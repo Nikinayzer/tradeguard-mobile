@@ -1,0 +1,210 @@
+import React from 'react';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {Home, BarChart2, User, Settings, Bot, TrendingUp, LineChart} from 'lucide-react-native';
+
+import HomeScreen from '../screens/home/HomeScreen';
+import MarketScreen from '../screens/market/MarketScreen';
+import TradeScreen from '../screens/trade/TradeScreen';
+import ProfileScreen from '../screens/profile/ProfileScreen';
+import AccountLimitsScreen from '../screens/profile/AccountLimitsScreen';
+import AutomatedTradeScreen from '../screens/auto/AutomatedTradeScreen';
+import PortfolioScreen from '../screens/portfolio/PortfolioScreen';
+import AccountSettingsScreen from "@/screens/settings/AccountSettingsScreen";
+import SecuritySettingsScreen from "@/screens/settings/SecuritySettingsScreen";
+import APISettingsScreen from "@/screens/settings/APISettingsScreen";
+import NotificationsSettingsScreen from "@/screens/settings/NotificationsSettingsScreen";
+import SettingsScreen from "@/screens/settings/SettingsScreen";
+
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+const commonAnimationConfig = {
+    animation: 'slide_from_right' as const,
+    animationDuration: 150,
+    presentation: 'card' as const,
+};
+
+function HomeStack() {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                ...commonAnimationConfig,
+            }}
+        >
+            <Stack.Screen name="HomeMain" component={HomeScreen}/>
+        </Stack.Navigator>
+    );
+}
+
+function MarketStack() {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                ...commonAnimationConfig,
+            }}
+        >
+            <Stack.Screen name="MarketMain" component={MarketScreen}/>
+        </Stack.Navigator>
+    );
+}
+
+// function TradeStack() {
+//     return (
+//         <Stack.Navigator
+//             screenOptions={{
+//                 headerShown: false,
+//                 ...commonAnimationConfig,
+//             }}
+//         >
+//             <Stack.Screen name="TradeMain" component={TradeScreen}/>
+//         </Stack.Navigator>
+//     );
+// }
+
+function AutoStack() {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                ...commonAnimationConfig,
+            }}
+        >
+            <Stack.Screen name="AutoMain" component={AutomatedTradeScreen}/>
+        </Stack.Navigator>
+    );
+}
+
+function ProfileStack() {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                animation: 'fade' as const,
+                animationDuration: 150,
+                presentation: 'transparentModal' as const,
+                contentStyle: {
+                    backgroundColor: '#0D1B2A',
+                },
+            }}
+        >
+            <Stack.Screen name="ProfileMain" component={ProfileScreen}/>
+            <Stack.Screen name="AccountLimits" component={AccountLimitsScreen}/>
+            <Stack.Screen name="SettingsStack" component={SettingsStack}/>
+        </Stack.Navigator>
+    );
+}
+
+function SettingsStack() {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+            }}
+        >
+            <Stack.Screen name="Settings" component={SettingsScreen}/>
+            {/*<Stack.Screen name="AccountSettings" component={AccountSettingsScreen}/>*/}
+            <Stack.Screen name="Security" component={SecuritySettingsScreen}/>
+            <Stack.Screen name="APISettings" component={APISettingsScreen}/>
+            <Stack.Screen name="Notifications" component={NotificationsSettingsScreen}/>
+        </Stack.Navigator>
+    )
+}
+
+
+function PortfolioStack() {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                ...commonAnimationConfig,
+            }}
+        >
+            <Stack.Screen name="PortfolioMain" component={PortfolioScreen}/>
+        </Stack.Navigator>
+    );
+}
+
+export default function MainTabs() {
+    return (
+        <Tab.Navigator
+            screenOptions={{
+                headerShown: false,
+                tabBarStyle: {
+                    backgroundColor: '#0D1B2A',
+                    borderTopColor: '#1B263B',
+                },
+                tabBarActiveTintColor: '#3B82F6',
+                tabBarInactiveTintColor: '#748CAB',
+                tabBarLabelStyle: {
+                    fontSize: 12,
+                    fontWeight: '500',
+                },
+            }}
+        >
+            <Tab.Screen
+                name="Home"
+                component={HomeStack}
+                options={{
+                    tabBarIcon: ({color, size}) => (
+                        <Home size={size} color={color}/>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Market"
+                component={MarketStack}
+                options={{
+                    tabBarIcon: ({color, size}) => (
+                        <BarChart2 size={size} color={color}/>
+                    ),
+                }}
+            />
+            {/*<Tab.Screen*/}
+            {/*    name="Trade"*/}
+            {/*    component={TradeStack}*/}
+            {/*    options={{*/}
+            {/*        tabBarIcon: ({color, size}) => (*/}
+            {/*            <LineChart size={size} color={color}/>*/}
+            {/*        ),*/}
+            {/*    }}*/}
+            {/*/>*/}
+            <Tab.Screen
+                name="Auto"
+                component={AutoStack}
+                options={{
+                    tabBarIcon: ({color, size}) => (
+                        <Bot size={size} color={color}/>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Portfolio"
+                component={PortfolioStack}
+                options={{
+                    tabBarIcon: ({color, size}) => (
+                        <TrendingUp size={size} color={color}/>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={ProfileStack}
+                options={({route, navigation}) => ({
+                    tabBarIcon: ({color, size}) => (
+                        <User size={size} color={color}/>
+                    ),
+                    tabBarListeners: {
+                        tabBlur: () => {
+                            navigation.reset({
+                                index: 0,
+                                routes: [{name: 'ProfileMain'}],
+                            });
+                        },
+                    },
+                })}
+            />
+        </Tab.Navigator>
+    );
+} 

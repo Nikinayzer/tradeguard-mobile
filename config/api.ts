@@ -1,0 +1,43 @@
+export const API_CONFIG = {
+    development: {
+        host: 'http://192.168.137.1:8080/api', //todo read from env
+        timeout: 10000,
+    },
+    production: {
+        host: 'tradeguardblahblahblah:8080/api',
+        timeout: 10000,
+    },
+};
+
+export const API_ENDPOINTS = {
+    auth: {
+        login: '/auth/login',
+        register: '/auth/register',
+        logout: '/auth/logout',
+    },
+    profile:{
+        getMe: '/users/me',
+        updateMe: '/users/me',
+        getBybitAccounts: '/users/me/bybit-accounts',
+        addBybitAccount: '/users/me/bybit-accounts',
+        getLimits: '/users/me/limits',
+        updateLimits: '/users/me/limits',
+    },
+    portfolio: {
+        getPortfolio: '/portfolio',
+        getPositions: '/portfolio/positions',
+        getHistory: '/portfolio/history',
+    },
+    trades: {
+        getTrades: '/trades',
+        getTradeDetails: (id: string) => `/trades/${id}`,
+        createTrade: '/trades',
+        closeTrade: (id: string) => `/trades/${id}/close`,
+    },
+    settings: {
+        getSettings: '/settings',
+        updateSettings: '/settings',
+        getNotifications: '/settings/notifications',
+        updateNotifications: '/settings/notifications',
+    },
+};

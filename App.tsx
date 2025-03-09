@@ -1,65 +1,73 @@
-import { registerRootComponent } from "expo";
+import React from 'react';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {RootStackParamList, AuthStackParamList} from '@/types/navigation';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {AuthProvider, useAuth} from '@/contexts/AuthContext';
+import {registerRootComponent} from "expo";
 
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+// Screens
+import LoadingScreen from '@/screens/LoadingScreen';
+import LoginScreen from '@/screens/auth/LoginScreen';
+import RegisterScreen from '@/screens/auth/RegisterScreen';
+import MainTabs from '@/navigation/MainTabs';
+import JobsScreen from '@/screens/auto/JobsScreen';
+import JobDetailsScreen from '@/screens/auto/JobDetailsScreen';
 
-import HomeScreen from "./screens/HomeScreen";
-import MarketScreen from "./screens/MarketScreen";
-import TradeScreen from "./screens/TradeScreen";
-import PortfolioScreen from "./screens/PortfolioScreen";
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 
-import { DollarSign, LineChart, TrendingUp } from "lucide-react-native";
-import { View, Text, StyleSheet } from "react-native";
-import React from "react";
-import JobsScreen from "@/screens/JobsScreen";
-
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
-
-function MainTabs() {
+function AuthNavigator() {
     return (
-        <Tab.Navigator>
-            <Tab.Screen name="Home" component={HomeScreen} />
-        </Tab.Navigator>
+        <AuthStack.Navigator
+            screenOptions={{
+                headerShown: false,
+            }}
+        >
+            <AuthStack.Screen name="Login" component={LoginScreen} />
+            <AuthStack.Screen name="Register" component={RegisterScreen} />
+        </AuthStack.Navigator>
     );
 }
 
-export default function App() {
+function Navigation() {
+    const {isAuthenticated, isLoading} = useAuth();
+
+    if (isLoading) {
+        return <LoadingScreen />;
+    }
+
     return (
-        <NavigationContainer>
-            <Tab.Navigator
-                screenOptions={({ route }) => ({
-                    headerShown: false,
-                    tabBarStyle: styles.tabBar,
-                    tabBarActiveTintColor: "#ffffff",
-                    tabBarInactiveTintColor: "#748CAB",
-                    tabBarLabel: ({ color }) => (
-                        <Text style={[styles.tabLabel, { color }]}>{route.name}</Text>
-                    ),
-                })}
-            >
-                <Tab.Screen name="Home" component={HomeScreen} />
-                <Tab.Screen name="Market" component={MarketScreen} />
-                <Tab.Screen name="Trade" component={TradeScreen} />
-                <Tab.Screen name="Jobs" component={JobsScreen} />
-                <Tab.Screen name="Portfolio" component={PortfolioScreen} />
-            </Tab.Navigator>
-        </NavigationContainer>
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+            }}
+        >
+            {!isAuthenticated ? (
+                <Stack.Screen name="Auth" component={AuthNavigator} />
+            ) : (
+                <>
+                    <Stack.Screen name="Main" component={MainTabs} />
+                    <Stack.Screen name="Jobs" component={JobsScreen} />
+                    <Stack.Screen name="JobDetails" component={JobDetailsScreen} />
+                </>
+            )}
+        </Stack.Navigator>
     );
 }
-const styles = StyleSheet.create({
-    tabBar: {
-        backgroundColor: "#0D1B2A",
-        borderTopWidth: 0,
-        paddingBottom: 5,
-        paddingTop: 5,
-        height: 60,
-    },
-    tabLabel: {
-        fontSize: 12,
-        fontWeight: "600",
-    },
-});
+
+function App() {
+    return (
+        <SafeAreaProvider>
+            <AuthProvider>
+                <NavigationContainer>
+                    <Navigation />
+                </NavigationContainer>
+            </AuthProvider>
+        </SafeAreaProvider>
+    );
+}
 
 registerRootComponent(App);
+
+export default App;
