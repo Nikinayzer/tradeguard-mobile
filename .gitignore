@@ -1,38 +1,90 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# 🚀 Dependencies
 node_modules/
+.yarn/
+.pnp.*
+.pnp.js
 
-# Expo
+# 🛠 Expo
 .expo/
-dist/
 web-build/
+dist/
 expo-env.d.ts
+.expo-shared/
 
-# Native
+# 📦 Metro bundler
+.metro-health-check*
+
+# 🏗️ Build files
+build/
+*.xcframework
+*.spec.json
+Info-generated.plist
+
+# 📌 Native (Sensitive Keys, Certificates, and Provisioning)
 *.orig.*
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
-npm-debug.*
-yarn-debug.*
-yarn-error.*
-
-# macOS
-.DS_Store
 *.pem
+google-services.json
+GoogleService-Info.plist
 
-# local env files
+# 📍 Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+expo-error.log
+
+# 🍏 macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 🖥️ Editor / IDE files
+.idea/
+.vscode/
+.history/
+*.sublime-project
+*.sublime-workspace
+.gradle/
+*.iml
+*.swp
+*.swo
+*.swn
+*.swm
+
+# 🏗️ Android # P.S. first folder might be overkill
+android
+android/.gradle/
+android/app/build/
+android/app/src/main/assets/
+android/app/src/main/res/drawable-*/
+
+# 🏗️ iOS # P.S. first folder might be overkill
+ios
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+ios/.xcworkspace/
+
+# 📂 Local environment files
+.env
 .env*.local
+.envrc.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# typescript
+# 📑 TypeScript
 *.tsbuildinfo
 
+# 🔧 Miscellaneous
 app-example
+*.lock
+logs/
+logs/*.log
+*.tmp
