@@ -5,7 +5,6 @@ import {Home, BarChart2, User, Settings, Bot, TrendingUp, LineChart} from 'lucid
 
 import HomeScreen from '../screens/home/HomeScreen';
 import MarketScreen from '../screens/market/MarketScreen';
-import TradeScreen from '../screens/trade/TradeScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import AccountLimitsScreen from '../screens/profile/AccountLimitsScreen';
 import AutomatedTradeScreen from '../screens/auto/AutomatedTradeScreen';
@@ -49,19 +48,6 @@ function MarketStack() {
         </Stack.Navigator>
     );
 }
-
-// function TradeStack() {
-//     return (
-//         <Stack.Navigator
-//             screenOptions={{
-//                 headerShown: false,
-//                 ...commonAnimationConfig,
-//             }}
-//         >
-//             <Stack.Screen name="TradeMain" component={TradeScreen}/>
-//         </Stack.Navigator>
-//     );
-// }
 
 function AutoStack() {
     return (
@@ -161,15 +147,7 @@ export default function MainTabs() {
                     ),
                 }}
             />
-            {/*<Tab.Screen*/}
-            {/*    name="Trade"*/}
-            {/*    component={TradeStack}*/}
-            {/*    options={{*/}
-            {/*        tabBarIcon: ({color, size}) => (*/}
-            {/*            <LineChart size={size} color={color}/>*/}
-            {/*        ),*/}
-            {/*    }}*/}
-            {/*/>*/}
+
             <Tab.Screen
                 name="Auto"
                 component={AutoStack}
