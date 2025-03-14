@@ -17,7 +17,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Ionicons} from '@expo/vector-icons';
-import {AuthStackParamList} from '@/types/navigation';
+import {AuthStackParamList} from '@/navigation/navigation';
 import {authService} from '@/services/api/auth';
 import {useAuth} from '@/contexts/AuthContext';
 

@@ -14,6 +14,7 @@ import SecuritySettingsScreen from "@/screens/settings/SecuritySettingsScreen";
 import APISettingsScreen from "@/screens/settings/APISettingsScreen";
 import NotificationsSettingsScreen from "@/screens/settings/NotificationsSettingsScreen";
 import SettingsScreen from "@/screens/settings/SettingsScreen";
+import CoinDetailScreen from "@/screens/market/CoinDetailScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -45,6 +46,14 @@ function MarketStack() {
             }}
         >
             <Stack.Screen name="MarketMain" component={MarketScreen}/>
+            <Stack.Screen
+                name="CoinDetail"
+                component={CoinDetailScreen}
+                options={{
+                    animation: 'slide_from_right',
+                    presentation: 'card',
+                }}
+            />
         </Stack.Navigator>
     );
 }

@@ -15,13 +15,18 @@ export const API_ENDPOINTS = {
         register: '/auth/register',
         logout: '/auth/logout',
     },
-    profile:{
+    profile: {
         getMe: '/users/me',
         updateMe: '/users/me',
         getBybitAccounts: '/users/me/bybit-accounts',
         addBybitAccount: '/users/me/bybit-accounts',
         getLimits: '/users/me/limits',
         updateLimits: '/users/me/limits',
+    },
+    market: {
+        getCategories: '/market/categories',
+        getAll: '/market/all',
+        getTokens: (symbols: string[]) => `/market/tokens?symbols=${symbols.join(',')}`,
     },
     portfolio: {
         getPortfolio: '/portfolio',
@@ -40,4 +45,4 @@ export const API_ENDPOINTS = {
         getNotifications: '/settings/notifications',
         updateNotifications: '/settings/notifications',
     },
-};
+} as const;

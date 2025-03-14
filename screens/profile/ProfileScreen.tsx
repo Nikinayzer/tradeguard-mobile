@@ -27,7 +27,7 @@ import {
     Settings
 } from 'lucide-react-native';
 import {useNavigation} from "@react-navigation/native";
-import {ProfileStackParamList} from "@/types/navigation";
+import {ProfileStackParamList} from "@/navigation/navigation";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
 import {useFormValidation, ValidationRules} from '@/hooks/useFormValidation';
 

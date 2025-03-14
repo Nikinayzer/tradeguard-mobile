@@ -2,16 +2,17 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { RefreshCw } from 'lucide-react-native';
 
-interface PortfolioHeaderProps {
+interface ScreenHeaderProps {
+    title: string;
     lastUpdated: string;
     onRefresh: () => void;
 }
 
-export function PortfolioHeader({ lastUpdated, onRefresh }: PortfolioHeaderProps) {
+export function ScreenHeader({ title, lastUpdated, onRefresh }: ScreenHeaderProps) {
     return (
         <View style={styles.header}>
             <View>
-                <Text style={styles.headerTitle}>Portfolio</Text>
+                <Text style={styles.headerTitle}>{title}</Text>
                 <Text style={styles.headerSubtitle}>Last updated {lastUpdated}</Text>
             </View>
             <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
@@ -26,10 +27,11 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
+        marginTop: 10,
         marginBottom: 24,
     },
     headerTitle: {
-        fontSize: 28,
+        fontSize: 34,
         fontWeight: "bold",
         color: "white",
     },

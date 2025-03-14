@@ -4,7 +4,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {Bell, ChevronLeft, HelpCircle, History, Lock, Shield, Wallet} from "lucide-react-native";
 import {useNavigation} from "@react-navigation/native";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
-import {SettingsStackParamList} from "@/types/navigation";
+import {SettingsStackParamList} from "@/navigation/navigation";
 import {useAuth} from "@/contexts/AuthContext";
 import {Ionicons} from "@expo/vector-icons";
 

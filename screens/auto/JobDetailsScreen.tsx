@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Play, Pause, Trash2, Settings } from "lucide-react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "@/types/navigation";
+import { RootStackParamList } from "@/navigation/navigation";
 
 type Props = NativeStackScreenProps<RootStackParamList, "JobDetails">;
 

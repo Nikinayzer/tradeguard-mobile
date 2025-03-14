@@ -2,7 +2,7 @@ import React, {useState, useCallback} from 'react';
 import {View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text, TouchableOpacity} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
-import {PortfolioHeader} from '@/components/screens/portfolio/PortfolioHeader';
+import {ScreenHeader} from '@/components/screens/portfolio/ScreenHeader';
 import {PortfolioSummary} from '@/components/screens/portfolio/PortfolioSummary';
 import {OpenPosition, PositionCard} from '@/components/screens/portfolio/PositionCard';
 import {ChevronRight} from "lucide-react-native";
@@ -105,7 +105,8 @@ export default function PortfolioScreen() {
             >
                 <View>
                 </View>
-                <PortfolioHeader
+                <ScreenHeader
+                    title={"Portfolio"}
                     lastUpdated={lastUpdated}
                     onRefresh={handleRefresh}
                 />
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        padding: 16,
+        padding: 12,
     },
     loadingContainer: {
         flex: 1,

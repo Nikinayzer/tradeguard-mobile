@@ -1,7 +1,7 @@
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {RootStackParamList, AuthStackParamList} from '@/types/navigation';
+import {RootStackParamList, AuthStackParamList} from '@/navigation/navigation';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {AuthProvider, useAuth} from '@/contexts/AuthContext';
 import {registerRootComponent} from "expo";

@@ -19,6 +19,12 @@ export type MainTabParamList = {
     Settings: undefined;
 };
 
+export type MarketStackParamList = {
+    MarketMain: undefined;
+    CoinDetail: { symbol: string };
+    AllTokens: { category: string };
+};
+
 export type ProfileStackParamList = {
     ProfileMain: undefined;
     AccountLimits: undefined;
