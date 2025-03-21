@@ -62,7 +62,7 @@ const mockData: PortfolioData = {
 
 export default function PortfolioScreen() {
     const [isLoading, setIsLoading] = useState(false);
-    const [lastUpdated, setLastUpdated] = useState("2m ago");
+    const [lastUpdated, setLastUpdated] = useState("Now");
     const [portfolioData, setPortfolioData] = useState(mockData);
 
     const loadData = useCallback(async () => {
@@ -111,7 +111,6 @@ export default function PortfolioScreen() {
                     onRefresh={handleRefresh}
                 />
                 <PortfolioSummary {...portfolioData.summary} />
-                {/* OPEN POSITIONS */}
                 <View style={styles.sectionHeader}>
                     <View>
                         <Text style={styles.sectionTitle}>Open Positions</Text>

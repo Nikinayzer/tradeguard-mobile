@@ -1,155 +1,380 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Switch } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bot, Plus, ChevronRight } from 'lucide-react-native';
-import { CoinSelector } from '@/components/screens/auto/CoinSelector';
-import { JobCard } from '@/components/screens/auto/JobCard';
-import { JobCreator } from '../../components/screens/auto/JobCreator';
+import React, {useState, useEffect, useMemo, createContext} from 'react';
+import {
+    View,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    ActivityIndicator,
+    ScrollView,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {JobCreator} from '@/components/screens/auto/JobCreator';
+import {JobCard} from '@/components/screens/auto/JobCard';
+import {
+    autoService,
+    Job,
+    JobStrategy,
+    JobParams,
+    DCAJobParams,
+    LIQJobParams,
+} from '@/services/api/auto';
+import {usePullToRefresh} from '@/hooks/usePullToRefresh';
+import NotificationModal from '@/components/modals/NotificationModal';
+import {RefreshControl} from 'react-native';
+import {Bot, History} from 'lucide-react-native';
+import {ScreenHeader} from "@/components/screens/portfolio/ScreenHeader";
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-interface Job {
-    id: string;
-    type: 'dca' | 'liq';
-    status: 'active' | 'paused';
-    currentStep: number;
-    totalSteps: number;
-    coins: any[];
+interface Coin {
+    symbol: string;
+    name: string;
+    icon: string;
+    price: string;
+    change24h: string;
+    isPositive: boolean;
 }
 
+type NavigationProp = NativeStackNavigationProp<any>;
+
+const defaultDCAJobParams: DCAJobParams = {
+    source: 'mobile',
+    coins: [],
+    side: 'BUY',
+    totalSteps: 10,
+    force: false,
+    discountPct: 0.5,
+    randomnessPct: 0.1,
+    amount: 100,
+};
+
+const defaultLIQJobParams: LIQJobParams = {
+    source: 'mobile',
+    coins: [],
+    side: 'SELL',
+    totalSteps: 10,
+    force: false,
+    discountPct: 0.5,
+    randomnessPct: 0.1,
+    excludeCoins: [],
+    proportionPct: 100,
+};
+
+export const TooltipContext = createContext<{
+    activeTooltipId: string | null;
+    setActiveTooltipId: React.Dispatch<React.SetStateAction<string | null>>;
+}>({
+    activeTooltipId: null,
+    setActiveTooltipId: () => null,
+});
+
 export default function AutomatedTradeScreen() {
-    const [jobType, setJobType] = useState<'dca' | 'liq'>('dca');
+    const navigation = useNavigation<NavigationProp>();
+    const [jobType, setJobType] = useState<JobStrategy>('DCA');
     const [jobs, setJobs] = useState<Job[]>([]);
-    const [selectedCoins, setSelectedCoins] = useState<any[]>([]);
-    const [jobParams, setJobParams] = useState<any>({});
+    const [selectedCoins, setSelectedCoins] = useState<Coin[]>([]);
+    const [jobParams, setJobParams] = useState<JobParams>(defaultDCAJobParams);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState("Now");
 
-    const handleJobComplete = () => {
-        if (Object.keys(jobParams).length === 0 || selectedCoins.length === 0) return;
+    // DUPLICATE, REFACTOR
+    const [notificationVisible, setNotificationVisible] = useState(false);
+    const [notificationType, setNotificationType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+    const [notificationTitle, setNotificationTitle] = useState('');
+    const [notificationMessage, setNotificationMessage] = useState('');
 
-        const newJob: Job = {
-            id: Date.now().toString(),
-            type: jobType,
-            status: 'active',
-            currentStep: 1,
-            totalSteps: jobType === 'dca' ? (jobParams.steps || 10) : 1,
-            coins: selectedCoins,
-        };
+    const activeJobs = useMemo(() =>
+        jobs.filter(job => job.status === 'IN_PROGRESS' || job.status === 'PAUSED'),
+        [jobs]
+    );
 
-        setJobs([...jobs, newJob]);
+    const finishedJobs = useMemo(() =>
+        jobs.filter(job => job.status === 'FINISHED' || job.status === 'CANCELED'),
+        [jobs]
+    );
+
+    const {isRefreshing, handleRefresh} = usePullToRefresh({
+        onRefresh: fetchJobs,
+        onError: (error) => {
+            showNotification('error', 'Refresh Failed', 'Failed to refresh jobs');
+            console.error('Error refreshing jobs:', error);
+        }
+    });
+
+    const showNotification = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+        setNotificationType(type);
+        setNotificationTitle(title);
+        setNotificationMessage(message);
+        setNotificationVisible(true);
+    };
+    const closeNotification = () => {
+        setNotificationVisible(false);
+    };
+
+    const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+
+    async function fetchJobs() {
+        try {
+            setIsLoading(true);
+            const apiJobs = await autoService.getAllActiveJobs();
+            setJobs(apiJobs || []);
+            setLastUpdated(new Date().toLocaleTimeString());
+        } catch (err) {
+            console.error('Error fetching jobs:', err);
+            setJobs([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        fetchJobs();
+    }, []);
+
+    const handleJobTypeChange = (type: JobStrategy) => {
+        setJobType(type);
+        setJobParams(type === 'DCA' ? defaultDCAJobParams : defaultLIQJobParams);
         setSelectedCoins([]);
-        setJobParams({});
     };
 
-    const handleToggleJob = (id: string) => {
-        setJobs(jobs.map(job =>
-            job.id === id
-                ? { ...job, status: job.status === 'active' ? 'paused' : 'active' }
-                : job
-        ));
+    const handleCoinSelection = (coin: Coin) => {
+        setSelectedCoins(prev => {
+            const isSelected = prev.some(c => c.symbol === coin.symbol);
+            if (isSelected) {
+                return prev.filter(c => c.symbol !== coin.symbol);
+            }
+            return [...prev, coin];
+        });
     };
 
-    const handleDeleteJob = (id: string) => {
-        setJobs(jobs.filter(job => job.id !== id));
+    const handleJobComplete = async () => {
+        if (!jobParams || selectedCoins.length === 0) {
+            showNotification(
+                'warning',
+                'Missing Information',
+                'Please select at least one coin to continue.'
+            );
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+
+            if (jobType === 'DCA') {
+                await autoService.createDCAJob({
+                    ...jobParams as DCAJobParams,
+                    coins: selectedCoins.map(coin => coin.symbol),
+                });
+            } else {
+                await autoService.createLIQJob({
+                    ...jobParams as LIQJobParams,
+                    coins: selectedCoins.map(coin => coin.symbol),
+                });
+            }
+
+            showNotification(
+                'success',
+                'Job Created',
+                `Your ${jobType} job was successfully created`
+            );
+
+            setSelectedCoins([]);
+            setJobParams(jobType === 'DCA' ? defaultDCAJobParams : defaultLIQJobParams);
+            await fetchJobs();
+        } catch (err) {
+            console.error('Error creating job:', err);
+            showNotification(
+                'error',
+                'Job Creation Failed',
+                `Failed to create job. Please try again.`
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleToggleJob = async (jobId: number) => {
+        try {
+            const job = jobs.find(job => job.jobId === Number(jobId));
+            if (!job) return;
+
+            if (job.status === 'IN_PROGRESS') {
+                await autoService.pauseJob(job.id);
+                showNotification('info', 'Job Paused', 'Your job has been paused');
+            } else if (job.status === 'PAUSED') {
+                await autoService.resumeJob(job.id);
+                showNotification('success', 'Job Resumed', 'Your job is now running');
+            }
+
+            await fetchJobs();
+        } catch (err) {
+            console.error('Error toggling job:', err);
+            showNotification('error', 'Action Failed', 'Failed to update job status');
+        }
+    };
+
+    const handleDeleteJob = async (jobId: number) => {
+        try {
+            const job = jobs.find(j => j.jobId === Number(jobId));
+            if (!job) return;
+
+            await autoService.cancelJob(job.id);
+            showNotification('info', 'Job Cancelled', 'Your job has been cancelled');
+            await fetchJobs();
+        } catch (err) {
+            console.error('Error canceling job:', err);
+            showNotification('error', 'Action Failed', 'Failed to cancel job');
+        }
+    };
+
+    const handleStopJob = async (jobId: number) => {
+        try {
+            const job = jobs.find(j => j.jobId === Number(jobId));
+            if (!job) return;
+
+            await autoService.cancelJob(job.id);
+            showNotification('success', 'Job Stopped', 'Your job has been stopped and marked as completed');
+            await fetchJobs();
+        } catch (err) {
+            console.error('Error stopping job:', err);
+            showNotification('error', 'Action Failed', 'Failed to stop job');
+        }
+    };
+
+    const handleViewJobDetails = (jobId: number) => {
+        navigation.navigate('JobDetail', { jobId });
+    };
+
+    const navigateToJobList = (initialTab: 'active' | 'finished' = 'active') => {
+        navigation.navigate('JobList', { initialTab });
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <ScrollView style={styles.container}>
-                <View style={styles.header}>
-                    <View style={styles.headerLeft}>
-                        <Bot size={24} color="white" />
-                        <Text style={styles.title}>Automated Trading</Text>
-                    </View>
-                </View>
-
-                {/* Job Type Switch */}
-                <View style={styles.switchContainer}>
-                    <View style={styles.jobTypeSwitch}>
-                        <Text style={[styles.switchLabel, jobType === 'dca' && styles.activeSwitchLabel]}>DCA</Text>
-                        <Switch
-                            value={jobType === 'liq'}
-                            onValueChange={(value) => setJobType(value ? 'liq' : 'dca')}
-                            trackColor={{ false: '#3B82F6', true: '#3B82F6' }}
-                            thumbColor="white"
+        <TooltipContext.Provider value={{activeTooltipId, setActiveTooltipId}}>
+            <SafeAreaView style={styles.safeArea}>
+                <ScreenHeader
+                    title={"Automated Trading"}
+                    lastUpdated={lastUpdated}
+                    onRefresh={handleRefresh}
+                />
+                
+                <ScrollView 
+                    style={styles.container}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={handleRefresh}
+                            colors={["#3B82F6"]}
+                            tintColor="#3B82F6"
                         />
-                        <Text style={[styles.switchLabel, jobType === 'liq' && styles.activeSwitchLabel]}>LIQ</Text>
-                    </View>
-                </View>
+                    }
+                    onStartShouldSetResponder={() => {
+                        setActiveTooltipId(null);
+                        return false;
+                    }}
+                >
+                    <NotificationModal
+                        visible={notificationVisible}
+                        onClose={closeNotification}
+                        title={notificationTitle}
+                        message={notificationMessage}
+                        type={notificationType}
+                        buttonText="OK"
+                        onButtonPress={closeNotification}
+                    />
 
-                {/* Parameters */}
-                <View style={styles.section}>
                     <JobCreator
                         jobType={jobType}
-                        onJobTypeChange={setJobType}
+                        onJobTypeChange={handleJobTypeChange}
                         params={jobParams}
                         onUpdateParams={setJobParams}
-                    />
-                </View>
-
-                {/* Coin Selector */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Select Coins</Text>
-                    <CoinSelector
                         selectedCoins={selectedCoins}
-                        onSelect={(coin) => {
-                            setSelectedCoins(prev => {
-                                const isSelected = prev.some(c => c.symbol === coin.symbol);
-                                if (isSelected) {
-                                    return prev.filter(c => c.symbol !== coin.symbol);
-                                }
-                                return [...prev, coin];
-                            });
-                        }}
+                        onSelectCoin={handleCoinSelection}
                     />
-                </View>
 
-                {/* Create Button */}
-                {selectedCoins.length > 0 && Object.keys(jobParams).length > 0 && (
-                    <TouchableOpacity
-                        style={styles.createButton}
-                        onPress={handleJobComplete}
-                    >
-                        <Text style={styles.createButtonText}>
-                            Create Job with {selectedCoins.length} coins
-                        </Text>
-                    </TouchableOpacity>
-                )}
-
-                {/* Active Jobs */}
-                {jobs.length > 0 ? (
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <View>
-                                <Text style={styles.sectionTitle}>Active Jobs</Text>
-                                <Text style={styles.sectionSubtitle}>
-                                    {jobs.length} running jobs
+                    {selectedCoins.length > 0 && (
+                        <TouchableOpacity
+                            style={styles.createButton}
+                            onPress={handleJobComplete}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator size="small" color="white"/>
+                            ) : (
+                                <Text style={styles.createButtonText}>
+                                    Create {jobType} Job
+                                    with {selectedCoins.length} coin{selectedCoins.length > 1 ? 's' : ''}
                                 </Text>
-                            </View>
-                            <TouchableOpacity style={styles.seeAllButton}>
-                                <Text style={styles.seeAllText}>See All</Text>
-                                <ChevronRight size={16} color="#3B82F6" />
-                            </TouchableOpacity>
+                            )}
+                        </TouchableOpacity>
+                    )}
+
+                    <View style={styles.tabContainer}>
+                        <View style={[styles.tab, styles.activeTab]}>
+                            <Bot size={16} color="#3B82F6"/>
+                            <Text style={[styles.tabText, styles.activeTabText]}>
+                                Active ({activeJobs.length})
+                            </Text>
                         </View>
 
-                        {jobs.map(job => (
-                            <JobCard
-                                key={job.id}
-                                job={job}
-                                onToggle={() => handleToggleJob(job.id)}
-                                onDelete={() => handleDeleteJob(job.id)}
-                            />
-                        ))}
+                        <TouchableOpacity
+                            style={styles.tab}
+                            onPress={() => navigateToJobList('finished')}
+                        >
+                            <History size={16} color="#748CAB"/>
+                            <Text style={styles.tabText}>
+                                History ({finishedJobs.length})
+                            </Text>
+                        </TouchableOpacity>
                     </View>
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyStateText}>
-                            No automated jobs created yet
-                        </Text>
-                        <Text style={styles.emptyStateSubtext}>
-                            Create your first job to start automated trading
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
-        </SafeAreaView>
+
+                    {activeJobs.length > 0 ? (
+                        <View style={styles.recentJobsSection}>
+                            <TouchableOpacity 
+                                style={styles.sectionHeader}
+                                onPress={() => navigateToJobList('active')}
+                            >
+                                <View>
+                                    <Text style={styles.jobsTitle}>
+                                        Active Jobs
+                                    </Text>
+                                    <Text style={styles.jobsSubtitle}>
+                                        Your running automated strategies
+                                    </Text>
+                                </View>
+                                <Text style={styles.viewAllText}>View All</Text>
+                            </TouchableOpacity>
+
+                            {activeJobs.map(job => (
+                                <JobCard
+                                    key={job.jobId}
+                                    job={job}
+                                    onToggle={() => handleToggleJob(job.jobId)}
+                                    onDelete={() => handleDeleteJob(job.jobId)}
+                                    onStop={() => handleStopJob(job.jobId)}
+                                    onViewDetails={() => handleViewJobDetails(job.jobId)}
+                                    compact={true}
+                                />
+                            ))}
+                        </View>
+                    ) : !isLoading && (
+                        <View style={styles.emptyStateContainer}>
+                            <Text style={styles.emptyStateTitle}>No Active Jobs</Text>
+                            <Text style={styles.emptyStateMessage}>
+                                It's time to create a job!
+                            </Text>
+                        </View>
+                    )}
+
+                    {isLoading && jobs.length === 0 && (
+                        <View style={styles.loadingOverlay}>
+                            <ActivityIndicator size="large" color="#3B82F6"/>
+                        </View>
+                    )}
+                </ScrollView>
+            </SafeAreaView>
+        </TooltipContext.Provider>
     );
 }
 
@@ -160,104 +385,104 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
         padding: 16,
-        paddingBottom: 8,
     },
-    headerLeft: {
-        flexDirection: 'row',
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(13, 27, 42, 0.7)',
+        justifyContent: 'center',
         alignItems: 'center',
-        gap: 12,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: '600',
-        color: 'white',
-    },
-    switchContainer: {
-        alignItems: 'center',
-        paddingVertical: 16,
-    },
-    jobTypeSwitch: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        backgroundColor: '#1B263B',
-        padding: 4,
-        borderRadius: 8,
-    },
-    switchLabel: {
-        color: '#748CAB',
-        fontSize: 14,
-        fontWeight: '600',
-        paddingHorizontal: 8,
-    },
-    activeSwitchLabel: {
-        color: '#3B82F6',
-    },
-    section: {
-        padding: 16,
-        paddingTop: 0,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 16,
+        zIndex: 10,
     },
     createButton: {
         backgroundColor: '#3B82F6',
         padding: 16,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: 'center',
-        marginHorizontal: 16,
-        marginBottom: 16,
+        marginVertical: 16,
+        shadowColor: '#000',
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     createButtonText: {
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
     },
+    tabContainer: {
+        flexDirection: 'row',
+        marginVertical: 16,
+        backgroundColor: 'rgba(13, 27, 42, 0.7)',
+        borderRadius: 12,
+        padding: 4,
+    },
+    tab: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 10,
+    },
+    activeTab: {
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    },
+    tabText: {
+        fontSize: 14,
+        color: '#748CAB',
+        fontWeight: '500',
+        marginLeft: 8,
+    },
+    activeTabText: {
+        color: '#3B82F6',
+        fontWeight: '600',
+    },
+    viewAllText: {
+        fontSize: 12,
+        color: '#3B82F6',
+        fontWeight: '500',
+    },
+    recentJobsSection: {
+        marginBottom: 16,
+    },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
     },
-    sectionSubtitle: {
+    jobsHeaderContainer: {
+        marginBottom: 12,
+    },
+    jobsTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: 'white',
+    },
+    jobsSubtitle: {
         fontSize: 14,
         color: '#748CAB',
+        marginTop: 4,
     },
-    seeAllButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    seeAllText: {
-        color: '#3B82F6',
-        fontSize: 14,
-        marginRight: 4,
-    },
-    emptyState: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 32,
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
+    emptyStateContainer: {
         margin: 16,
+        padding: 16,
+        backgroundColor: 'rgba(13, 27, 42, 0.5)',
+        borderRadius: 12,
+        alignItems: 'center',
     },
-    emptyStateText: {
+    emptyStateTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: 'white',
         marginBottom: 8,
     },
-    emptyStateSubtext: {
+    emptyStateMessage: {
         fontSize: 14,
         color: '#748CAB',
         textAlign: 'center',
+        lineHeight: 20,
     },
-}); 
+});

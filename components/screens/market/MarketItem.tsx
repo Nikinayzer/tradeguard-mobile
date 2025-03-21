@@ -1,24 +1,43 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { DollarSign } from 'lucide-react-native';
-import { MarketData } from '@/services/MarketDataManager';
+
+interface MarketItemData {
+    instrument: string;
+    currentPrice: number;
+    volume24h: number;
+    change24h: number;
+    high24h: number;
+    low24h: number;
+    instrumentInfo: {
+        priceScale: number;
+        quantityStep: number;
+        timestamp: number;
+    };
+    // Optional fields
+    price24hAgo?: number;
+    price1hAgo?: number;
+    openInterestValue?: number;
+    fundingRate?: number;
+    nextFundingTime?: number;
+}
 
 interface MarketItemProps {
-    data: MarketData;
+    data: MarketItemData;
     onPress: () => void;
     variant?: 'card' | 'full';
 }
 
 export function MarketItem({ data, onPress, variant = 'card' }: MarketItemProps) {
     const [iconError, setIconError] = useState(false);
-    const { instrument, currentPrice, volume24h, change24h } = data;
+    const { instrument, currentPrice, volume24h, change24h, instrumentInfo } = data;
 
     const baseSymbol = instrument.split('/')[0].toLowerCase();
 
     const isPositiveChange = change24h >= 0;
     const formattedPrice = `$${currentPrice.toLocaleString('en-US', { 
-        minimumFractionDigits: data.instrumentInfo.priceScale, 
-        maximumFractionDigits: data.instrumentInfo.priceScale 
+        minimumFractionDigits: instrumentInfo?.priceScale || 2, 
+        maximumFractionDigits: instrumentInfo?.priceScale || 2 
     })}`;
     const formattedChange = `${isPositiveChange ? '+' : ''}${(change24h * 100).toFixed(2)}%`;
     
@@ -41,7 +60,7 @@ export function MarketItem({ data, onPress, variant = 'card' }: MarketItemProps)
                     </View>
                 ) : (
                     <Image
-                        source={{ uri: `https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${baseSymbol}.png` }}
+                        source={{ uri: `https://cryptologos.cc/logos/${baseSymbol}-${baseSymbol}-logo.png` }}
                         style={styles.icon}
                         onError={() => setIconError(true)}
                     />

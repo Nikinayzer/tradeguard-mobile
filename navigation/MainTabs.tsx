@@ -15,6 +15,9 @@ import APISettingsScreen from "@/screens/settings/APISettingsScreen";
 import NotificationsSettingsScreen from "@/screens/settings/NotificationsSettingsScreen";
 import SettingsScreen from "@/screens/settings/SettingsScreen";
 import CoinDetailScreen from "@/screens/market/CoinDetailScreen";
+import JobDetailScreen from "../screens/auto/JobDetailScreen";
+import JobListScreen from "../screens/auto/JobListScreen";
+import CoinSelectorScreen from "../screens/auto/CoinSelectorScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -67,6 +70,30 @@ function AutoStack() {
             }}
         >
             <Stack.Screen name="AutoMain" component={AutomatedTradeScreen}/>
+            <Stack.Screen
+                name="JobDetail"
+                component={JobDetailScreen}
+                options={{
+                    animation: 'slide_from_right',
+                    presentation: 'card',
+                }}
+            />
+            <Stack.Screen
+                name="JobList"
+                component={JobListScreen}
+                options={{
+                    animation: 'slide_from_right',
+                    presentation: 'card',
+                }}
+            />
+            <Stack.Screen
+                name="CoinSelector"
+                component={CoinSelectorScreen}
+                options={{
+                    animation: 'slide_from_right',
+                    presentation: 'card',
+                }}
+            />
         </Stack.Navigator>
     );
 }
@@ -127,8 +154,13 @@ export default function MainTabs() {
             screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: '#0D1B2A',
-                    borderTopColor: '#1B263B',
+                    backgroundColor: '#1B263B',
+                    borderTopWidth: 0,
+                    elevation: 0,
+                    shadowOpacity: 0,
+                    height: 60,
+                    paddingBottom: 8,
+                    paddingTop: 8,
                 },
                 tabBarActiveTintColor: '#3B82F6',
                 tabBarInactiveTintColor: '#748CAB',

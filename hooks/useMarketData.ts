@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import MarketDataManager, { CategoryData, Categories, MarketData } from '@/services/MarketDataManager';
+import MarketDataManager, { CategoryData, Categories } from '@/services/MarketDataManager';
 
 interface UseMarketDataResult {
     marketData: CategoryData;
     categories: Categories;
     isLoading: boolean;
+    isLoadingInitialData: boolean;
     error: Error | null;
-    getTokenData: (symbol: string) => Promise<MarketData | null>;
-    getCategoryData: (category: string) => MarketData[];
 }
 
 export function useMarketData(): UseMarketDataResult {
@@ -17,42 +16,34 @@ export function useMarketData(): UseMarketDataResult {
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
-        const manager = MarketDataManager.getInstance();
-
-        const marketUnsubscribe = manager.subscribeToMarketData((data) => {
+        const marketManager = MarketDataManager.getInstance();
+        
+        const unsubscribeMarket = marketManager.subscribeToMarketData((data) => {
             setMarketData(data);
             setIsLoading(false);
         });
 
-        const categoriesUnsubscribe = manager.subscribeToCategories((cats) => {
+        const unsubscribeCategories = marketManager.subscribeToCategories((cats) => {
             setCategories(cats);
         });
 
+        if (marketManager.isLoaded()) {
+            setMarketData(marketManager.getMarketData());
+            setCategories(marketManager.getCategories());
+            setIsLoading(false);
+        }
+
         return () => {
-            marketUnsubscribe();
-            categoriesUnsubscribe();
+            unsubscribeMarket();
+            unsubscribeCategories();
         };
     }, []);
-
-    const getTokenData = async (symbol: string): Promise<MarketData | null> => {
-        try {
-            return await MarketDataManager.getInstance().getTokenData(symbol);
-        } catch (err) {
-            setError(err instanceof Error ? err : new Error('Failed to fetch token data'));
-            return null;
-        }
-    };
-
-    const getCategoryData = (category: string): MarketData[] => {
-        return MarketDataManager.getInstance().getCategoryData(category);
-    };
 
     return {
         marketData,
         categories,
         isLoading,
-        error,
-        getTokenData,
-        getCategoryData,
+        isLoadingInitialData: MarketDataManager.getInstance().isLoadingInitialData(),
+        error
     };
 } 

@@ -1,19 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowUpRight, ArrowDownRight, DollarSign, Clock, BarChart2, ArrowLeft, TrendingUp, TrendingDown, Percent } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownRight, DollarSign, Clock, BarChart2, ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useMarketData } from '@/hooks/useMarketData';
+import MarketDataManager, { type Coin } from '@/services/MarketDataManager';
 
 export default function CoinDetailScreen() {
     const route = useRoute();
     const navigation = useNavigation();
     const { symbol } = route.params as { symbol: string };
-    const { marketData, isLoading, error } = useMarketData();
+    const { isLoading, error } = useMarketData();
+    const [coin, setCoin] = useState<Coin | null>(null);
+    const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-    const coin = marketData ? Object.values(marketData)
-        .flat()
-        .find(coin => coin.instrument === symbol) : null;
+    useEffect(() => {
+        // Get initial coin data
+        const marketManager = MarketDataManager.getInstance();
+        const initialCoin = marketManager.getCoin(symbol);
+        if (initialCoin) {
+            setCoin(initialCoin);
+            setLastUpdate(new Date(initialCoin.lastUpdate));
+        }
+
+        const unsubscribe = marketManager.subscribeToCoin(symbol, (updatedCoin) => {
+            setCoin(updatedCoin);
+            setLastUpdate(new Date(updatedCoin.lastUpdate));
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, [symbol]);
     
     const formatVolume = (volume: number) => {
         if (volume >= 1000000) {
@@ -22,24 +40,12 @@ export default function CoinDetailScreen() {
         return `$${(volume / 1000).toFixed(1)}K`;
     };
 
-    const formatFundingRate = (rate: number) => {
-        return `${(rate * 100).toFixed(4)}%`;
-    };
-
-    const formatNextFunding = (timestamp: number) => {
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-        });
-    };
-
-    if (isLoading) {
+    if (isLoading || !coin) {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#3B82F6" />
+                    <Text style={styles.loadingText}>Loading coin data...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -50,14 +56,18 @@ export default function CoinDetailScreen() {
             <SafeAreaView style={styles.safeArea}>
                 <View style={styles.errorContainer}>
                     <Text style={styles.errorText}>Failed to load coin data</Text>
+                    <TouchableOpacity 
+                        style={styles.retryButton}
+                        onPress={() => navigation.goBack()}
+                    >
+                        <Text style={styles.retryText}>Go Back</Text>
+                    </TouchableOpacity>
                 </View>
             </SafeAreaView>
         );
     }
 
-    const isPositive = coin.change24h >= 0;
-    const changePercent = (coin.change24h * 100).toFixed(2);
-    const formattedPrice = coin.currentPrice.toFixed(coin.instrumentInfo.priceScale);
+    const price24hAgo = coin.currentPrice / (1 + coin.change24h);
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -74,30 +84,30 @@ export default function CoinDetailScreen() {
                     {/* Header Section */}
                     <View style={styles.header}>
                         <View style={styles.titleContainer}>
-                            <Text style={styles.symbol}>{symbol.split('/')[0]}</Text>
-                            <Text style={styles.pair}>/{symbol.split('/')[1]}</Text>
+                            <Text style={styles.symbol}>{coin.symbol}</Text>
+                            <Text style={styles.pair}>/USDT</Text>
                         </View>
                         <View style={[
                             styles.change,
-                            isPositive ? styles.positiveChange : styles.negativeChange
+                            coin.isPositive ? styles.positiveChange : styles.negativeChange
                         ]}>
-                            {isPositive ? (
+                            {coin.isPositive ? (
                                 <ArrowUpRight size={16} color="#22C55E" strokeWidth={2.5} />
                             ) : (
                                 <ArrowDownRight size={16} color="#EF4444" strokeWidth={2.5} />
                             )}
                             <Text style={[
                                 styles.changeText,
-                                isPositive ? styles.positiveText : styles.negativeText
+                                coin.isPositive ? styles.positiveText : styles.negativeText
                             ]}>
-                                {isPositive ? '+' : ''}{changePercent}%
+                                {coin.change24hFormatted}
                             </Text>
                         </View>
                     </View>
 
                     {/* Price Section */}
                     <View style={styles.priceSection}>
-                        <Text style={styles.price}>${formattedPrice}</Text>
+                        <Text style={styles.price}>{coin.priceUSD}</Text>
                         <Text style={styles.priceLabel}>Current Price</Text>
                     </View>
 
@@ -117,7 +127,7 @@ export default function CoinDetailScreen() {
                                 <Text style={styles.statLabel}>24h Price</Text>
                             </View>
                             <Text style={styles.statValue}>
-                                ${coin.price24hAgo.toFixed(coin.instrumentInfo.priceScale)}
+                                ${price24hAgo.toFixed(coin.instrumentInfo.priceScale)}
                             </Text>
                         </View>
 
@@ -143,24 +153,11 @@ export default function CoinDetailScreen() {
 
                         <View style={styles.statItem}>
                             <View style={styles.statHeader}>
-                                <DollarSign size={16} color="#748CAB" />
-                                <Text style={styles.statLabel}>Open Interest</Text>
+                                <Clock size={16} color="#748CAB" />
+                                <Text style={styles.statLabel}>Last Updated</Text>
                             </View>
                             <Text style={styles.statValue}>
-                                {formatVolume(coin.openInterestValue)}
-                            </Text>
-                        </View>
-
-                        <View style={styles.statItem}>
-                            <View style={styles.statHeader}>
-                                <Percent size={16} color="#748CAB" />
-                                <Text style={styles.statLabel}>Funding Rate</Text>
-                            </View>
-                            <Text style={styles.statValue}>
-                                {formatFundingRate(coin.fundingRate)}
-                            </Text>
-                            <Text style={styles.statSubtext}>
-                                Next: {formatNextFunding(coin.nextFundingTime)}
+                                {lastUpdate.toLocaleTimeString()}
                             </Text>
                         </View>
                     </View>
@@ -184,6 +181,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    loadingText: {
+        color: '#748CAB',
+        fontSize: 16,
+        marginTop: 12,
+    },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -192,6 +194,18 @@ const styles = StyleSheet.create({
     errorText: {
         color: '#EF4444',
         fontSize: 16,
+        marginBottom: 16,
+    },
+    retryButton: {
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+    },
+    retryText: {
+        color: 'white',
+        fontSize: 14,
+        fontWeight: '600',
     },
     backButton: {
         marginBottom: 16,
@@ -283,10 +297,5 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '600',
         color: 'white',
-    },
-    statSubtext: {
-        fontSize: 13,
-        color: '#748CAB',
-        marginTop: 4,
     },
 }); 

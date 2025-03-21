@@ -11,32 +11,28 @@ import {
 import {SafeAreaView} from "react-native-safe-area-context";
 import {MarketItem} from "@/components/screens/market/MarketItem";
 import {useMarketData} from "@/hooks/useMarketData";
-import {MarketData} from "@/services/MarketDataManager";
+import {Coin, Categories} from "@/services/MarketDataManager";
 import {useNavigation} from "@react-navigation/native";
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {MarketStackParamList} from '@/navigation/navigation';
 import {ScreenHeader} from "@/components/screens/portfolio/ScreenHeader";
 import {usePullToRefresh} from "@/hooks/usePullToRefresh";
 import {SearchBar} from "@/components/common/SearchBar";
+import {ScreenLoader} from '@/components/common/ScreenLoader';
 
 interface Section {
     title: string;
-    data: MarketData[];
+    data: Coin[];
 }
 
 export default function MarketScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<MarketStackParamList>>();
-    const {marketData, categories, isLoading, error, getTokenData} = useMarketData();
+    const {marketData, categories, isLoading, isLoadingInitialData} = useMarketData();
     const [searchQuery, setSearchQuery] = useState("");
     const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
 
     const {isRefreshing, handleRefresh} = usePullToRefresh({
         onRefresh: async () => {
-            await Promise.all(
-                Object.values(categories || {})
-                    .flat()
-                    .map(symbol => getTokenData(symbol))
-            );
             setLastUpdated(new Date().toLocaleTimeString());
         },
         onError: (error) => {
@@ -51,7 +47,9 @@ export default function MarketScreen() {
             const query = searchQuery.toLowerCase();
             const allCoins = Object.values(marketData).flat();
             const filteredCoins = allCoins.filter(coin =>
-                coin.instrument.toLowerCase().includes(query)
+                coin.symbol.toLowerCase().includes(query) ||
+                coin.name.toLowerCase().includes(query) ||
+                coin.fullSymbol.toLowerCase().includes(query)
             );
             return [{
                 title: "Search Results",
@@ -59,62 +57,50 @@ export default function MarketScreen() {
             }];
         }
 
-        return Object.keys(categories).map(category => ({
+        return Object.entries(marketData).map(([category, coins]) => ({
             title: category,
-            data: marketData[category] || []
+            data: coins
         }));
     }, [marketData, categories, searchQuery]);
 
-    const handleCoinPress = (coin: MarketData) => {
-        navigation.navigate('CoinDetail', {symbol: coin.instrument});
-    };
+    const handleCoinPress = useCallback((coin: Coin) => {
+        navigation.navigate('CoinDetail', {symbol: coin.fullSymbol});
+    }, [navigation]);
 
-    const renderSection: ListRenderItem<Section> = ({item: section}) => (
+    const renderMarketItem = useCallback(({item}: {item: Coin}) => (
+        <MarketItem
+            data={{
+                instrument: item.fullSymbol,
+                currentPrice: item.currentPrice,
+                change24h: item.change24h,
+                volume24h: item.volume24h,
+                high24h: item.high24h,
+                low24h: item.low24h,
+                instrumentInfo: item.instrumentInfo
+            }}
+            onPress={() => handleCoinPress(item)}
+        />
+    ), [handleCoinPress]);
+
+    const renderSection: ListRenderItem<Section> = useCallback(({item: section}) => (
         <View style={styles.sectionContainer}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
             <FlatList
                 data={section.data}
-                renderItem={({item}) => (
-                    <MarketItem
-                        data={item}
-                        onPress={() => handleCoinPress(item)}
-                    />
-                )}
-                keyExtractor={(item) => item.instrument}
+                renderItem={renderMarketItem}
+                keyExtractor={(item) => item.fullSymbol}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.sectionList}
             />
         </View>
-    );
+    ), [renderMarketItem]);
 
-    if (isLoading) {
+    if (isLoadingInitialData) {
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <ScreenHeader
-                    title="Market"
-                    lastUpdated={lastUpdated}
-                    onRefresh={handleRefresh}
-                />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6"/>
-                </View>
-            </SafeAreaView>
-        );
-    }
-
-    if (error) {
-        return (
-            <SafeAreaView style={styles.safeArea}>
-                <ScreenHeader
-                    title="Market"
-                    lastUpdated={lastUpdated}
-                    onRefresh={handleRefresh}
-                />
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Failed to load market data</Text>
-                </View>
-            </SafeAreaView>
+            <ScreenLoader 
+                message="Updating the latest data for you..."
+            />
         );
     }
 
@@ -141,11 +127,18 @@ export default function MarketScreen() {
                     contentContainerStyle={styles.listContent}
                     refreshControl={
                         <RefreshControl
-                            refreshing={isRefreshing}
+                            refreshing={isRefreshing || isLoading}
                             onRefresh={handleRefresh}
                             tintColor="#3B82F6"
                             colors={["#3B82F6"]}
                         />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>
+                                {searchQuery ? 'No coins found matching your search' : 'No market data available'}
+                            </Text>
+                        </View>
                     }
                 />
             </View>
@@ -167,13 +160,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    errorText: {
-        color: '#EF4444',
+    loadingText: {
+        color: '#748CAB',
+        marginTop: 12,
         fontSize: 16,
     },
     searchContainer: {
@@ -194,5 +183,16 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingBottom: 20,
+    },
+    emptyContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 32,
+    },
+    emptyText: {
+        color: '#748CAB',
+        fontSize: 16,
+        textAlign: 'center',
     },
 });

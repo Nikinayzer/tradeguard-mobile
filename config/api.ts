@@ -33,11 +33,16 @@ export const API_ENDPOINTS = {
         getPositions: '/portfolio/positions',
         getHistory: '/portfolio/history',
     },
-    trades: {
-        getTrades: '/trades',
-        getTradeDetails: (id: string) => `/trades/${id}`,
-        createTrade: '/trades',
-        closeTrade: (id: string) => `/trades/${id}/close`,
+    auto: {
+        createDCA: '/jobs/dca',
+        createLIQ: '/jobs/liq',
+        getAll: '/users/jobs',
+        getAllActive: 'users/jobs/active',
+        getById: (id: string) => `/jobs/${id}`,
+        getJobEventsById: (id: string) => `/jobs/${id}/events`,
+        pause: (id: string) => `/jobs/${id}/pause`,
+        resume: (id: string) => `/jobs/${id}/resume`,
+        cancel: (id: string) => `/jobs/${id}/cancel`,
     },
     settings: {
         getSettings: '/settings',
