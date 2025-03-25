@@ -67,10 +67,10 @@ interface SliderLabelProps {
 
 function SliderLabel({ label, icon, tooltip }: SliderLabelProps) {
     return (
-        <View style={styles.inputLabelRow}>
-            <View style={styles.labelContainer}>
+            <View style={styles.inputLabelRow}>
+                <View style={styles.labelContainer}>
                 {icon && <View style={styles.inputIcon}>{React.cloneElement(icon as React.ReactElement, { size: 20 })}</View>}
-                <Text style={styles.inputLabel}>{label}</Text>
+                    <Text style={styles.inputLabel}>{label}</Text>
             </View>
             {tooltip && <Tooltip content={tooltip} position="right" size={36} />}
         </View>
@@ -133,160 +133,160 @@ export function JobCreator({
 
     return (
         <View style={styles.container}>
-            {/* Type Selector Header */}
-            <View style={styles.typeSelector}>
-                <Animated.View style={[styles.tabSelector, {
-                    left: tabPosition.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0%', '50%']
-                    }),
-                }]}/>
+                {/* Type Selector Header */}
+                <View style={styles.typeSelector}>
+                    <Animated.View style={[styles.tabSelector, {
+                        left: tabPosition.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0%', '50%']
+                        }),
+                    }]}/>
 
-                <TouchableOpacity
-                    style={styles.tabButton}
-                    onPress={() => onJobTypeChange('DCA')}
-                >
-                    <Animated.Text style={[styles.tabText, {color: leftTextColor}]}>
-                        Dollar Cost Average
-                    </Animated.Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.tabButton}
+                        onPress={() => onJobTypeChange('DCA')}
+                    >
+                        <Animated.Text style={[styles.tabText, {color: leftTextColor}]}>
+                            Dollar Cost Average
+                        </Animated.Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.tabButton}
-                    onPress={() => onJobTypeChange('LIQ')}
-                >
-                    <Animated.Text style={[styles.tabText, {color: rightTextColor}]}>
-                        Liquidation Protection
-                    </Animated.Text>
-                </TouchableOpacity>
-            </View>
-
-            <View
-                style={styles.contentContainer}
-                onStartShouldSetResponder={() => {
-                    setActiveTooltipId(null);
-                    return false;
-                }}
-            >
-                {/* Strategy Description */}
-                <View style={styles.strategyDescription}>
-                    <SlidersHorizontal size={18} color="#3B82F6" style={{marginRight: 8}}/>
-                    <Text style={styles.descriptionText}>
-                        {isDCA
-                            ? "Split your investment into smaller portions over time to reduce the impact of volatility"
-                            : "Protect your assets from market downturns by selling in smaller portions"
-                        }
-                    </Text>
+                    <TouchableOpacity
+                        style={styles.tabButton}
+                        onPress={() => onJobTypeChange('LIQ')}
+                    >
+                        <Animated.Text style={[styles.tabText, {color: rightTextColor}]}>
+                            Liquidation Protection
+                        </Animated.Text>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Core Parameters */}
-                <View style={styles.parameterSection}>
-                    <Text style={styles.sectionTitle}>Parameters</Text>
+            <View
+                    style={styles.contentContainer}
+                    onStartShouldSetResponder={() => {
+                        setActiveTooltipId(null);
+                        return false;
+                    }}
+                >
+                    {/* Strategy Description */}
+                    <View style={styles.strategyDescription}>
+                        <SlidersHorizontal size={18} color="#3B82F6" style={{marginRight: 8}}/>
+                        <Text style={styles.descriptionText}>
+                            {isDCA
+                                ? "Split your investment into smaller portions over time to reduce the impact of volatility"
+                                : "Protect your assets from market downturns by selling in smaller portions"
+                            }
+                        </Text>
+                    </View>
 
-                    {isDCA ? (
-                        <>
+                    {/* Core Parameters */}
+                    <View style={styles.parameterSection}>
+                        <Text style={styles.sectionTitle}>Parameters</Text>
+
+                        {isDCA ? (
+                            <>
                             <SliderLabel
-                                label="Total Amount"
+                                    label="Total Amount"
                                 icon={<DollarSign size={16} color="#3B82F6"/>}
                                 tooltip="Total funds to use for this strategy"
                             />
                             <SliderInput
-                                value={dcaParams.amount}
+                                    value={dcaParams.amount}
                                 onChange={(value) => handleUpdateParams({amount: value})}
-                                min={10}
-                                max={10000}
-                                step={10}
-                                unit=" USDT"
+                                    min={10}
+                                    max={10000}
+                                    step={10}
+                                    unit=" USDT"
                                 disabled={false}
-                            />
+                                />
 
                             <SliderLabel
-                                label="Total Steps"
+                                    label="Total Steps"
                                 icon={<ArrowDown size={16} color="#3B82F6"/>}
                                 tooltip="Number of separate buy operations"
                             />
                             <SliderInput
-                                value={dcaParams.totalSteps}
+                                    value={dcaParams.totalSteps}
                                 onChange={(value) => handleUpdateParams({totalSteps: value})}
-                                min={2}
-                                max={50}
-                                step={1}
+                                    min={2}
+                                    max={50}
+                                    step={1}
                                 disabled={false}
-                            />
-                        </>
-                    ) : (
-                        <>
+                                />
+                            </>
+                        ) : (
+                            <>
                             <SliderLabel
-                                label="Proportion"
+                                    label="Proportion"
                                 icon={<Percent size={16} color="#3B82F6"/>}
                                 tooltip="Percentage of your portfolio to include in this strategy"
                             />
                             <SliderInput
-                                value={liqParams.proportionPct}
+                                    value={liqParams.proportionPct}
                                 onChange={(value) => handleUpdateParams({proportionPct: value})}
-                                min={1}
-                                max={100}
-                                step={1}
-                                unit="%"
+                                    min={1}
+                                    max={100}
+                                    step={1}
+                                    unit="%"
                                 disabled={false}
-                            />
+                                />
 
                             <SliderLabel
-                                label="Total Steps"
+                                    label="Total Steps"
                                 icon={<ArrowDown size={16} color="#3B82F6"/>}
                                 tooltip="Number of separate sell operations"
                             />
                             <SliderInput
-                                value={liqParams.totalSteps}
+                                    value={liqParams.totalSteps}
                                 onChange={(value) => handleUpdateParams({totalSteps: value})}
-                                min={2}
-                                max={50}
-                                step={1}
+                                    min={2}
+                                    max={50}
+                                    step={1}
                                 disabled={false}
-                            />
-                        </>
-                    )}
+                                />
+                            </>
+                        )}
 
                     <SliderLabel
-                        label="Randomness"
+                            label="Randomness"
                         icon={<AlertCircle size={16} color="#3B82F6"/>}
                         tooltip="Random variance applied to execution times to avoid pattern detection"
                     />
                     <SliderInput
-                        value={params.randomnessPct}
+                            value={params.randomnessPct}
                         onChange={(value) => handleUpdateParams({randomnessPct: value})}
-                        min={0}
-                        max={5}
-                        step={0.1}
-                        unit="%"
+                            min={0}
+                            max={5}
+                            step={0.1}
+                            unit="%"
                         disabled={false}
-                    />
+                        />
 
-                    <Toggle
-                        label="Force Entry"
-                        value={params.force}
-                        onChange={(value) => handleUpdateParams({force: value})}
-                        tooltip={isDCA
-                            ? "Ensures trades execute even if price isn't discounted"
-                            : "Execute trades immediately without waiting for market conditions"
-                        }
-                    />
+                        <Toggle
+                            label="Force Entry"
+                            value={params.force}
+                            onChange={(value) => handleUpdateParams({force: value})}
+                            tooltip={isDCA
+                                ? "Ensures trades execute even if price isn't discounted"
+                                : "Execute trades immediately without waiting for market conditions"
+                            }
+                        />
 
                     <SliderLabel
-                        label="Discount Percentage"
+                            label="Discount Percentage"
                         icon={<Percent size={16} color="#3B82F6"/>}
                         tooltip="Price discount target for each transaction"
                     />
                     <SliderInput
-                        value={params.discountPct}
+                            value={params.discountPct}
                         onChange={(value) => handleUpdateParams({discountPct: value})}
-                        min={0}
-                        max={10}
-                        step={0.1}
-                        unit="%"
-                        disabled={params.force}
-                    />
-                </View>
+                            min={0}
+                            max={10}
+                            step={0.1}
+                            unit="%"
+                            disabled={params.force}
+                        />
+                    </View>
 
                 {/* Selected Coins Section */}
                 <View style={styles.selectedCoinsSection}>
@@ -322,7 +322,7 @@ export function JobCreator({
                                     <X size={20} color="#748CAB" />
                                 </TouchableOpacity>
                             ))}
-                        </ScrollView>
+                </ScrollView>
                     ) : (
                         <View style={styles.emptyState}>
                             <Text style={styles.emptyStateText}>
@@ -353,7 +353,7 @@ function Toggle({label, value, onChange, tooltip}: ToggleProps) {
             >
                 <View style={[styles.toggleHandle, value ? styles.toggleHandleActive : styles.toggleHandleInactive]}/>
             </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
     );
 }
 

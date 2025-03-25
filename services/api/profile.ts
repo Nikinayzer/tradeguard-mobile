@@ -28,19 +28,19 @@ export interface UserUpdateRequest {
 }
 
 export interface UserAccountLimits {
-    id: number;
-    userId: number;
-    dailyTradingLimit: string; // BigDecimal
-    maximumLeverage: string;
-    tradingCooldown: string; // Duration = ISO 8601
-    dailyLossLimit: string;
-}
-
-export interface UserAccountLimitsRequest {
-    dailyTradingLimit: string;
-    maximumLeverage: string;
+    maxSingleJobLimit: string;
+    maxDailyTradingLimit: string;
+    maxPortfolioRisk: string;
+    maxConcurrentOrders: string;
+    maxDailyTrades: string;
     tradingCooldown: string;
+    allowDcaForce: boolean;
+    allowLiqForce: boolean;
     dailyLossLimit: string;
+    maxConsecutiveLosses: string;
+    maxDailyBalanceChange: string;
+    volatilityLimit: string;
+    liquidityThreshold: string;
 }
 
 export const profileService = {
@@ -58,7 +58,9 @@ export const profileService = {
         const response = await apiClient.get<UserAccountLimits>(API_ENDPOINTS.profile.getLimits);
         return response.data;
     },
-    updateLimits: async (data: UserAccountLimitsRequest): Promise<void> => {
+
+    updateLimits: async (data: UserAccountLimits): Promise<void> => {
+        console.log(data)
         await apiClient.post(API_ENDPOINTS.profile.updateLimits, data);
     }
 };

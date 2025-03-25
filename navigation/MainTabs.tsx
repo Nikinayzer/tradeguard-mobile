@@ -6,7 +6,7 @@ import {Home, BarChart2, User, Settings, Bot, TrendingUp, LineChart} from 'lucid
 import HomeScreen from '../screens/home/HomeScreen';
 import MarketScreen from '../screens/market/MarketScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import AccountLimitsScreen from '../screens/profile/AccountLimitsScreen';
+import AccountLimitsScreen from '../screens/settings/AccountLimitsScreen';
 import AutomatedTradeScreen from '../screens/auto/AutomatedTradeScreen';
 import PortfolioScreen from '../screens/portfolio/PortfolioScreen';
 import AccountSettingsScreen from "@/screens/settings/AccountSettingsScreen";
@@ -18,6 +18,7 @@ import CoinDetailScreen from "@/screens/market/CoinDetailScreen";
 import JobDetailScreen from "../screens/auto/JobDetailScreen";
 import JobListScreen from "../screens/auto/JobListScreen";
 import CoinSelectorScreen from "../screens/auto/CoinSelectorScreen";
+import PersonalInfoScreen from '../screens/settings/PersonalInfoScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -126,7 +127,7 @@ function SettingsStack() {
             }}
         >
             <Stack.Screen name="Settings" component={SettingsScreen}/>
-            {/*<Stack.Screen name="AccountSettings" component={AccountSettingsScreen}/>*/}
+            <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen}/>
             <Stack.Screen name="Security" component={SecuritySettingsScreen}/>
             <Stack.Screen name="APISettings" component={APISettingsScreen}/>
             <Stack.Screen name="Notifications" component={NotificationsSettingsScreen}/>

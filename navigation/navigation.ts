@@ -38,4 +38,5 @@ export type SettingsStackParamList = {
     Security: undefined;
     APISettings: undefined;
     Notifications: undefined;
+    PersonalInfo: undefined;
 }; 

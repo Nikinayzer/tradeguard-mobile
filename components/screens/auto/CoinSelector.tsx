@@ -186,7 +186,7 @@ export const CoinSelector: React.FC<CoinSelectorProps> = ({
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Select Coins</Text>
+            <Text style={styles.title}>Select Coins</Text>
                 {selectedCoins.length > 0 && (
                     <Text style={styles.selectedCount}>
                         {selectedCoins.length} selected
@@ -295,7 +295,7 @@ export const CoinSelector: React.FC<CoinSelectorProps> = ({
                                 disabled={isLoading}
                             />
                         ))}
-                    </View>
+            </View>
                 </ScrollView>
             )}
 
@@ -303,40 +303,40 @@ export const CoinSelector: React.FC<CoinSelectorProps> = ({
                 <View style={styles.selectedList}>
                     {selectedCoins.length > 0 && (
                         <>
-                            <Text style={styles.selectedTitle}>Selected Coins</Text>
-                            {selectedCoins.map((coin) => (
-                                <TouchableOpacity
-                                    key={coin.symbol}
-                                    style={styles.selectedItem}
-                                    onPress={() => onSelect(coin)}
+                    <Text style={styles.selectedTitle}>Selected Coins</Text>
+                    {selectedCoins.map((coin) => (
+                        <TouchableOpacity
+                            key={coin.symbol}
+                            style={styles.selectedItem}
+                            onPress={() => onSelect(coin)}
                                     activeOpacity={0.7}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Remove ${coin.name} from selection`}
-                                >
-                                    <View style={styles.selectedItemLeft}>
+                        >
+                            <View style={styles.selectedItemLeft}>
                                         <Image 
                                             source={{ uri: coin.icon }} 
                                             style={styles.selectedIcon}
                                             accessibilityRole="image"
                                             accessibilityLabel={`${coin.name} icon`}
                                         />
-                                        <View style={styles.selectedInfo}>
-                                            <Text style={styles.selectedSymbol}>{coin.symbol}</Text>
-                                            <Text style={styles.selectedName}>{coin.name}</Text>
-                                        </View>
-                                    </View>
-                                    <View style={styles.selectedItemRight}>
-                                        <Text style={styles.selectedPrice}>{coin.price}</Text>
-                                        <Text style={[
-                                            styles.selectedChange,
-                                            coin.isPositive ? styles.positiveChange : styles.negativeChange
-                                        ]}>
-                                            {coin.change24h}
-                                        </Text>
-                                    </View>
-                                    <ChevronRight size={20} color="#748CAB" />
-                                </TouchableOpacity>
-                            ))}
+                                <View style={styles.selectedInfo}>
+                                    <Text style={styles.selectedSymbol}>{coin.symbol}</Text>
+                                    <Text style={styles.selectedName}>{coin.name}</Text>
+                                </View>
+                            </View>
+                            <View style={styles.selectedItemRight}>
+                                <Text style={styles.selectedPrice}>{coin.price}</Text>
+                                <Text style={[
+                                    styles.selectedChange,
+                                    coin.isPositive ? styles.positiveChange : styles.negativeChange
+                                ]}>
+                                    {coin.change24h}
+                                </Text>
+                            </View>
+                            <ChevronRight size={20} color="#748CAB" />
+                        </TouchableOpacity>
+                    ))}
                         </>
                     )}
 

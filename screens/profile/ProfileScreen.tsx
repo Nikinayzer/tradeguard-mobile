@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    TextInput,
     ScrollView,
     ActivityIndicator,
     SafeAreaView,
@@ -13,15 +12,12 @@ import {
 } from 'react-native';
 
 import {format} from 'date-fns';
-import {profileService, User, UserUpdateRequest} from '@/services/api/profile';
+import {profileService, User} from '@/services/api/profile';
 import {useAlert} from '@/components/common/CustomAlert';
 import CustomAlert from '@/components/common/CustomAlert';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
 import {
     Mail,
-    Edit,
-    Check,
-    X,
     AlertCircle,
     Calendar,
     Settings
@@ -29,61 +25,14 @@ import {
 import {useNavigation} from "@react-navigation/native";
 import {ProfileStackParamList} from "@/navigation/navigation";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
-import {useFormValidation, ValidationRules} from '@/hooks/useFormValidation';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
 
-type ValidationErrors = {
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-};
-
 export default function ProfileScreen() {
     const [user, setUser] = useState<User | null>(null);
-    const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
     const {alert, showAlert, hideAlert} = useAlert();
     const navigation = useNavigation<LoginScreenNavigationProp>();
-
-    const validationRules: ValidationRules<UserUpdateRequest> = {
-        email: {
-            required: true,
-            pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            message: 'Please enter a valid email address'
-        },
-        firstName: {
-            required: true,
-            minLength: 3,
-            maxLength: 50,
-            message: 'First name must be between 3 and 50 characters'
-        },
-        lastName: {
-            required: true,
-            minLength: 3,
-            maxLength: 50,
-            message: 'Last name must be between 3 and 50 characters'
-        }
-    };
-
-    const {
-        formData,
-        errors,
-        touchedFields,
-        setFormData,
-        handleChange,
-        handleBlur,
-        validateForm,
-        resetForm
-    } = useFormValidation<UserUpdateRequest>(
-        {
-            email: '',
-            firstName: '',
-            lastName: '',
-        },
-        validationRules
-    );
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -110,52 +59,6 @@ export default function ProfileScreen() {
             fetchProfile();
         }
     }, []);
-
-    useEffect(() => {
-        if (user) {
-            setFormData({
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName,
-            });
-        }
-    }, [user, setFormData]);
-
-    const handleSave = async () => {
-        if (!validateForm()) {
-            showAlert({
-                type: 'error',
-                title: 'Validation Error',
-                message: 'Please fill in all required fields correctly',
-            });
-            return;
-        }
-
-        try {
-            setIsSaving(true);
-            await profileService.updateMe({
-                email: formData.email.trim(),
-                firstName: formData.firstName.trim(),
-                lastName: formData.lastName.trim(),
-            });
-            const updatedProfile = await profileService.getMe();
-            setUser(updatedProfile);
-            setIsEditing(false);
-            showAlert({
-                type: 'success',
-                title: 'Success',
-                message: 'Profile updated successfully',
-            });
-        } catch (error) {
-            showAlert({
-                type: 'error',
-                title: 'Error',
-                message: 'Failed to update profile',
-            });
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     const getInitials = (firstName?: string, lastName?: string) => {
         return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || user?.username?.[0]?.toUpperCase() || '?';
@@ -215,53 +118,12 @@ export default function ProfileScreen() {
                                         {backgroundColor: user.enabled ? '#22C55E' : '#DC2626'}
                                     ]}
                                 />
-                                {!isEditing && (
-                                    <TouchableOpacity
-                                        style={styles.editButton}
-                                        onPress={() => setIsEditing(true)}
-                                    >
-                                        <Edit size={16} color="#3B82F6" strokeWidth={1.5}/>
-                                    </TouchableOpacity>
-                                )}
                             </View>
                         </View>
                         <TouchableOpacity style={styles.settingsButton} onPress={handleSettingsPress}>
                             <Settings size={24} color="#3B82F6"/>
                         </TouchableOpacity>
                     </View>
-
-                    {isEditing && (
-                        <View style={styles.editActions}>
-                            <TouchableOpacity
-                                style={[styles.actionButton, styles.cancelButton]}
-                                onPress={() => {
-                                    setIsEditing(false);
-                                    setFormData({
-                                        email: user.email,
-                                        firstName: user.firstName,
-                                        lastName: user.lastName,
-                                    });
-                                }}
-                            >
-                                <X size={18} color="#fff"/>
-                                <Text style={styles.actionButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.actionButton, styles.saveButton]}
-                                onPress={handleSave}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? (
-                                    <ActivityIndicator color="white" size="small"/>
-                                ) : (
-                                    <>
-                                        <Check size={18} color="#fff"/>
-                                        <Text style={styles.actionButtonText}>Save Changes</Text>
-                                    </>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    )}
                 </View>
 
                 <ScrollView
@@ -279,81 +141,29 @@ export default function ProfileScreen() {
                 >
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Personal Information</Text>
-
-                        {isEditing ? (
-                            <View style={styles.form}>
-                                <View style={styles.formField}>
-                                    <Text style={styles.label}>First Name</Text>
-                                    <TextInput
-                                        style={[styles.input, touchedFields.firstName && errors.firstName && styles.inputError]}
-                                        value={formData.firstName}
-                                        onChangeText={(text) => handleChange('firstName', text)}
-                                        onBlur={() => handleBlur('firstName')}
-                                        placeholder="Enter first name"
-                                        placeholderTextColor="#748CAB"
-                                        maxLength={50}
-                                    />
-                                    {touchedFields.firstName && errors.firstName && (
-                                        <Text style={styles.errorText}>{errors.firstName}</Text>
-                                    )}
+                        <View style={styles.infoList}>
+                            <View style={styles.infoRow}>
+                                <View style={styles.infoIcon}>
+                                    <Mail size={18} color="#748CAB" strokeWidth={1.5}/>
                                 </View>
-                                <View style={styles.formField}>
-                                    <Text style={styles.label}>Last Name</Text>
-                                    <TextInput
-                                        style={[styles.input, touchedFields.lastName && errors.lastName && styles.inputError]}
-                                        value={formData.lastName}
-                                        onChangeText={(text) => handleChange('lastName', text)}
-                                        onBlur={() => handleBlur('lastName')}
-                                        placeholder="Enter last name"
-                                        placeholderTextColor="#748CAB"
-                                        maxLength={50}
-                                    />
-                                    {touchedFields.lastName && errors.lastName && (
-                                        <Text style={styles.errorText}>{errors.lastName}</Text>
-                                    )}
-                                </View>
-                                <View style={styles.formField}>
-                                    <Text style={styles.label}>Email</Text>
-                                    <TextInput
-                                        style={[styles.input, touchedFields.email && errors.email && styles.inputError]}
-                                        value={formData.email}
-                                        onChangeText={(text) => handleChange('email', text)}
-                                        onBlur={() => handleBlur('email')}
-                                        placeholder="Enter email"
-                                        keyboardType="email-address"
-                                        autoCapitalize="none"
-                                        placeholderTextColor="#748CAB"
-                                    />
-                                    {touchedFields.email && errors.email && (
-                                        <Text style={styles.errorText}>{errors.email}</Text>
-                                    )}
+                                <View style={styles.infoContent}>
+                                    <Text style={styles.infoLabel}>Email</Text>
+                                    <Text style={styles.infoValue}>{user.email || 'Not set'}</Text>
                                 </View>
                             </View>
-                        ) : (
-                            <View style={styles.infoList}>
-                                <View style={styles.infoRow}>
-                                    <View style={styles.infoIcon}>
-                                        <Mail size={18} color="#748CAB" strokeWidth={1.5}/>
-                                    </View>
-                                    <View style={styles.infoContent}>
-                                        <Text style={styles.infoLabel}>Email</Text>
-                                        <Text style={styles.infoValue}>{user.email || 'Not set'}</Text>
-                                    </View>
-                                </View>
 
-                                <View style={styles.infoRow}>
-                                    <View style={styles.infoIcon}>
-                                        <Calendar size={18} color="#748CAB" strokeWidth={1.5}/>
-                                    </View>
-                                    <View style={styles.infoContent}>
-                                        <Text style={styles.infoLabel}>Member Since</Text>
-                                        <Text style={styles.infoValue}>
-                                            {format(new Date(user.registeredAt), 'MMMM d, yyyy')}
-                                        </Text>
-                                    </View>
+                            <View style={styles.infoRow}>
+                                <View style={styles.infoIcon}>
+                                    <Calendar size={18} color="#748CAB" strokeWidth={1.5}/>
+                                </View>
+                                <View style={styles.infoContent}>
+                                    <Text style={styles.infoLabel}>Member Since</Text>
+                                    <Text style={styles.infoValue}>
+                                        {format(new Date(user.registeredAt), 'MMMM d, yyyy')}
+                                    </Text>
                                 </View>
                             </View>
-                        )}
+                        </View>
                     </View>
                 </ScrollView>
             </View>
@@ -444,34 +254,6 @@ const styles = StyleSheet.create({
         color: '#748CAB',
         marginRight: 8,
     },
-    editButton: {
-        padding: 4,
-    },
-    editActions: {
-        flexDirection: 'row',
-        gap: 8,
-        marginTop: 16,
-    },
-    actionButton: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 10,
-        borderRadius: 8,
-    },
-    saveButton: {
-        backgroundColor: '#3B82F6',
-    },
-    cancelButton: {
-        backgroundColor: '#22314A',
-    },
-    actionButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
     section: {
         marginBottom: 24,
     },
@@ -482,14 +264,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         textTransform: 'uppercase',
     },
-    menuItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#1B263B',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 8,
-    },
     infoIcon: {
         width: 32,
         height: 32,
@@ -499,38 +273,26 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 12,
     },
-    menuContent: {
+    infoList: {
+        paddingVertical: 8,
+        gap: 24,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    infoContent: {
         flex: 1,
     },
-    menuText: {
-        fontSize: 16,
-        color: 'white',
+    infoLabel: {
+        fontSize: 14,
+        color: '#748CAB',
         marginBottom: 4,
     },
-    menuDescription: {
-        fontSize: 14,
-        color: '#748CAB',
-    },
-    form: {
-        gap: 16,
-    },
-    formField: {
-        marginBottom: 16,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#748CAB',
-        marginBottom: 8,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#22314A',
-        borderRadius: 8,
-        padding: 12,
+    infoValue: {
         fontSize: 16,
         color: 'white',
-        backgroundColor: '#1B263B',
+        fontWeight: '500',
     },
     roleChip: {
         paddingHorizontal: 8,
@@ -558,29 +320,5 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
-    },
-    infoList: {
-        paddingVertical: 8,
-        gap: 24,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    infoContent: {
-        flex: 1,
-    },
-    infoLabel: {
-        fontSize: 14,
-        color: '#748CAB',
-        marginBottom: 4,
-    },
-    infoValue: {
-        fontSize: 16,
-        color: 'white',
-        fontWeight: '500',
-    },
-    inputError: {
-        borderColor: '#DC2626',
     }
 });

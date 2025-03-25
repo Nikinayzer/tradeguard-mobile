@@ -1,7 +1,7 @@
 import React from "react";
 import {ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {Bell, ChevronLeft, HelpCircle, History, Lock, Shield, Wallet} from "lucide-react-native";
+import {Bell, ChevronLeft, HelpCircle, History, Lock, Shield, Wallet, User} from "lucide-react-native";
 import {useNavigation} from "@react-navigation/native";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
 import {SettingsStackParamList} from "@/navigation/navigation";
@@ -39,6 +39,13 @@ export default function SettingsScreen() {
     };
 
     const menuItems = [
+        {
+            id: 'personal',
+            title: 'Personal Information',
+            description: 'Update your profile details and contact information',
+            icon: <User size={24} color="#748CAB"/>,
+            onPress: () => navigation.navigate('PersonalInfo'),
+        },
         {
             id: 'limits',
             title: 'Account Limits',
