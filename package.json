@@ -54,7 +54,8 @@
     "react-native-web": "~0.19.13",
     "react-native-websocket": "^1.0.2",
     "react-native-webview": "13.12.5",
-    "recharts": "^2.15.1"
+    "recharts": "^2.15.1",
+    "expo-dev-client": "~5.0.14"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
