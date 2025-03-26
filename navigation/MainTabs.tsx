@@ -9,7 +9,6 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import AccountLimitsScreen from '../screens/settings/AccountLimitsScreen';
 import AutomatedTradeScreen from '../screens/auto/AutomatedTradeScreen';
 import PortfolioScreen from '../screens/portfolio/PortfolioScreen';
-import AccountSettingsScreen from "@/screens/settings/AccountSettingsScreen";
 import SecuritySettingsScreen from "@/screens/settings/SecuritySettingsScreen";
 import APISettingsScreen from "@/screens/settings/APISettingsScreen";
 import NotificationsSettingsScreen from "@/screens/settings/NotificationsSettingsScreen";
