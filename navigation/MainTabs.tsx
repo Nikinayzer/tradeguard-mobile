@@ -8,6 +8,7 @@ import MarketScreen from '../screens/market/MarketScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import AccountLimitsScreen from '../screens/settings/AccountLimitsScreen';
 import AutomatedTradeScreen from '../screens/auto/AutomatedTradeScreen';
+import HealthScreen from '../screens/health/HealthScreen';
 import PortfolioScreen from '../screens/portfolio/PortfolioScreen';
 import SecuritySettingsScreen from "@/screens/settings/SecuritySettingsScreen";
 import APISettingsScreen from "@/screens/settings/APISettingsScreen";
@@ -94,6 +95,19 @@ function AutoStack() {
                     presentation: 'card',
                 }}
             />
+        </Stack.Navigator>
+    );
+}
+
+function HealthStack() {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                ...commonAnimationConfig,
+            }}
+        >
+            <Stack.Screen name="HealthMain" component={HealthScreen}/>
         </Stack.Navigator>
     );
 }
@@ -204,6 +218,15 @@ export default function MainTabs() {
                 options={{
                     tabBarIcon: ({color, size}) => (
                         <TrendingUp size={size} color={color}/>
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Health"
+                component={HealthStack}
+                options={{
+                    tabBarIcon: ({color, size}) => (
+                        <LineChart size={size} color={color}/>
                     ),
                 }}
             />
