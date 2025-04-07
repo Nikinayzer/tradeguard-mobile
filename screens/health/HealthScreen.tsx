@@ -3,7 +3,6 @@ import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated} from "re
 import {SafeAreaView} from "react-native-safe-area-context";
 import {ChevronDown, ChevronUp, BarChart3, AlertCircle} from "lucide-react-native";
 import CircularProgress from 'react-native-circular-progress-indicator';
-import {Color} from "@shopify/react-native-skia/lib/module/skia/web/JsiSkColor";
 import tinycolor from "tinycolor2";
 
 const exampleJSON = {
@@ -226,7 +225,7 @@ const CircularScore: React.FC<CircularScoreProps> = ({
                                                          size = 85,
                                                          isHighlighted = false
                                                      }) => {
-    const percentage = Math.min(score * 100, 100);
+    const percentage = Math.min(Math.floor(score * 100), 100);
     const roundedScore = Math.round(percentage);
 
     const formattedLabel = (
@@ -286,45 +285,229 @@ const CircularScore: React.FC<CircularScoreProps> = ({
 interface PatternItemProps {
     pattern: Pattern;
     isComposite?: boolean;
+    findPatternById?: (id: string) => Pattern | undefined;
 }
 
-const PatternItem: React.FC<PatternItemProps> = ({pattern, isComposite = false}) => {
+const PatternItem: React.FC<PatternItemProps> = ({
+                                                     pattern,
+                                                     isComposite = false,
+                                                     findPatternById
+                                                 }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [animation] = useState(new Animated.Value(0));
+
+    const toggleExpand = () => {
+        if (isComposite) {
+            Animated.timing(animation, {
+                toValue: isExpanded ? 0 : 1,
+                duration: 300,
+                useNativeDriver: false,
+            }).start();
+            setIsExpanded(!isExpanded);
+        }
+    };
+
+    const maxHeight = animation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 500],
+    });
+
+    const getConfidenceColor = (confidence: number): string => {
+        if (confidence >= 0.8) return "#EF4444"; // High - red
+        if (confidence >= 0.5) return "#F59E0B"; // Medium - amber
+        return "#10B981"; // Low - green
+    };
+
+    const confidenceColor = getConfidenceColor(pattern.confidence);
+    const confidencePercent = Math.round(pattern.confidence * 100);
+
+    // Calculate ratio and create display message
+    const hasRatio = pattern.details.ratio !== undefined;
+    const ratio = pattern.details.ratio || 0;
+    const isExceeded = hasRatio && (pattern.details.ratio || 0) > 1;
+
+    // Determine top categories that contribute to this pattern
+    const categoryEntries = Object.entries(pattern.category_weights || {});
+    const topCategory = categoryEntries.length > 0
+        ? categoryEntries.sort((a, b) => (b[1] || 0) - (a[1] || 0))[0]
+        : null;
+
+    const formatCategoryName = (name: string) => {
+        if (name === "overtrading") return "Overtrading";
+        if (name === "sunk_cost") return "Sunk Cost";
+        if (name === "fomo") return "FOMO";
+        return name.charAt(0).toUpperCase() + name.slice(1);
+    };
+
     return (
         <View style={[
-            styles.patternItem,
-            isComposite && styles.compositePatternItem
+            styles.patternCard,
+            isComposite && styles.compositePatternCard
         ]}>
-            <View style={styles.patternHeader}>
-                <Text style={styles.patternMessage}>{pattern.message}</Text>
-                <View style={styles.confidenceContainer}>
-                    <Text style={styles.confidenceValue}>
-                        {Math.round(pattern.confidence * 100)}%
+            {/* Card header with confidence pill and expand trigger */}
+            <TouchableOpacity
+                style={styles.patternHeader}
+                onPress={toggleExpand}
+                activeOpacity={isComposite ? 0.7 : 1}
+            >
+                {/* Confidence indicator dot */}
+                <View style={[styles.confidenceDot, {backgroundColor: confidenceColor}]}/>
+
+                <View style={styles.patternHeaderContent}>
+                    <Text style={styles.patternTitle}>{pattern.message}</Text>
+
+                    <View style={styles.headerMeta}>
+                        {topCategory && (
+                            <View style={styles.categoryTag}>
+                                <Text style={styles.categoryTagText}>
+                                    {formatCategoryName(topCategory[0])}
+                                </Text>
+                            </View>
+                        )}
+
+                        {isComposite && (
+                            <View style={styles.compositeBadge}>
+                                <Text style={styles.compositeBadgeText}>Combined</Text>
+                            </View>
+                        )}
+
+                        <View style={[
+                            styles.confidencePill,
+                            {backgroundColor: `${confidenceColor}20`}
+                        ]}>
+                            <Text style={[styles.confidenceText, {color: confidenceColor}]}>
+                                {confidencePercent}%
+                            </Text>
+                        </View>
+
+                        {isComposite && (
+                            <ChevronDown
+                                size={16}
+                                color="#748CAB"
+                                style={{
+                                    transform: [{rotate: isExpanded ? '180deg' : '0deg'}],
+                                    marginLeft: 8
+                                }}
+                            />
+                        )}
+                    </View>
+                </View>
+            </TouchableOpacity>
+
+            {/* Progress visualization */}
+            {pattern.details.actual !== undefined && pattern.details.limit !== undefined && (
+                <View style={styles.progressContainer}>
+                    <View style={styles.progressBarContainer}>
+                        <View style={styles.progressBar}>
+                            <View
+                                style={[
+                                    styles.progressFill,
+                                    {
+                                        width: `${Math.min(100, (pattern.details.actual / pattern.details.limit) * 100)}%`,
+                                        backgroundColor: confidenceColor
+                                    }
+                                ]}
+                            />
+                        </View>
+
+                        {isExceeded && (
+                            <View style={[styles.limitMarker, {backgroundColor: confidenceColor}]}/>
+                        )}
+                    </View>
+
+                    <View style={styles.progressLabels}>
+                        <Text style={styles.progressLabel}>
+                            <Text
+                                style={styles.progressEmphasis}>{pattern.details.actual}</Text> / {pattern.details.limit}
+                        </Text>
+
+                        {hasRatio && (
+                            <Text style={[
+                                styles.ratioIndicator,
+                                {color: isExceeded ? confidenceColor : '#748CAB'}
+                            ]}>
+                                {(pattern.details.ratio || 0).toFixed(1)}x {isExceeded ? 'Exceeded' : 'Within Limit'}
+                            </Text>
+                        )}
+                    </View>
+                </View>
+            )}
+
+            {/* Job information */}
+            {pattern.job_id && pattern.job_id.length > 0 && (
+                <View style={styles.jobInfo}>
+                    <Text style={styles.jobInfoText}>
+                        Affected job{pattern.job_id.length > 1 ? 's' : ''}: {pattern.job_id.join(', ')}
                     </Text>
                 </View>
-            </View>
+            )}
 
-            <View style={styles.patternDetails}>
-                {pattern.details.actual !== undefined && (
-                    <Text style={styles.detailText}>
-                        Actual: <Text style={styles.detailValue}>{pattern.details.actual}</Text>
-                    </Text>
-                )}
-                {pattern.details.limit !== undefined && (
-                    <Text style={styles.detailText}>
-                        Limit: <Text style={styles.detailValue}>{pattern.details.limit}</Text>
-                    </Text>
-                )}
-                {pattern.details.ratio !== undefined && (
-                    <Text style={styles.detailText}>
-                        Ratio: <Text style={styles.detailValue}>{pattern.details.ratio.toFixed(2)}</Text>
-                    </Text>
-                )}
-            </View>
+            {/* Composite patterns will have collapsible children */}
+            {isComposite && pattern.details.components && findPatternById && (
+                <Animated.View style={[styles.compositeChildren, {maxHeight}]}>
+                    <View style={styles.divider}/>
 
-            {pattern.job_id && pattern.job_id.length > 0 && (
-                <Text style={styles.jobIdText}>
-                    Job IDs: {pattern.job_id.join(', ')}
-                </Text>
+                    <View style={styles.relatedPatternsHeader}>
+                        <Text style={styles.relatedPatternsTitle}>Related Patterns</Text>
+                        <Text style={styles.relatedPatternsSubtitle}>
+                            These patterns were detected and analyzed together
+                        </Text>
+                    </View>
+
+                    {pattern.details.components.map((component) => {
+                        const childPattern = findPatternById(component.id);
+                        if (!childPattern) return null;
+
+                        const childConfidenceColor = getConfidenceColor(component.confidence);
+                        const childConfidencePercent = Math.round(component.confidence * 100);
+
+                        return (
+                            <View key={childPattern.internal_id} style={styles.relatedPattern}>
+                                <View style={[styles.relatedPatternDot, {backgroundColor: childConfidenceColor}]}/>
+
+                                <View style={styles.relatedPatternContent}>
+                                    <View style={styles.relatedPatternHeader}>
+                                        <Text style={styles.relatedPatternTitle}>
+                                            {childPattern.message}
+                                        </Text>
+
+                                        <View style={[
+                                            styles.miniConfidencePill,
+                                            {backgroundColor: `${childConfidenceColor}20`}
+                                        ]}>
+                                            <Text style={[styles.miniConfidenceText, {color: childConfidenceColor}]}>
+                                                {childConfidencePercent}%
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    {childPattern.details.actual !== undefined &&
+                                        childPattern.details.limit !== undefined && (
+                                            <View style={styles.relatedPatternMetrics}>
+                                                <View style={styles.relatedPatternProgress}>
+                                                    <View style={styles.miniProgressBar}>
+                                                        <View
+                                                            style={[
+                                                                styles.miniProgressFill,
+                                                                {
+                                                                    width: `${Math.min(100, (childPattern.details.actual / childPattern.details.limit) * 100)}%`,
+                                                                    backgroundColor: childConfidenceColor
+                                                                }
+                                                            ]}
+                                                        />
+                                                    </View>
+                                                </View>
+
+                                                <Text style={styles.relatedPatternDetail}>
+                                                    {childPattern.details.actual} / {childPattern.details.limit}
+                                                </Text>
+                                            </View>
+                                        )}
+                                </View>
+                            </View>
+                        );
+                    })}
+                </Animated.View>
             )}
         </View>
     );
@@ -341,51 +524,8 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
                                                                    children,
                                                                    isComposite = false
                                                                }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [animation] = useState(new Animated.Value(0));
-
-    const toggleExpand = () => {
-        Animated.timing(animation, {
-            toValue: isExpanded ? 0 : 1,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-        setIsExpanded(!isExpanded);
-    };
-
-    const maxHeight = animation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 500],
-    });
-
-    return (
-        <View style={styles.collapsibleSection}>
-            <TouchableOpacity
-                style={styles.collapsibleHeader}
-                onPress={toggleExpand}
-                activeOpacity={0.7}
-            >
-                <Text style={styles.collapsibleTitle}>{title}</Text>
-                {isExpanded ? (
-                    <ChevronUp size={20} color="#E2E8F0"/>
-                ) : (
-                    <ChevronDown size={20} color="#E2E8F0"/>
-                )}
-            </TouchableOpacity>
-
-            {isComposite && (
-                <View style={styles.compositeExplanation}>
-                    <Text style={styles.compositeExplanationText}>
-                        Multiple trading patterns detected and analyzed together to identify significant risk.
-                    </Text>
-                </View>
-            )}
-
-            <Animated.View style={[styles.collapsibleContent, {maxHeight}]}>
-                {children}
-            </Animated.View>
-        </View>
-    );
+    // We'll just render the children directly now, since PatternItem has its own collapsible logic
+    return <>{children}</>;
 };
 
 interface SectionHeaderProps {
@@ -455,28 +595,12 @@ export default function HealthScreen() {
                     />
 
                     {exampleJSON.composite_patterns.map((compositePattern) => (
-                        <CollapsibleSection
+                        <PatternItem
                             key={compositePattern.internal_id}
-                            title={compositePattern.message}
+                            pattern={compositePattern}
                             isComposite={true}
-                        >
-                            <View style={styles.compositeDetails}>
-                                <Text style={styles.compositeConfidence}>
-                                    Confidence: {Math.round(compositePattern.confidence * 100)}%
-                                </Text>
-
-                                {compositePattern.details.components?.map((component) => {
-                                    const pattern = findPatternById(component.id);
-                                    if (pattern) {
-                                        return <PatternItem
-                                            key={pattern.internal_id}
-                                            pattern={pattern}
-                                        />;
-                                    }
-                                    return null;
-                                })}
-                            </View>
-                        </CollapsibleSection>
+                            findPatternById={findPatternById}
+                        />
                     ))}
                 </View>
 
@@ -488,14 +612,13 @@ export default function HealthScreen() {
                             icon={<AlertCircle size={22} color="#F59E0B"/>}
                         />
 
-                        <View style={styles.risingAwarenessSection}>
-                            {risingAwarenessPatterns.map((pattern) => (
-                                <PatternItem
-                                    key={pattern.internal_id}
-                                    pattern={pattern}
-                                />
-                            ))}
-                        </View>
+                        {risingAwarenessPatterns.map((pattern) => (
+                            <PatternItem
+                                key={pattern.internal_id}
+                                pattern={pattern}
+                            />
+                        ))}
+
                     </View>
                 )}
             </ScrollView>
@@ -579,100 +702,6 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         marginLeft: 8,
     },
-    collapsibleSection: {
-        backgroundColor: "rgba(27, 38, 59, 0.5)",
-        borderRadius: 12,
-        marginBottom: 12,
-        overflow: "hidden",
-        borderWidth: 1,
-        borderColor: "rgba(59, 130, 246, 0.1)",
-    },
-    collapsibleHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: 16,
-    },
-    collapsibleTitle: {
-        color: "#E2E8F0",
-        fontSize: 16,
-        fontWeight: "500",
-        flex: 1,
-    },
-    collapsibleContent: {
-        overflow: "hidden",
-    },
-    compositeExplanation: {
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "rgba(59, 130, 246, 0.1)",
-    },
-    compositeExplanationText: {
-        color: "#748CAB",
-        fontSize: 14,
-        fontStyle: "italic",
-    },
-    compositeDetails: {
-        padding: 16,
-        paddingTop: 12,
-    },
-    compositeConfidence: {
-        color: "#748CAB",
-        fontSize: 14,
-        marginBottom: 12,
-    },
-    patternItem: {
-        backgroundColor: "rgba(13, 27, 42, 0.6)",
-        borderRadius: 10,
-        padding: 14,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: "rgba(59, 130, 246, 0.05)",
-    },
-    compositePatternItem: {
-        borderLeftWidth: 3,
-        borderLeftColor: "#3B82F6",
-    },
-    patternHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 10,
-    },
-    patternMessage: {
-        color: "#E2E8F0",
-        fontSize: 15,
-        fontWeight: "500",
-        flex: 1,
-    },
-    confidenceContainer: {
-        backgroundColor: "rgba(59, 130, 246, 0.2)",
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-    },
-    confidenceValue: {
-        color: "#3B82F6",
-        fontSize: 13,
-        fontWeight: "500",
-    },
-    patternDetails: {
-        marginBottom: 10,
-    },
-    detailText: {
-        color: "#748CAB",
-        fontSize: 14,
-        marginBottom: 4,
-    },
-    detailValue: {
-        color: "#E2E8F0",
-        fontWeight: "500",
-    },
-    jobIdText: {
-        color: "#748CAB",
-        fontSize: 12,
-    },
     risingAwarenessSection: {
         backgroundColor: "rgba(249, 115, 22, 0.05)",
         borderRadius: 12,
@@ -680,5 +709,220 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         borderWidth: 1,
         borderColor: "rgba(249, 115, 22, 0.2)",
+    },
+    patternCard: {
+        backgroundColor: "rgba(27, 38, 59, 0.4)",
+        borderRadius: 16,
+        marginBottom: 16,
+        overflow: "hidden",
+        elevation: 2,
+        shadowColor: "rgba(246,6,6,0)",
+        shadowOffset: {width: 0, height: 2},
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+    },
+    compositePatternCard: {
+        backgroundColor: "rgba(239,68,68,0.1)",
+        borderLeftWidth: 0,
+        borderLeftColor: "#3B82F6",
+    },
+    patternHeader: {
+        padding: 16,
+        flexDirection: "row",
+        alignItems: "flex-start",
+    },
+    confidenceDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginTop: 5,
+        marginRight: 10,
+    },
+    patternHeaderContent: {
+        flex: 1,
+    },
+    patternTitle: {
+        color: "#E2E8F0",
+        fontSize: 16,
+        fontWeight: "600",
+        marginBottom: 8,
+        lineHeight: 22,
+    },
+    headerMeta: {
+        flexDirection: "row",
+        alignItems: "center",
+        flexWrap: "wrap",
+    },
+    categoryTag: {
+        backgroundColor: "rgba(116, 140, 171, 0.15)",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 4,
+        marginRight: 8,
+        marginBottom: 4,
+    },
+    categoryTagText: {
+        color: "#94ACCA",
+        fontSize: 11,
+        fontWeight: "500",
+    },
+    compositeBadge: {
+        backgroundColor: "rgba(59, 130, 246, 0.15)",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 4,
+        marginRight: 8,
+        marginBottom: 4,
+    },
+    compositeBadgeText: {
+        color: "#3B82F6",
+        fontSize: 11,
+        fontWeight: "500",
+    },
+    confidencePill: {
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: 12,
+        marginBottom: 4,
+    },
+    confidenceText: {
+        fontSize: 12,
+        fontWeight: "600",
+    },
+    progressContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    progressBarContainer: {
+        position: "relative",
+        marginBottom: 8,
+    },
+    progressBar: {
+        height: 6,
+        backgroundColor: "rgba(116, 140, 171, 0.15)",
+        borderRadius: 3,
+        overflow: "hidden",
+    },
+    progressFill: {
+        height: "100%",
+        borderRadius: 3,
+    },
+    limitMarker: {
+        position: "absolute",
+        right: 0,
+        top: -4,
+        width: 2,
+        height: 14,
+        borderRadius: 1,
+    },
+    progressLabels: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+    progressLabel: {
+        color: "#748CAB",
+        fontSize: 13,
+    },
+    progressEmphasis: {
+        color: "#E2E8F0",
+        fontWeight: "600",
+    },
+    ratioIndicator: {
+        fontSize: 12,
+        fontWeight: "500",
+    },
+    jobInfo: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    jobInfoText: {
+        color: "#748CAB",
+        fontSize: 12,
+        fontStyle: "italic",
+    },
+    compositeChildren: {
+        overflow: "hidden",
+    },
+    divider: {
+        height: 1,
+        backgroundColor: "rgba(116, 140, 171, 0.1)",
+    },
+    relatedPatternsHeader: {
+        padding: 16,
+        paddingBottom: 8,
+    },
+    relatedPatternsTitle: {
+        color: "#E2E8F0",
+        fontSize: 14,
+        fontWeight: "600",
+        marginBottom: 4,
+    },
+    relatedPatternsSubtitle: {
+        color: "#748CAB",
+        fontSize: 12,
+        fontStyle: "italic",
+    },
+    relatedPattern: {
+        flexDirection: "row",
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    relatedPatternDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginTop: 6,
+        marginRight: 10,
+    },
+    relatedPatternContent: {
+        flex: 1,
+    },
+    relatedPatternHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        marginBottom: 8,
+    },
+    relatedPatternTitle: {
+        color: "#E2E8F0",
+        fontSize: 14,
+        fontWeight: "500",
+        flex: 1,
+        marginRight: 8,
+    },
+    miniConfidencePill: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    miniConfidenceText: {
+        fontSize: 10,
+        fontWeight: "600",
+    },
+    relatedPatternMetrics: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    relatedPatternProgress: {
+        flex: 1,
+        marginRight: 8,
+    },
+    miniProgressBar: {
+        height: 4,
+        backgroundColor: "rgba(116, 140, 171, 0.15)",
+        borderRadius: 2,
+        overflow: "hidden",
+    },
+    miniProgressFill: {
+        height: "100%",
+        borderRadius: 2,
+    },
+    relatedPatternDetail: {
+        color: "#748CAB",
+        fontSize: 12,
+        fontWeight: "500",
+        width: 70,
+        textAlign: "right",
     },
 });
