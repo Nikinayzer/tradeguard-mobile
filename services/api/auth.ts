@@ -18,17 +18,27 @@ export interface RegisterData {
 }
 
 export const authService = {
-    login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-        const response = await apiClient.post<AuthResponse>(API_ENDPOINTS.auth.login, credentials);
+    login: async (credentials: LoginCredentials, pushToken: string): Promise<AuthResponse> => {
+        const response =
+            await apiClient.post<AuthResponse>(API_ENDPOINTS.auth.login, credentials, {
+                headers: {
+                    'X-Push-Token': pushToken,
+                },
+            });
         return response.data;
     },
 
     register: async (data: RegisterData): Promise<AuthResponse> => {
-        const response = await apiClient.post(API_ENDPOINTS.auth.register, data);
+        const response =
+            await apiClient.post(API_ENDPOINTS.auth.register, data);
         return response.data;
     },
 
-    logout: async (): Promise<void> => {
-        await apiClient.post(API_ENDPOINTS.auth.logout);
+    logout: async (pushToken:string): Promise<void> => {
+        await apiClient.post(API_ENDPOINTS.auth.logout, pushToken,{
+            headers: {
+                'X-Push-Token': pushToken,
+            },
+        });
     },
 }; 

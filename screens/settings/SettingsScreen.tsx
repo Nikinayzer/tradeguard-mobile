@@ -7,11 +7,14 @@ import {NativeStackNavigationProp} from "@react-navigation/native-stack";
 import {SettingsStackParamList} from "@/navigation/navigation";
 import {useAuth} from "@/contexts/AuthContext";
 import {Ionicons} from "@expo/vector-icons";
+import {authService} from "@/services/api/auth";
+import {usePushToken} from "@/contexts/PushTokenContext";
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
 export default function SettingsScreen() {
     const navigation = useNavigation<SettingsScreenNavigationProp>();
+    const {pushToken} = usePushToken();
     const {logout} = useAuth();
 
     const handleLogout = async () => {
@@ -28,6 +31,7 @@ export default function SettingsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
+                            await authService.logout(pushToken);
                             await logout();
                         } catch (error) {
                             Alert.alert('Error', 'Failed to logout');

@@ -20,6 +20,7 @@ import {AuthStackParamList} from '@/navigation/navigation';
 import {authService} from '@/services/api/auth';
 import {useAuth} from '@/contexts/AuthContext';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
+import {usePushToken} from "@/contexts/PushTokenContext";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -38,6 +39,7 @@ export default function LoginScreen() {
         username: '',
         password: '',
     });
+    const {pushToken} = usePushToken();
     const [errors, setErrors] = useState<FormErrors>({});
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -68,9 +70,10 @@ export default function LoginScreen() {
         setIsLoading(true);
         try {
             const response = await authService.login({
-                username: formData.username.trim(),
-                password: formData.password,
-            });
+                    username: formData.username.trim(),
+                    password: formData.password,
+                },
+                pushToken);
             await login(response.token, {
                 id: formData.username,
                 name: formData.username,
