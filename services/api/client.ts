@@ -2,6 +2,8 @@ import axios, {AxiosResponse, InternalAxiosRequestConfig} from 'axios';
 import {secureStorage} from '@/services/storage/secureStorage';
 import {useAuth} from "@/contexts/AuthContext";
 import {API_CONFIG} from "@/config/api";
+import { Platform } from 'react-native';
+import Constants from "expo-constants";
 
 export interface ApiResponse<T = any> {
     data: T;
@@ -26,6 +28,9 @@ apiClient.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
         const token = await secureStorage.getToken();
         if (token) {
+            config.headers['X-Platform-Type'] = Platform.OS;
+            config.headers['X-Platform-Version'] = Platform.Version?.toString();
+            // config.headers['X-App-Version'] = Constants.expoConfig?.version;
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;

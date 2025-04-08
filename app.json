@@ -3,6 +3,14 @@
     "name": "tradeGuard",
     "slug": "tradeGuard",
     "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "dfd83b9f-7b94-4794-ac17-e36469433564"
+      },
+      "router": {
+        "origin": false
+      }
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
