@@ -1,7 +1,7 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {Home, BarChart2, User, Settings, Bot, TrendingUp, LineChart} from 'lucide-react-native';
+import {Home, BarChart2, User, Bot, TrendingUp, HeartPulse} from 'lucide-react-native';
 
 import HomeScreen from '../screens/home/HomeScreen';
 import MarketScreen from '../screens/market/MarketScreen';
@@ -226,7 +226,7 @@ export default function MainTabs() {
                 component={HealthStack}
                 options={{
                     tabBarIcon: ({color, size}) => (
-                        <LineChart size={size} color={color}/>
+                        <HeartPulse size={size} color={color}/>
                     ),
                 }}
             />

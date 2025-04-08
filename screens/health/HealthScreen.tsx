@@ -1,7 +1,7 @@
 import React, {useState, useMemo} from "react";
 import {View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {ChevronDown, ChevronUp, BarChart3, AlertCircle} from "lucide-react-native";
+import {ChevronDown, AlertCircle, ShieldAlert} from "lucide-react-native";
 import CircularProgress from 'react-native-circular-progress-indicator';
 import tinycolor from "tinycolor2";
 
@@ -99,7 +99,7 @@ const exampleJSON = {
             "job_id": [
                 107
             ],
-            "message": "Trading volume burst detected (2 related patterns)",
+            "message": "Trading volume burst",
             "confidence": 1.0,
             "category_weights": {
                 "overtrading": 0.7,
@@ -254,7 +254,7 @@ const CircularScore: React.FC<CircularScoreProps> = ({
                 maxValue={100}
                 progressValueColor={'#E2E8F0'}
                 activeStrokeColor={color}
-                activeStrokeSecondaryColor={tinycolor(color).spin(-10).saturate(30).toString()}
+                activeStrokeSecondaryColor={tinycolor(color).spin(-25).saturate(40).toString()}
                 inActiveStrokeColor={color}
                 inActiveStrokeOpacity={0.1}
                 inActiveStrokeWidth={8}
@@ -381,14 +381,22 @@ const PatternItem: React.FC<PatternItemProps> = ({
                         </View>
 
                         {isComposite && (
-                            <ChevronDown
-                                size={16}
-                                color="#748CAB"
-                                style={{
-                                    transform: [{rotate: isExpanded ? '180deg' : '0deg'}],
-                                    marginLeft: 8
-                                }}
-                            />
+                            <TouchableOpacity
+                                onPress={toggleExpand}
+                                style={styles.collapsibleButton}
+                            >
+                                <Text style={styles.collapsibleButtonText}>
+                                    {isExpanded ? 'Hide Details' : 'Show Details'}
+                                </Text>
+                                <ChevronDown
+                                    size={14}
+                                    color="#94ACCA"
+                                    style={{
+                                        transform: [{rotate: isExpanded ? '180deg' : '0deg'}],
+                                        marginLeft: 4
+                                    }}
+                                />
+                            </TouchableOpacity>
                         )}
                     </View>
                 </View>
@@ -590,8 +598,8 @@ export default function HealthScreen() {
                 {/* Composite Patterns Section */}
                 <View style={styles.patternsSection}>
                     <SectionHeader
-                        title="Significant Risks"
-                        icon={<BarChart3 size={22} color="#EF4444"/>}
+                        title={`We've found critical pattern${exampleJSON.composite_patterns.length > 1 ? 's' : ''}`}
+                        icon={<ShieldAlert size={22} color="#EF4444"/>}
                     />
 
                     {exampleJSON.composite_patterns.map((compositePattern) => (
@@ -608,7 +616,7 @@ export default function HealthScreen() {
                 {risingAwarenessPatterns.length > 0 && (
                     <View style={styles.patternsSection}>
                         <SectionHeader
-                            title="Rising Awareness"
+                            title={`Keep an eye on early trend${exampleJSON.composite_patterns.length > 1 ? 's' : ''}`}
                             icon={<AlertCircle size={22} color="#F59E0B"/>}
                         />
 
@@ -924,5 +932,20 @@ const styles = StyleSheet.create({
         fontWeight: "500",
         width: 70,
         textAlign: "right",
+    },
+    collapsibleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(116, 140, 171, 0.1)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginLeft: 8,
+        marginBottom: 4,
+    },
+    collapsibleButtonText: {
+        color: '#94ACCA',
+        fontSize: 11,
+        fontWeight: '500',
     },
 });
