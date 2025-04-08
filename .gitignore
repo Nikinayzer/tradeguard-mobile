@@ -88,3 +88,4 @@ app-example
 logs/
 logs/*.log
 *.tmp
+/tradeguard-992cc-firebase-adminsdk-fbsvc-e569f6bef1.json

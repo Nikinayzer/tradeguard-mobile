@@ -25,6 +25,11 @@ export type MarketStackParamList = {
     AllTokens: { category: string };
 };
 
+export type HealthStackParamList = {
+    HealthMain: undefined;
+};
+
+
 export type ProfileStackParamList = {
     ProfileMain: undefined;
     AccountLimits: undefined;
