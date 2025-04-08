@@ -18,7 +18,7 @@ import JobsScreen from '@/screens/auto/JobsScreen';
 
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import {Platform} from 'react-native';
 import Constants from "expo-constants";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -70,28 +70,11 @@ Notifications.setNotificationHandler({
         shouldSetBadge: true,
     }),
 });
-async function sendPushNotification(expoPushToken: string) {
-    const message = {
-        to: expoPushToken,
-        sound: 'default',
-        title: 'Original Title',
-        body: 'And here is the body!',
-        data: { someData: 'goes here' },
-    };
 
-    await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
-        headers: {
-            Accept: 'application/json',
-            'Accept-encoding': 'gzip, deflate',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(message),
-    });
-}
 function handleRegistrationError(errorMessage: string) {
-    alert(errorMessage);
-    throw new Error(errorMessage);
+    //alert(errorMessage);
+    console.error(errorMessage);
+    //throw new Error(errorMessage);
 }
 async function registerForPushNotificationsAsync() {
     if (Platform.OS === 'android') {
@@ -116,6 +99,7 @@ async function registerForPushNotificationsAsync() {
         }
         const projectId =
             Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+        console.log('Project ID:', projectId); //todo remove
         if (!projectId) {
             handleRegistrationError('Project ID not found');
         }
@@ -145,8 +129,6 @@ export default function App() {
     );
     const notificationListener = useRef<Notifications.EventSubscription>();
     const responseListener = useRef<Notifications.EventSubscription>();
-
-
     useEffect(() => {
         registerForPushNotificationsAsync()
             .then(token => setExpoPushToken(token ?? ''))
@@ -166,7 +148,8 @@ export default function App() {
             responseListener.current &&
             Notifications.removeNotificationSubscription(responseListener.current);
         };
-
+    }, []);
+    useEffect(() => {
         async function prepare() {
             try {
                 const marketManager = MarketDataManager.getInstance();
@@ -195,7 +178,8 @@ export default function App() {
     if (!isReady) {
         return null;
     }
-
+    console.log(process.env.GOOGLE_SERVICES_JSON)
+    console.log("PUSH TOKEN:", expoPushToken);//todo remove
     return (
         <SafeAreaProvider onLayout={onLayoutRootView}>
             {showSplash ? (
