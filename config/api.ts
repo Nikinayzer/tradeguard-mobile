@@ -1,6 +1,8 @@
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+
 export const API_CONFIG = {
     development: {
-        host: 'http://192.168.137.1:8080/api', //todo read from env
+        host: apiUrl,
         timeout: 10000,
     },
     production: {

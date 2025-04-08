@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "tradeGuard",
+    "name": "tradeguard",
     "slug": "tradeGuard",
-    "version": "1.0.0",
+    "version": "0.0.1",
     "extra": {
       "eas": {
         "projectId": "dfd83b9f-7b94-4794-ac17-e36469433564"
@@ -20,11 +20,12 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.tradeGuard"
+      "package": "com.tradeguard.app"
     },
     "web": {
       "bundler": "metro",

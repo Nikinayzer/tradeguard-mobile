@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList, AuthStackParamList} from '@/navigation/navigation';
@@ -139,7 +139,34 @@ export default function App() {
     const [isReady, setIsReady] = useState(false);
     const [showSplash, setShowSplash] = useState(true);
 
+    const [expoPushToken, setExpoPushToken] = useState('');
+    const [notification, setNotification] = useState<Notifications.Notification | undefined>(
+        undefined
+    );
+    const notificationListener = useRef<Notifications.EventSubscription>();
+    const responseListener = useRef<Notifications.EventSubscription>();
+
+
     useEffect(() => {
+        registerForPushNotificationsAsync()
+            .then(token => setExpoPushToken(token ?? ''))
+            .catch((error: any) => setExpoPushToken(`${error}`));
+
+        notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+            setNotification(notification);
+        });
+
+        responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+            console.log(response);
+        });
+
+        return () => {
+            notificationListener.current &&
+            Notifications.removeNotificationSubscription(notificationListener.current);
+            responseListener.current &&
+            Notifications.removeNotificationSubscription(responseListener.current);
+        };
+
         async function prepare() {
             try {
                 const marketManager = MarketDataManager.getInstance();
