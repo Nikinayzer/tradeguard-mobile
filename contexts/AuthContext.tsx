@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<User | null>(null);
-    const {pushToken} = usePushToken();
 
     useEffect(() => {
         checkAuthStatus();

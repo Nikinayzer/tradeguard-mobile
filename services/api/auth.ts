@@ -30,7 +30,7 @@ export const authService = {
 
     register: async (data: RegisterData): Promise<AuthResponse> => {
         const response =
-            await apiClient.post(API_ENDPOINTS.auth.register, data);
+            await apiClient.post<AuthResponse>(API_ENDPOINTS.auth.register, data);
         return response.data;
     },
 

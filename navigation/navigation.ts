@@ -10,6 +10,7 @@ export type RootStackParamList = {
 export type AuthStackParamList = {
     Login: undefined;
     Register: undefined;
+    DiscordAuth: { code: string; state?: string; codeVerifier: string | undefined} | undefined;
 };
 
 export type MainTabParamList = {

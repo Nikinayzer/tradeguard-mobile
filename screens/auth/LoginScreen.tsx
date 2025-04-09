@@ -21,6 +21,7 @@ import {authService} from '@/services/api/auth';
 import {useAuth} from '@/contexts/AuthContext';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 import {usePushToken} from "@/contexts/PushTokenContext";
+import DiscordLoginButton from '@/components/auth/DiscordLoginButton';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -185,6 +186,24 @@ export default function LoginScreen() {
                                 )}
                             </TouchableOpacity>
 
+                            <View style={styles.orContainer}>
+                                <View style={styles.divider} />
+                                <Text style={styles.orText}>OR</Text>
+                                <View style={styles.divider} />
+                            </View>
+
+                            <DiscordLoginButton 
+                                onLoginStarted={() => setIsLoading(true)}
+                                onLoginFailed={(error) => {
+                                    setIsLoading(false);
+                                    showAlert({
+                                        title: 'Discord Login Failed',
+                                        message: error.message || 'Please try again',
+                                        type: 'error',
+                                    });
+                                }}
+                            />
+
                             <TouchableOpacity
                                 style={styles.linkButton}
                                 onPress={() => navigation.navigate('Register')}
@@ -306,5 +325,20 @@ const styles = StyleSheet.create({
     linkTextBold: {
         color: '#3B82F6',
         fontWeight: '600',
+    },
+    orContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 16,
+    },
+    divider: {
+        flex: 1,
+        height: 1,
+        backgroundColor: 'rgba(116, 140, 171, 0.2)',
+    },
+    orText: {
+        color: '#748CAB',
+        fontSize: 14,
+        marginHorizontal: 10,
     },
 }); 

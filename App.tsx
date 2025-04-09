@@ -9,11 +9,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import MainTabs from '@/navigation/MainTabs';
 import {SplashScreen as CustomSplashScreen} from './components/SplashScreen';
 import MarketDataManager from '@/services/MarketDataManager';
+import * as Linking from 'expo-linking';
+import {LinkingOptions} from '@react-navigation/native';
 
 // Screens
 import LoadingScreen from '@/screens/LoadingScreen';
 import LoginScreen from '@/screens/auth/LoginScreen';
 import RegisterScreen from '@/screens/auth/RegisterScreen';
+import DiscordAuthScreen from '@/screens/auth/DiscordAuthScreen';
 
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -35,6 +38,7 @@ function AuthNavigator() {
         >
             <AuthStack.Screen name="Login" component={LoginScreen}/>
             <AuthStack.Screen name="Register" component={RegisterScreen}/>
+            <AuthStack.Screen name="DiscordAuth" component={DiscordAuthScreen}/>
         </AuthStack.Navigator>
     );
 }
@@ -71,6 +75,40 @@ Notifications.setNotificationHandler({
     }),
 });
 
+// Add this before the Navigation component
+const linking: LinkingOptions<RootStackParamList> = {
+    prefixes: [
+        Linking.createURL('/'),
+        'tradeguard://',
+        'exp://localhost:19000',
+    ],
+    config: {
+        screens: {
+            Auth: {
+                screens: {
+                    Login: 'login',
+                    Register: 'register',
+                    DiscordAuth: 'auth/discord',
+                }
+            },
+            Main: 'main'
+        }
+    },
+    // Log all links for debugging
+    subscribe(listener) {
+        const onReceiveURL = ({url}: { url: string }) => {
+            console.log('Received URL:', url);
+            listener(url);
+        };
+
+        // Listen to incoming links from deep linking
+        const subscription = Linking.addEventListener('url', onReceiveURL);
+
+        return () => {
+            subscription.remove();
+        };
+    },
+};
 
 export default function App() {
     const [isReady, setIsReady] = useState(false);
@@ -131,13 +169,14 @@ export default function App() {
             {showSplash ? (
                 <CustomSplashScreen/>
             ) : (
-                <AuthProvider>
-                    <PushTokenProvider>
-                        <NavigationContainer>
+                <PushTokenProvider>
+                    <AuthProvider>
+
+                        <NavigationContainer linking={linking}>
                             <Navigation/>
                         </NavigationContainer>
-                    </PushTokenProvider>
-                </AuthProvider>
+                    </AuthProvider>
+                </PushTokenProvider>
             )}
         </SafeAreaProvider>
     );
