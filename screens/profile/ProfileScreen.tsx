@@ -7,7 +7,6 @@ import {
     ScrollView,
     ActivityIndicator,
     SafeAreaView,
-    StatusBar,
     RefreshControl,
 } from 'react-native';
 
@@ -25,6 +24,7 @@ import {
 import {useNavigation} from "@react-navigation/native";
 import {ProfileStackParamList} from "@/navigation/navigation";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
+import Constants from "expo-constants";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
 
@@ -92,7 +92,6 @@ export default function ProfileScreen() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <StatusBar barStyle="light-content"/>
             <View style={styles.container}>
                 <View style={styles.header}>
                     <View style={styles.headerContent}>
@@ -174,6 +173,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
     safeArea: {
+        marginTop: Constants.statusBarHeight, //todo why? Refactor whole page later
         flex: 1,
         backgroundColor: '#0D1B2A',
     },
