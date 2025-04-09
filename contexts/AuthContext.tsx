@@ -3,9 +3,9 @@ import { secureStorage } from '@/services/storage/secureStorage';
 import {usePushToken} from "@/contexts/PushTokenContext";
 
 interface User {
-    id: string;
-    name: string;
+    username: string;
     email: string;
+    firstName: string;
 }
 
 interface AuthContextType {

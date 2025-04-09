@@ -96,13 +96,8 @@ export default function RegisterScreen() {
                 name: formData.username,
                 email: formData.email,
                 password: formData.password,
-                password_confirmation: formData.confirmPassword,
             });
-            await login(response.token, {
-                id: formData.username,
-                name: formData.username,
-                email: formData.email,
-            });
+            await login(response.token, response.user);
         } catch (error: any) {
             Alert.alert(
                 'Registration Failed',

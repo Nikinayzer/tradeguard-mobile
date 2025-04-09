@@ -10,7 +10,6 @@ import {
     Keyboard,
     TouchableWithoutFeedback,
     ActivityIndicator,
-    Dimensions,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
@@ -75,11 +74,7 @@ export default function LoginScreen() {
                     password: formData.password,
                 },
                 pushToken);
-            await login(response.token, {
-                id: formData.username,
-                name: formData.username,
-                email: '',
-            });
+            await login(response.token, response.user);
         } catch (error: any) {
             showAlert({
                 title: 'Login Failed',

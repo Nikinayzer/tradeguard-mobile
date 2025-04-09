@@ -3,6 +3,11 @@ import {API_ENDPOINTS} from '@/config/api';
 
 export interface AuthResponse {
     token: string;
+    user: {
+        username: string;
+        email: string;
+        firstName: string;
+    }
 }
 
 export interface LoginCredentials {
@@ -14,7 +19,6 @@ export interface RegisterData {
     name: string;
     email: string;
     password: string;
-    password_confirmation: string;
 }
 
 export const authService = {

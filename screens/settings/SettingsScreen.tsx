@@ -33,8 +33,9 @@ export default function SettingsScreen() {
                         try {
                             await authService.logout(pushToken);
                             await logout();
-                        } catch (error) {
-                            Alert.alert('Error', "Failed to logout. This shouldn't have happen, but try to restart the app.");
+                        } catch (error: any) {
+                            Alert.alert('Error', error.message || 'Failed to logout');
+                            console.log(error.toString())
                         }
                     },
                 },

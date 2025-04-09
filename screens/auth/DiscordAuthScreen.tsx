@@ -3,50 +3,44 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '@/navigation/navigation';
-import { useAuth } from '@/contexts/AuthContext';
 import { oauthService } from '@/services/api/oauth';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePushToken } from '@/contexts/PushTokenContext';
+import {getDiscordCodeVerifier} from "@/utils/OAuthTempStore";
 
 type DiscordAuthScreenProps = NativeStackScreenProps<AuthStackParamList, 'DiscordAuth'>;
 
 export default function DiscordAuthScreen({ route, navigation }: DiscordAuthScreenProps) {
     const [error, setError] = useState<string | null>(null);
+    const { pushToken } = usePushToken();
     const { login } = useAuth();
 
-    // Log route params for debugging
-    console.log('DiscordAuthScreen mounted with params:', route.params);
-    
-    useEffect(() => {
-        const handleDiscordAuth = async () => {
-            try {
-                // If there's no code in the route params, return to login screen
-                if (!route.params?.code) {
-                    console.log('No code found in route params, redirecting to Login');
-                    navigation.replace('Login');
-                    return;
-                }
+    console.log('DiscordAuthScreen rendered with params:', route.params);
+    const [handled, setHandled] = useState(false);
 
-                const { code, codeVerifier } = route.params;
-                console.log('Exchanging code for token. Code starts with:', code.substring(0, 5) + '...');
-                
-                // Exchange the code for a JWT token
-                const response = await oauthService.exchangeDiscordCode(code, codeVerifier );
-                console.log('Token received successfully');
-                
-                // Login with the received token
-                await login(response.token, {
-                    // These values will be updated when the profile is fetched
-                    id: 'discord_user',
-                    name: 'Discord User',
-                    email: '',
-                });
-                
-                // Auth context will redirect to main app
+    useEffect(() => {
+        if (handled) return;
+        setHandled(true)
+        console.log('DiscordAuthScreen: useEffect fired');
+        const handleDiscordAuth = async () => {
+            if (!route.params?.code) {
+                console.error('No code found in route params, redirecting to Login');
+                navigation.replace('Login');
+                return;
+            }
+            try {
+                const { code } = route.params;
+                const codeVerifier = getDiscordCodeVerifier();
+                if (!codeVerifier) {
+                    console.error('Discord code verifier is missing');
+                }
+                const response = await oauthService.exchangeDiscordCode(code, codeVerifier, pushToken);
+                console.info('Discord token received successfully');
+                await login(response.token, response.user);
+
             } catch (error: any) {
                 console.error('Discord auth error:', error);
                 setError(error.message || 'Failed to authenticate with Discord');
-                
-                // Wait 3 seconds and redirect to login
                 setTimeout(() => {
                     navigation.replace('Login');
                 }, 3000);
@@ -54,7 +48,7 @@ export default function DiscordAuthScreen({ route, navigation }: DiscordAuthScre
         };
         
         handleDiscordAuth();
-    }, [route.params, login, navigation]);
+    }, [route.params]);
     
     return (
         <SafeAreaView style={styles.container}>
