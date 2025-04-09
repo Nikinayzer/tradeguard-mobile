@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {StatusBar} from "react-native";
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList, AuthStackParamList} from '@/navigation/navigation';
@@ -20,7 +21,7 @@ import DiscordAuthScreen from '@/screens/auth/DiscordAuthScreen';
 
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import {Platform} from 'react-native';
+import {Platform, SafeAreaView, View} from 'react-native';
 import Constants from "expo-constants";
 import {PushTokenProvider, usePushToken} from "@/contexts/PushTokenContext";
 
@@ -152,6 +153,12 @@ export default function App() {
         }
 
         prepare();
+    }, []);
+    useEffect(() => {
+        //StatusBar.setBarStyle(theme == 'Light' ? 'dark-content' : 'light-content'); //todo its time to cook some themes
+        StatusBar.setBarStyle('light-content', true);
+        StatusBar.setBackgroundColor('#0D1B2A');
+        StatusBar.setTranslucent(true)
     }, []);
 
     const onLayoutRootView = useCallback(async () => {
