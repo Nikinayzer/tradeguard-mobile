@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Image, ScrollView} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
 import {Plus, X} from 'lucide-react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {RootState} from '@/services/redux/store';
