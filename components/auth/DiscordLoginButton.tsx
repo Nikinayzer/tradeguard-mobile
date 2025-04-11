@@ -7,11 +7,13 @@ import {useDiscordAuth} from '@/hooks/useDiscordAuth';
 interface DiscordLoginButtonProps {
     onLoginStarted?: () => void;
     onLoginFailed?: (error: Error) => void;
+    login?: boolean;
 }
 
 export default function DiscordLoginButton({
                                                onLoginStarted,
                                                onLoginFailed,
+                                               login = true,
                                            }: DiscordLoginButtonProps) {
     const {startDiscordAuth, isReady} = useDiscordAuth();
     const [loading, setLoading] = React.useState(false);
@@ -42,7 +44,9 @@ export default function DiscordLoginButton({
                     <View style={styles.discordIconContainer}>
                         <Ionicons name="logo-discord" size={18} color="#FFFFFF"/>
                     </View>
-                    <Text style={styles.buttonText}>Continue with Discord</Text>
+                    <Text style={styles.buttonText}>
+                        {login ? 'Continue with Discord' : 'Connect Discord'}
+                    </Text>
                 </View>
             )}
         </TouchableOpacity>

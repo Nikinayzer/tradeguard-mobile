@@ -76,7 +76,7 @@ class MarketDataManager {
     private marketListeners: Set<MarketDataListener> = new Set();
     private categoryListeners: Set<CategoryListener> = new Set();
     private coinListeners: Map<string, Set<CoinUpdateListener>> = new Map();
-    
+
     private lastFullUpdate: number = 0;
     private lastCategoryUpdate: number = 0;
     private isInitialDataLoaded: boolean = false;
@@ -99,7 +99,7 @@ class MarketDataManager {
     private async initialize(): Promise<void> {
         try {
             console.log('📦 [MarketDataManager] Starting initialization...');
-            
+
             // Try to load cached data first
             const cacheStartTime = Date.now();
             await this.loadFromCache();
@@ -108,29 +108,29 @@ class MarketDataManager {
             // Start fetching fresh data
             console.log('🔄 [MarketDataManager] Fetching fresh data...');
             const fetchStartTime = Date.now();
-            
+
             const categoriesStartTime = Date.now();
             await this.fetchCategories();
             logPerformance('Categories fetch', categoriesStartTime);
-            
+
             const marketDataStartTime = Date.now();
             await this.fetchAllMarketData();
             logPerformance('Market data fetch', marketDataStartTime);
-            
+
             logPerformance('Total fresh data fetch', fetchStartTime);
-            
+
             this.isInitialDataLoaded = true;
             this.isLoadingFromCache = false;
-            
+
             this.startPeriodicUpdates();
-            
+
             const totalDuration = logPerformance('Total initialization', this.initStartTime);
-            console.log(`✅ [MarketDataManager] Initialized successfully:
-    - Cache load: ${cacheDuration}ms
-    - Total time: ${totalDuration}ms
-    - Categories: ${Object.keys(this.categories).length}
-    - Coins: ${this.marketData.size}`);
-            
+            // console.log(`✅ [MarketDataManager] Initialized successfully:
+            //              - Cache load: ${cacheDuration}ms
+            //              - Total time: ${totalDuration}ms
+            //              - Categories: ${Object.keys(this.categories).length}
+            //              - Coins: ${this.marketData.size}`);
+
         } catch (error) {
             console.error('❌ [MarketDataManager] Initialization failed:', error);
             setTimeout(() => this.initialize(), 5000);
@@ -188,10 +188,10 @@ class MarketDataManager {
             logPerformance('Listener notifications', notifyStartTime);
 
             const totalDuration = logPerformance('Total cache load', startTime);
-            console.log(`✅ [MarketDataManager] Cache loaded successfully:
-    - Categories: ${Object.keys(this.categories).length}
-    - Coins: ${this.marketData.size}
-    - Age: ${Math.floor((now - lastUpdate) / 1000)}s`);
+            // console.log(`✅ [MarketDataManager] Cache loaded successfully:
+            //                 - Categories: ${Object.keys(this.categories).length}
+            //                 - Coins: ${this.marketData.size}
+            //                 - Age: ${Math.floor((now - lastUpdate) / 1000)}s`);
         } catch (error) {
             console.error('❌ [MarketDataManager] Error loading from cache:', error);
             await this.clearCache();
@@ -238,7 +238,7 @@ class MarketDataManager {
 
     private createCoinInstance(rawData: RawMarketData): Coin {
         const [baseSymbol] = rawData.instrument.split('/');
-        
+
         return {
             ...rawData,
             symbol: baseSymbol,
@@ -318,11 +318,11 @@ class MarketDataManager {
         this.updateInterval = setInterval(async () => {
             try {
                 const now = Date.now();
-                
+
                 if (now - this.lastFullUpdate >= CACHE_CONFIG.REFRESH_INTERVAL) {
                     await this.fetchAllMarketData();
                 }
-                
+
                 if (now - this.lastCategoryUpdate >= CACHE_CONFIG.MAX_AGE) {
                     await this.fetchCategories();
                 }
@@ -336,7 +336,7 @@ class MarketDataManager {
         if (!this.coinListeners.has(symbol)) {
             this.coinListeners.set(symbol, new Set());
         }
-        
+
         const listeners = this.coinListeners.get(symbol)!;
         listeners.add(listener);
 
@@ -344,7 +344,7 @@ class MarketDataManager {
         if (coin) {
             listener(coin);
         }
-        
+
         return () => {
             const listeners = this.coinListeners.get(symbol);
             if (listeners) {
@@ -362,7 +362,7 @@ class MarketDataManager {
         if (this.isInitialDataLoaded) {
             listener(this.categoryData);
         }
-        
+
         return () => {
             this.marketListeners.delete(listener);
         };
@@ -374,7 +374,7 @@ class MarketDataManager {
         if (Object.keys(this.categories).length > 0) {
             listener(this.categories);
         }
-        
+
         return () => {
             this.categoryListeners.delete(listener);
         };

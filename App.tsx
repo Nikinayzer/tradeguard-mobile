@@ -59,22 +59,18 @@ function Navigation() {
             {!isAuthenticated ? (
                 <Stack.Screen name="Auth" component={AuthNavigator}/>
             ) : (
-                <>
-                    <Stack.Screen name="Main" component={MainTabs}/>
-                </>
+                <Stack.Screen name="Main" component={MainTabs}/>
             )}
+            <Stack.Screen
+                name="DiscordAuth"
+                component={DiscordAuthScreen}
+                options={{
+                    presentation: 'modal',
+                }}
+            />
         </Stack.Navigator>
     );
 }
-
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-    }),
-});
-
 const linking: LinkingOptions<RootStackParamList> = {
     prefixes: [
         Linking.createURL('/'),
@@ -87,27 +83,31 @@ const linking: LinkingOptions<RootStackParamList> = {
                 screens: {
                     Login: 'login',
                     Register: 'register',
-                    DiscordAuth: 'auth/discord',
                 }
             },
+            DiscordAuth: 'auth/discord',
             Main: 'main'
         }
     },
-    // Log all links for debugging
     subscribe(listener) {
         const onReceiveURL = ({url}: { url: string }) => {
             console.log('Received URL:', url);
             listener(url);
         };
-
-        // Listen to incoming links from deep linking
         const subscription = Linking.addEventListener('url', onReceiveURL);
-
         return () => {
             subscription.remove();
         };
     },
 };
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+    }),
+});
 
 export default function App() {
     const [isReady, setIsReady] = useState(false);

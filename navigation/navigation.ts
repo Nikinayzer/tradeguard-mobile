@@ -1,10 +1,10 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
-    Auth: undefined;
+    //Auth: undefined;
+    Auth: NavigatorScreenParams<AuthStackParamList>;
     Main: NavigatorScreenParams<MainTabParamList>;
-    Jobs: undefined;
-    JobDetails: { jobId: string };
+    DiscordAuth: { code: string; state?: string; codeVerifier: string | undefined} | undefined;
 };
 
 export type AuthStackParamList = {

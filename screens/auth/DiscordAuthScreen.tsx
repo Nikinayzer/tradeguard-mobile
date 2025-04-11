@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '@/navigation/navigation';
-import { oauthService } from '@/services/api/oauth';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePushToken } from '@/contexts/PushTokenContext';
+import React, {useEffect, useState} from 'react';
+import {View, Text, StyleSheet, ActivityIndicator} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {AuthStackParamList, RootStackParamList} from '@/navigation/navigation';
+import {oauthService} from '@/services/api/oauth';
+import {useAuth} from '@/contexts/AuthContext';
+import {usePushToken} from '@/contexts/PushTokenContext';
 import {getDiscordCodeVerifier} from "@/utils/OAuthTempStore";
 
-type DiscordAuthScreenProps = NativeStackScreenProps<AuthStackParamList, 'DiscordAuth'>;
+type DiscordAuthScreenProps = NativeStackScreenProps<RootStackParamList, 'DiscordAuth'>;
 
-export default function DiscordAuthScreen({ route, navigation }: DiscordAuthScreenProps) {
+export default function DiscordAuthScreen({route, navigation}: DiscordAuthScreenProps) {
     const [error, setError] = useState<string | null>(null);
-    const { pushToken } = usePushToken();
-    const { login } = useAuth();
+    const {pushToken} = usePushToken();
+    const {login, isAuthenticated} = useAuth();
 
     console.log('DiscordAuthScreen rendered with params:', route.params);
     const [handled, setHandled] = useState(false);
@@ -24,32 +24,50 @@ export default function DiscordAuthScreen({ route, navigation }: DiscordAuthScre
         console.log('DiscordAuthScreen: useEffect fired');
         const handleDiscordAuth = async () => {
             if (!route.params?.code) {
-                console.error('No code found in route params, redirecting to Login');
-                navigation.replace('Login');
+                console.error('No code found in route params, redirecting back');
+                if (isAuthenticated) {
+                    navigation.goBack()
+                } else {
+                    navigation.replace('Auth', {
+                        screen: 'Login',
+                    });
+                }
                 return;
             }
             try {
-                const { code } = route.params;
+                const {code} = route.params;
                 const codeVerifier = getDiscordCodeVerifier();
                 if (!codeVerifier) {
                     console.error('Discord code verifier is missing');
                 }
                 const response = await oauthService.exchangeDiscordCode(code, codeVerifier, pushToken);
                 console.info('Discord token received successfully');
-                await login(response.token, response.user);
+                if (isAuthenticated) {
+                    navigation.goBack()
+                } else {
+                    await login(response.token, response.user);
+                }
+
 
             } catch (error: any) {
                 console.error('Discord auth error:', error);
                 setError(error.message || 'Failed to authenticate with Discord');
                 setTimeout(() => {
-                    navigation.replace('Login');
+                    if (isAuthenticated) {
+                        navigation.goBack();
+                    } else {
+                        navigation.replace('Auth', {
+                            screen: 'Login',
+                        });
+                    }
                 }, 3000);
+
             }
         };
-        
+
         handleDiscordAuth();
     }, [route.params]);
-    
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
@@ -57,11 +75,11 @@ export default function DiscordAuthScreen({ route, navigation }: DiscordAuthScre
                     <View style={styles.errorContainer}>
                         <Text style={styles.errorTitle}>Authentication Failed</Text>
                         <Text style={styles.errorMessage}>{error}</Text>
-                        <Text style={styles.redirectText}>Redirecting to login...</Text>
+                        <Text style={styles.redirectText}>Redirecting back..</Text>
                     </View>
                 ) : (
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="#3B82F6" />
+                        <ActivityIndicator size="large" color="#3B82F6"/>
                         <Text style={styles.loadingText}>Completing Discord authentication...</Text>
                     </View>
                 )}

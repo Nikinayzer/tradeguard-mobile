@@ -30,6 +30,7 @@ import {NativeStackNavigationProp} from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 import {useAuth} from '@/contexts/AuthContext';
 import {ExchangeAccount as APIExchangeAccount} from '@/services/api/profile';
+import DiscordLoginButton from '@/components/auth/DiscordLoginButton';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
 
@@ -366,7 +367,9 @@ export default function ProfileScreen() {
                                     <DiscordConnection discordAccount={user.discordAccount}/>
                                 </ConnectionCard>
                             ) : (
-                                <ConnectDiscordButton/>
+                                <DiscordLoginButton
+                                    login={false}
+                                />
                             )}
                         </View>
                     </View>
