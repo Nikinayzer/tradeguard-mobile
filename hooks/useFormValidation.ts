@@ -11,6 +11,7 @@ export type ValidationRule = {
     pattern?: RegExp;
     customValidator?: (value: string) => string | null;
     message?: string;
+    skipValidation?: boolean;
 };
 
 /**
@@ -100,6 +101,9 @@ export function useFormValidation<T extends Record<string, any>>(
      */
     const validateField = useCallback((field: keyof T, value: string): string | null => {
         const rules = validationRules[field];
+        if (rules.skipValidation) {
+            return null;
+        }
         if (rules.required && !value) {
             return rules.message || `${String(field)} is required`;
         }

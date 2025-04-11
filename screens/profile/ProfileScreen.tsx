@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     SafeAreaView,
     RefreshControl,
+    Image,
 } from 'react-native';
 
 import {format} from 'date-fns';
@@ -19,20 +20,207 @@ import {
     Mail,
     AlertCircle,
     Calendar,
-    Settings
+    Settings,
+    User as UserIcon,
 } from 'lucide-react-native';
+import {Ionicons} from '@expo/vector-icons';
 import {useNavigation} from "@react-navigation/native";
 import {ProfileStackParamList} from "@/navigation/navigation";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
 import Constants from "expo-constants";
+import {useAuth} from '@/contexts/AuthContext';
+import {ExchangeAccount as APIExchangeAccount} from '@/services/api/profile';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
+
+interface ConnectionCardProps {
+    title?: string;
+    provider?: string;
+    status: string;
+    onPress: () => void;
+    children?: React.ReactNode;
+    isDemo?: boolean;
+}
+
+const ConnectionCard: React.FC<ConnectionCardProps> = ({
+                                                           title,
+                                                           provider,
+                                                           status,
+                                                           onPress,
+                                                           children,
+                                                           isDemo,
+                                                       }) => {
+    const getProviderIcon = (provider?: string): { name: keyof typeof Ionicons.glyphMap; color: string } | null => {
+        if (!provider) return null;
+        switch (provider.toUpperCase()) {
+            case 'DISCORD':
+                return {name: 'logo-discord', color: '#5865F2'};
+            case 'BYBIT':
+            case 'BINANCE':
+            default:
+                return {name: 'wallet-outline', color: '#748CAB'};
+        }
+    };
+
+    const providerIcon = provider ? getProviderIcon(provider) : null;
+
+    return (
+        <TouchableOpacity onPress={onPress}>
+            <View style={styles.connectionCard}>
+                <View style={styles.connectionTitleContainer}>
+                    {providerIcon && (
+                        <View style={styles.providerHeader}>
+                            <Ionicons
+                                name={providerIcon.name}
+                                size={16}
+                                color={providerIcon.color}
+                            />
+                            <Text style={styles.providerText}>{provider}</Text>
+                        </View>
+                    )}
+                    {title && (
+                        <View style={styles.connectionTitleLeft}>
+                            <Text style={styles.connectionTitle}>{title}</Text>
+                            {isDemo && (
+                                <View style={styles.demoBadge}>
+                                    <Text style={styles.demoBadgeText}>DEMO</Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+                </View>
+                {status === "connected" && children && (
+                    <View style={styles.connectionContent}>
+                        {children}
+                    </View>
+                )}
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+const DiscordConnection: React.FC<{ discordAccount: User['discordAccount'] }> = ({discordAccount}) => {
+    const avatarUrl = discordAccount?.discordId
+        ? `https://cdn.discordapp.com/avatars/${discordAccount.discordId}/${discordAccount.avatar}.png`
+        : null;
+
+    return (
+        <View style={styles.discordContent}>
+            <View style={styles.discordUser}>
+                {avatarUrl ? (
+                    <Image
+                        source={{uri: avatarUrl}}
+                        style={styles.discordAvatar}
+                    />
+                ) : (
+                    <View style={styles.discordAvatar}>
+                        <UserIcon size={24} color="#748CAB"/>
+                    </View>
+                )}
+                <View style={styles.discordUserInfo}>
+                    <Text style={styles.discordUsername}>
+                        {discordAccount?.username || 'Unknown'}
+                    </Text>
+                    <View style={styles.discordId}>
+                        <Text style={styles.discordIdText}>ID: {discordAccount?.discordId || 'Unknown'}</Text>
+                    </View>
+                </View>
+            </View>
+        </View>
+    );
+};
+
+interface ExchangeAccount {
+    id: number;
+    name: string;
+    provider: string;
+    demo: boolean;
+}
+
+interface ExchangeCardProps {
+    exchangeAccount: ExchangeAccount;
+}
+
+const ExchangeCard: React.FC<ExchangeCardProps> = ({exchangeAccount}) => {
+    const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
+
+    return (
+        <TouchableOpacity
+            style={styles.exchangeCard}
+            onPress={() => navigation.navigate('ExchangeAccount', {accountId: exchangeAccount.id.toString()})}
+        >
+            <View style={styles.exchangeHeader}>
+                <View style={styles.exchangeTitleContainer}>
+                    <Text style={styles.providerText}>{exchangeAccount.provider}</Text>
+                    <View style={[styles.accountTypeBadge, exchangeAccount.demo && styles.demoBadge]}>
+                        <Text style={[styles.accountTypeText, exchangeAccount.demo && styles.demoBadgeText]}>
+                            {exchangeAccount.demo ? 'Demo' : 'Live'}
+                        </Text>
+                    </View>
+                </View>
+                <Text style={styles.accountName}>{exchangeAccount.name}</Text>
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+type ProfileScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
+
+interface AddExchangeButtonProps {
+    showAlert: (params: { title: string; message: string; type: 'info' }) => void;
+    hasAccount: boolean;
+}
+
+const AddExchangeButton: React.FC<AddExchangeButtonProps> = ({showAlert, hasAccount}) => {
+    const navigation = useNavigation<ProfileScreenNavigationProp>();
+    
+    const handleAddExchange = () => {
+        if (hasAccount) {
+            showAlert({
+                title: 'Account Limit',
+                message: 'Currently we can\'t add you another account, but we are working on it',
+                type: 'info',
+            });
+            return;
+        }
+        navigation.navigate('AddExchange');
+    };
+    
+    return (
+        <TouchableOpacity 
+            style={styles.addButton}
+            onPress={handleAddExchange}
+        >
+            <View style={styles.addButtonContent}>
+                <Ionicons name="add-circle-outline" size={24} color="#3B82F6" />
+                <Text style={styles.addButtonText}>Add Exchange</Text>
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+const ConnectDiscordButton = () => {
+    return (
+        <TouchableOpacity
+            style={styles.connectButton}
+            onPress={() => {
+                // TODO: Implement Discord connection logic
+            }}
+        >
+            <View style={styles.connectButtonContent}>
+                <Ionicons name="logo-discord" size={20} color="#5865F2"/>
+                <Text style={styles.connectButtonText}>Connect Discord</Text>
+            </View>
+        </TouchableOpacity>
+    );
+};
 
 export default function ProfileScreen() {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const {alert, showAlert, hideAlert} = useAlert();
-    const navigation = useNavigation<LoginScreenNavigationProp>();
+    const navigation = useNavigation<ProfileScreenNavigationProp>();
+    const {user: authUser} = useAuth();
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -162,6 +350,50 @@ export default function ProfileScreen() {
                                     </Text>
                                 </View>
                             </View>
+                        </View>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>My Connections</Text>
+                        <View style={styles.connectionsList}>
+                            {user.discordAccount?.discordId ? (
+                                <ConnectionCard
+                                    provider="Discord"
+                                    status="connected"
+                                    onPress={() => {
+                                    }}
+                                >
+                                    <DiscordConnection discordAccount={user.discordAccount}/>
+                                </ConnectionCard>
+                            ) : (
+                                <ConnectDiscordButton/>
+                            )}
+                        </View>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Exchange Accounts</Text>
+                        <View style={styles.connectionsList}>
+                            {user.exchangeAccounts?.map((account: APIExchangeAccount, index: number) => {
+                                if (!account.id || !account.name || !account.provider || account.demo === undefined) {
+                                    return null;
+                                }
+                                return (
+                                    <ExchangeCard
+                                        key={`${account.name}-${index}`}
+                                        exchangeAccount={{
+                                            id: account.id,
+                                            name: account.name,
+                                            provider: account.provider,
+                                            demo: account.demo
+                                        }}
+                                    />
+                                );
+                            })}
+                            <AddExchangeButton 
+                                showAlert={showAlert}
+                                hasAccount={(user.exchangeAccounts?.length ?? 0) > 0}
+                            />
                         </View>
                     </View>
                 </ScrollView>
@@ -320,5 +552,144 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
-    }
+    },
+    connectionsList: {
+        gap: 16,
+    },
+    connectionCard: {
+        backgroundColor: '#1B263B',
+        borderRadius: 12,
+        padding: 16,
+    },
+    connectionContent: {
+        marginTop: 16,
+    },
+    connectionTitleContainer: {
+        gap: 8,
+    },
+    connectionTitleLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    connectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+    providerText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#748CAB',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+    },
+    accountTypeBadge: {
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+    },
+    demoBadge: {
+        backgroundColor: 'rgba(20, 184, 166, 0.1)',
+    },
+    accountTypeText: {
+        color: '#F59E0B',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    demoBadgeText: {
+        color: '#14B8A6',
+    },
+    exchangeCard: {
+        backgroundColor: '#1B263B',
+        borderRadius: 12,
+        padding: 16,
+    },
+    exchangeHeader: {
+        gap: 8,
+    },
+    exchangeTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    accountName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+    discordContent: {
+        gap: 8,
+    },
+    discordUser: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    discordAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#22314A',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    discordUserInfo: {
+        flex: 1,
+        gap: 4,
+    },
+    discordUsername: {
+        fontSize: 16,
+        color: 'white',
+        fontWeight: '500',
+    },
+    discordId: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    discordIdText: {
+        fontSize: 12,
+        color: '#748CAB',
+    },
+    providerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    addButton: {
+        backgroundColor: '#1B263B',
+        borderRadius: 12,
+        padding: 16,
+    },
+    addButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    addButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
+    connectButton: {
+        backgroundColor: '#1B263B',
+        borderRadius: 8,
+        padding: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#5865F2',
+    },
+    connectButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    connectButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#FFFFFF',
+    },
 });

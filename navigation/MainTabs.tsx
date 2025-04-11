@@ -19,6 +19,8 @@ import JobDetailScreen from "../screens/auto/JobDetailScreen";
 import JobListScreen from "../screens/auto/JobListScreen";
 import CoinSelectorScreen from "../screens/auto/CoinSelectorScreen";
 import PersonalInfoScreen from '../screens/settings/PersonalInfoScreen';
+import ExchangeAccountScreen from '../screens/settings/ExchangeAccountScreen';
+import AddExchangeScreen from '../screens/settings/AddExchangeScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -127,6 +129,8 @@ function ProfileStack() {
         >
             <Stack.Screen name="ProfileMain" component={ProfileScreen}/>
             <Stack.Screen name="AccountLimits" component={AccountLimitsScreen}/>
+            <Stack.Screen name="ExchangeAccount" component={ExchangeAccountScreen}/>
+            <Stack.Screen name="AddExchange" component={AddExchangeScreen}/>
             <Stack.Screen name="SettingsStack" component={SettingsStack}/>
         </Stack.Navigator>
     );

@@ -34,6 +34,10 @@ export type HealthStackParamList = {
 export type ProfileStackParamList = {
     ProfileMain: undefined;
     AccountLimits: undefined;
+    ExchangeAccount: {
+        accountId: string;
+    };
+    AddExchange: undefined;
     SettingsStack: NavigatorScreenParams<SettingsStackParamList>;
 };
 

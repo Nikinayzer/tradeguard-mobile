@@ -46,7 +46,6 @@ function AuthNavigator() {
 
 function Navigation() {
     const {isAuthenticated, isLoading} = useAuth();
-
     if (isLoading) {
         return <LoadingScreen/>;
     }
@@ -76,7 +75,6 @@ Notifications.setNotificationHandler({
     }),
 });
 
-// Add this before the Navigation component
 const linking: LinkingOptions<RootStackParamList> = {
     prefixes: [
         Linking.createURL('/'),
@@ -129,7 +127,6 @@ export default function App() {
         const responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
             console.log('Notification response:', response);
         });
-
         return () => {
             Notifications.removeNotificationSubscription(notificationListener);
             Notifications.removeNotificationSubscription(responseListener);
@@ -178,7 +175,6 @@ export default function App() {
             ) : (
                 <PushTokenProvider>
                     <AuthProvider>
-
                         <NavigationContainer linking={linking}>
                             <Navigation/>
                         </NavigationContainer>

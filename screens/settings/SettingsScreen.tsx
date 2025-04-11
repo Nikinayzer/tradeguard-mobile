@@ -31,8 +31,8 @@ export default function SettingsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await authService.logout(pushToken);
                             await logout();
+                            await authService.logout(pushToken);
                         } catch (error: any) {
                             Alert.alert('Error', error.message || 'Failed to logout');
                             console.log(error.toString())

@@ -18,6 +18,7 @@ export interface AlertState {
     title: string;
     message: string;
     type: AlertType;
+    buttons?: AlertButton[];
 }
 
 export interface AlertButton {
@@ -37,6 +38,7 @@ export const useAlert = (initialState: Partial<AlertState> = {}) => {
         title: '',
         message: '',
         type: 'info',
+        buttons: [{ text: 'OK', onPress: () => {}, style: 'default' }],
         ...initialState,
     });
 

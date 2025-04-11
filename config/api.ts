@@ -21,8 +21,10 @@ export const API_ENDPOINTS = {
     profile: {
         getMe: '/users/me',
         updateMe: '/users/me',
-        getBybitAccounts: '/users/me/bybit-accounts',
-        addBybitAccount: '/users/me/bybit-accounts',
+        getExchangeAccount: (id: string) => `/users/me/exchange-accounts/${id}`,
+        updateExchangeAccount: (id: string) => `/users/me/exchange-accounts/${id}/update`,
+        addExchangeAccount: '/users/me/exchange-accounts/add',
+        deleteExchangeAccount: (id: string) => `/users/me/exchange-accounts/${id}/delete`,
         getLimits: '/users/me/limits',
         updateLimits: '/users/me/limits',
     },

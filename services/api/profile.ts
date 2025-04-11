@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { API_ENDPOINTS } from '@/config/api';
+import {API_ENDPOINTS} from '@/config/api';
 
 export enum Role {
     ADMIN = "ADMIN",
@@ -19,6 +19,23 @@ export interface User {
     accountNonLocked: boolean;
     credentialsNonExpired: boolean;
     enabled: boolean;
+    discordAccount?: {
+        username: string;
+        discordId: string;
+        avatar: string;
+    };
+    exchangeAccounts?: Array<ExchangeAccount>;
+}
+
+export interface ExchangeAccount {
+    id?: number;
+    provider?: string;
+    demo?: boolean;
+    name: string;
+    readOnlyApiKey: string;
+    readOnlyApiSecret: string;
+    readWriteApiKey: string;
+    readWriteApiSecret: string;
 }
 
 export interface UserUpdateRequest {
@@ -53,7 +70,22 @@ export const profileService = {
         const response = await apiClient.post(API_ENDPOINTS.profile.updateMe, data);
         return response.data;
     },
-
+    getExchangeAccount: async (id: string): Promise<ExchangeAccount> => {
+        const response = await apiClient.get<ExchangeAccount>(API_ENDPOINTS.profile.getExchangeAccount(id));
+        return response.data;
+    },
+    updateExchangeAccount: async (id: string, data: ExchangeAccount): Promise<void> => {
+        const response = await apiClient.post(API_ENDPOINTS.profile.updateExchangeAccount(id), data);
+        return response.data;
+    },
+    addExchangeAccount: async (data: ExchangeAccount): Promise<void> => {
+        const response = await apiClient.post(API_ENDPOINTS.profile.addExchangeAccount, data);
+        return response.data;
+    },
+    deleteExchangeAccount: async (id: string): Promise<void> => {
+        const response = await apiClient.delete(API_ENDPOINTS.profile.deleteExchangeAccount(id));
+        return response.data;
+    },
     getLimits: async (): Promise<UserAccountLimits> => {
         const response = await apiClient.get<UserAccountLimits>(API_ENDPOINTS.profile.getLimits);
         return response.data;
