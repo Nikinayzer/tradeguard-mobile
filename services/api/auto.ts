@@ -6,22 +6,18 @@ export type JobStatus = 'CREATED' | 'PAUSED' | 'IN_PROGRESS' | 'CANCELED' | 'FIN
 export type JobSide = 'BUY' | 'SELL' | 'BOTH' ; //todo both or not to both
 
 interface BaseJobParams {
-    source: 'mobile';
+    amount: number;
     coins: string[];
     side: JobSide;
     totalSteps: number;
-    force: boolean;
+    durationMinutes: number;
     discountPct: number;
-    randomnessPct: number;
 }
 
 export interface DCAJobParams extends BaseJobParams {
-    amount: number;
 }
 
 export interface LIQJobParams extends BaseJobParams {
-    excludeCoins: string[];
-    proportionPct: number;
 }
 
 export type JobParams = DCAJobParams | LIQJobParams;

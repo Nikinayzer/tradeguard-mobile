@@ -93,6 +93,7 @@ export function JobCreator({
     };
 
     const isDCA = jobType === 'DCA';
+    const [isForce, setForce] = useState(false)
     const dcaParams = params as DCAJobParams;
     const liqParams = params as LIQJobParams;
 
@@ -222,8 +223,8 @@ export function JobCreator({
                                 tooltip="Percentage of your portfolio to include in this strategy"
                             />
                             <SliderInput
-                                    value={liqParams.proportionPct}
-                                onChange={(value) => handleUpdateParams({proportionPct: value})}
+                                    value={liqParams.amount}
+                                onChange={(value) => handleUpdateParams({amount: value})}
                                     min={1}
                                     max={100}
                                     step={1}
@@ -246,26 +247,10 @@ export function JobCreator({
                                 />
                             </>
                         )}
-
-                    <SliderLabel
-                            label="Randomness"
-                        icon={<AlertCircle size={16} color="#3B82F6"/>}
-                        tooltip="Random variance applied to execution times to avoid pattern detection"
-                    />
-                    <SliderInput
-                            value={params.randomnessPct}
-                        onChange={(value) => handleUpdateParams({randomnessPct: value})}
-                            min={0}
-                            max={5}
-                            step={0.1}
-                            unit="%"
-                        disabled={false}
-                        />
-
                         <Toggle
                             label="Force Entry"
-                            value={params.force}
-                            onChange={(value) => handleUpdateParams({force: value})}
+                            value={isForce}
+                            onChange={(value) => setForce(value)}
                             tooltip={isDCA
                                 ? "Ensures trades execute even if price isn't discounted"
                                 : "Execute trades immediately without waiting for market conditions"
@@ -284,7 +269,7 @@ export function JobCreator({
                             max={10}
                             step={0.1}
                             unit="%"
-                            disabled={params.force}
+                            disabled={isForce}
                         />
                     </View>
 

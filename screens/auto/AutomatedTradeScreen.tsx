@@ -38,26 +38,21 @@ interface Coin {
 type NavigationProp = NativeStackNavigationProp<any>;
 
 const defaultDCAJobParams: DCAJobParams = {
-    source: 'mobile',
     coins: [],
     side: 'BUY',
     totalSteps: 10,
-    force: false,
     discountPct: 0.5,
-    randomnessPct: 0.1,
+    durationMinutes: 60,
     amount: 100,
 };
 
 const defaultLIQJobParams: LIQJobParams = {
-    source: 'mobile',
+    amount: 10,
     coins: [],
     side: 'SELL',
     totalSteps: 10,
-    force: false,
+    durationMinutes: 60,
     discountPct: 0.5,
-    randomnessPct: 0.1,
-    excludeCoins: [],
-    proportionPct: 100,
 };
 
 export const TooltipContext = createContext<{
