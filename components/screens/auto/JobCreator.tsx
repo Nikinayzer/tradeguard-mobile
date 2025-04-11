@@ -5,97 +5,53 @@ import {
     StyleSheet,
     TouchableOpacity,
     TextInput,
-    Modal,
-    Pressable,
     ScrollView,
     Animated,
     Image
 } from 'react-native';
-import {DollarSign, Percent, Info, AlertCircle, ArrowDown, Plus, Minus, SlidersHorizontal, X, ChevronRight} from 'lucide-react-native';
-import Slider from '@react-native-community/slider';
+import {
+    DollarSign,
+    Percent,
+    ArrowDown,
+    Plus,
+    X
+} from 'lucide-react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {setJobType, setJobParams, setSelectedCoins} from '@/services/redux/slices/jobStateSlice'; // Redux actions
+import {RootState} from '@/services/redux/store';
 import {JobStrategy, DCAJobParams, LIQJobParams, JobParams} from '@/services/api/auto';
 import {CoinSelector} from '@/components';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SliderInput } from '@/components/common/SliderInput';
-import { TooltipContext } from '@/screens/auto/AutomatedTradeScreen';
-import { Tooltip } from '@/components/common/Tooltip';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SliderInput} from '@/components/common/SliderInput';
+import {TooltipContext} from '@/screens/auto/AutomatedTradeScreen';
+import {Tooltip} from '@/components/common/Tooltip';
 
-interface Coin {
-    symbol: string;
-    name: string;
-    icon: string;
-    price: string;
-    change24h: string;
-    isPositive: boolean;
-}
-
-interface JobCreatorProps {
-    jobType: JobStrategy;
-    onJobTypeChange: (type: JobStrategy) => void;
-    onUpdateParams: (params: JobParams) => void;
-    params: JobParams;
-    selectedCoins: Coin[];
-    onSelectCoin: (coin: Coin) => void;
-}
-
-interface NumberInputProps {
-    label: string;
-    value: number;
-    onChange: (value: number) => void;
-    min: number;
-    max: number;
-    step: number;
-    unit?: string;
-    icon?: React.ReactNode;
-    tooltip?: string;
-    disabled?: boolean;
-}
-
-interface ToggleProps {
-    label: string;
-    value: boolean;
-    onChange: (value: boolean) => void;
-    tooltip?: string;
-}
-
-interface SliderLabelProps {
-    label: string;
-    icon?: React.ReactNode;
-    tooltip?: string;
-}
-
-function SliderLabel({ label, icon, tooltip }: SliderLabelProps) {
+function SliderLabel({label, icon, tooltip}: SliderLabelProps) {
     return (
-            <View style={styles.inputLabelRow}>
-                <View style={styles.labelContainer}>
-                {icon && <View style={styles.inputIcon}>{React.cloneElement(icon as React.ReactElement, { size: 20 })}</View>}
-                    <Text style={styles.inputLabel}>{label}</Text>
+        <View style={styles.inputLabelRow}>
+            <View style={styles.labelContainer}>
+                {icon &&
+                    <View style={styles.inputIcon}>{React.cloneElement(icon as React.ReactElement, {size: 20})}</View>}
+                <Text style={styles.inputLabel}>{label}</Text>
             </View>
-            {tooltip && <Tooltip content={tooltip} position="right" size={36} />}
+            {tooltip && <Tooltip content={tooltip} position="right" size={36}/>}
         </View>
     );
 }
 
-export function JobCreator({
-                               jobType,
-                               onJobTypeChange,
-                               params,
-                               onUpdateParams,
-                               selectedCoins,
-                               onSelectCoin
-                           }: JobCreatorProps) {
+export function JobCreator() {
     const {activeTooltipId, setActiveTooltipId} = useContext(TooltipContext);
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
-    const handleUpdateParams = (newParams: Record<string, any>) => {
-        onUpdateParams({...params, ...newParams} as JobParams);
-    };
+    const dispatch = useDispatch();
+    const {jobType, jobParams, selectedCoins} = useSelector((state: RootState) => state.job);
 
     const isDCA = jobType === 'DCA';
-    const [isForce, setForce] = useState(false)
-    const dcaParams = params as DCAJobParams;
-    const liqParams = params as LIQJobParams;
+    const [isForce, setForce] = useState(false);
+
+    const dcaParams = jobParams as DCAJobParams;
+    const liqParams = jobParams as LIQJobParams;
 
     const [tabPosition] = useState(new Animated.Value(isDCA ? 0 : 1));
 
@@ -117,205 +73,158 @@ export function JobCreator({
         outputRange: ['#748CAB', 'white']
     });
 
+    const handleJobTypeChange = (type: JobStrategy) => {
+        dispatch(setJobType(type));
+    };
+
+
+    const handleUpdateParams = (key: keyof JobParams, value: any) => {
+        const updatedJobParams = {...jobParams, [key]: value};
+        dispatch(setJobParams(updatedJobParams));
+    };
+
     const handleOpenCoinSelector = () => {
-        navigation.navigate('CoinSelector', {
-            selectedCoins,
-            mode: jobType,
-            onCoinsSelected: (coins: Coin[]) => {
-                // Update selected coins in the parent component
-                coins.forEach(coin => onSelectCoin(coin));
-            },
-        });
+        navigation.navigate('CoinSelector');
     };
 
     const handleRemoveCoin = (coin: Coin) => {
-        onSelectCoin(coin);
+        const updatedSelectedCoins = selectedCoins.filter(c => c.symbol !== coin.symbol);
+        dispatch(setSelectedCoins(updatedSelectedCoins)); // Dispatch the updated selected coins to Redux
     };
 
     return (
         <View style={styles.container}>
-                {/* Type Selector Header */}
-                <View style={styles.typeSelector}>
-                    <Animated.View style={[styles.tabSelector, {
-                        left: tabPosition.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: ['0%', '50%']
-                        }),
-                    }]}/>
+            {/* Type Selector Header */}
+            <View style={styles.typeSelector}>
+                <Animated.View style={[styles.tabSelector, {
+                    left: tabPosition.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0%', '50%']
+                    }),
+                }]}/>
 
-                    <TouchableOpacity
-                        style={styles.tabButton}
-                        onPress={() => onJobTypeChange('DCA')}
-                    >
-                        <Animated.Text style={[styles.tabText, {color: leftTextColor}]}>
-                            Dollar Cost Average
-                        </Animated.Text>
-                    </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.tabButton}
+                    onPress={() => handleJobTypeChange('DCA')}
+                >
+                    <Animated.Text style={[styles.tabText, {color: leftTextColor}]}>
+                        Dollar Cost Average
+                    </Animated.Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.tabButton}
-                        onPress={() => onJobTypeChange('LIQ')}
-                    >
-                        <Animated.Text style={[styles.tabText, {color: rightTextColor}]}>
-                            Liquidation Protection
-                        </Animated.Text>
-                    </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.tabButton}
+                    onPress={() => handleJobTypeChange('LIQ')}
+                >
+                    <Animated.Text style={[styles.tabText, {color: rightTextColor}]}>
+                        Liquidation Protection
+                    </Animated.Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.contentContainer}>
+                {/* Strategy Description */}
+                <View style={styles.strategyDescription}>
+                    <DollarSign size={18} color="#3B82F6" style={{marginRight: 8}}/>
+                    <Text style={styles.descriptionText}>
+                        {isDCA
+                            ? "Split your investment into smaller portions over time to reduce the impact of volatility"
+                            : "Protect your assets from market downturns by selling in smaller portions"
+                        }
+                    </Text>
                 </View>
 
-            <View
-                    style={styles.contentContainer}
-                    onStartShouldSetResponder={() => {
-                        setActiveTooltipId(null);
-                        return false;
-                    }}
-                >
-                    {/* Strategy Description */}
-                    <View style={styles.strategyDescription}>
-                        <SlidersHorizontal size={18} color="#3B82F6" style={{marginRight: 8}}/>
-                        <Text style={styles.descriptionText}>
-                            {isDCA
-                                ? "Split your investment into smaller portions over time to reduce the impact of volatility"
-                                : "Protect your assets from market downturns by selling in smaller portions"
-                            }
-                        </Text>
-                    </View>
+                {/* Core Parameters */}
+                <View style={styles.parameterSection}>
+                    <Text style={styles.sectionTitle}>Parameters</Text>
 
-                    {/* Core Parameters */}
-                    <View style={styles.parameterSection}>
-                        <Text style={styles.sectionTitle}>Parameters</Text>
-
-                        {isDCA ? (
-                            <>
+                    {isDCA ? (
+                        <>
                             <SliderLabel
-                                    label="Total Amount"
+                                label="Total Amount"
                                 icon={<DollarSign size={16} color="#3B82F6"/>}
                                 tooltip="Total funds to use for this strategy"
                             />
                             <SliderInput
-                                    value={dcaParams.amount}
-                                onChange={(value) => handleUpdateParams({amount: value})}
-                                    min={10}
-                                    max={10000}
-                                    step={10}
-                                    unit=" USDT"
-                                disabled={false}
-                                />
+                                value={dcaParams.amount}
+                                onChange={(value) => handleUpdateParams('amount', value)}
+                                min={10}
+                                max={10000}
+                                step={10}
+                                unit=" USDT"
+                            />
 
                             <SliderLabel
-                                    label="Total Steps"
+                                label="Total Steps"
                                 icon={<ArrowDown size={16} color="#3B82F6"/>}
                                 tooltip="Number of separate buy operations"
                             />
                             <SliderInput
-                                    value={dcaParams.totalSteps}
-                                onChange={(value) => handleUpdateParams({totalSteps: value})}
-                                    min={2}
-                                    max={50}
-                                    step={1}
-                                disabled={false}
-                                />
-                            </>
-                        ) : (
-                            <>
+                                value={dcaParams.totalSteps}
+                                onChange={(value) => handleUpdateParams('totalSteps', value)}
+                                min={2}
+                                max={50}
+                                step={1}
+                            />
+                        </>
+                    ) : (
+                        <>
                             <SliderLabel
-                                    label="Proportion"
+                                label="Proportion"
                                 icon={<Percent size={16} color="#3B82F6"/>}
                                 tooltip="Percentage of your portfolio to include in this strategy"
                             />
                             <SliderInput
-                                    value={liqParams.amount}
-                                onChange={(value) => handleUpdateParams({amount: value})}
-                                    min={1}
-                                    max={100}
-                                    step={1}
-                                    unit="%"
-                                disabled={false}
-                                />
+                                value={liqParams.amount}
+                                onChange={(value) => handleUpdateParams('amount', value)}
+                                min={1}
+                                max={100}
+                                step={1}
+                                unit="%"
+                            />
 
                             <SliderLabel
-                                    label="Total Steps"
+                                label="Total Steps"
                                 icon={<ArrowDown size={16} color="#3B82F6"/>}
                                 tooltip="Number of separate sell operations"
                             />
                             <SliderInput
-                                    value={liqParams.totalSteps}
-                                onChange={(value) => handleUpdateParams({totalSteps: value})}
-                                    min={2}
-                                    max={50}
-                                    step={1}
-                                disabled={false}
-                                />
-                            </>
-                        )}
-                        <Toggle
-                            label="Force Entry"
-                            value={isForce}
-                            onChange={(value) => setForce(value)}
-                            tooltip={isDCA
-                                ? "Ensures trades execute even if price isn't discounted"
-                                : "Execute trades immediately without waiting for market conditions"
-                            }
-                        />
+                                value={liqParams.totalSteps}
+                                onChange={(value) => handleUpdateParams('totalSteps', value)}
+                                min={2}
+                                max={50}
+                                step={1}
+                            />
+                        </>
+                    )}
+
+                    <Toggle
+                        label="Force Entry"
+                        value={isForce}
+                        onChange={(value) => setForce(value)}
+                        tooltip={isDCA
+                            ? "Ensures trades execute even if price isn't discounted"
+                            : "Execute trades immediately without waiting for market conditions"
+                        }
+                    />
 
                     <SliderLabel
-                            label="Discount Percentage"
+                        label="Discount Percentage"
                         icon={<Percent size={16} color="#3B82F6"/>}
                         tooltip="Price discount target for each transaction"
                     />
                     <SliderInput
-                            value={params.discountPct}
-                        onChange={(value) => handleUpdateParams({discountPct: value})}
-                            min={0}
-                            max={10}
-                            step={0.1}
-                            unit="%"
-                            disabled={isForce}
-                        />
-                    </View>
-
-                {/* Selected Coins Section */}
-                <View style={styles.selectedCoinsSection}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Selected Coins</Text>
-                        <TouchableOpacity
-                            style={styles.addButton}
-                            onPress={handleOpenCoinSelector}
-                        >
-                            <Plus size={20} color="#3B82F6" />
-                            <Text style={styles.addButtonText}>Add Coins</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {selectedCoins.length > 0 ? (
-                        <ScrollView 
-                            style={styles.selectedCoinsList}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            {selectedCoins.map((coin) => (
-                                <TouchableOpacity
-                                    key={coin.symbol}
-                                    style={styles.selectedCoinItem}
-                                    onPress={() => handleRemoveCoin(coin)}
-                                >
-                                    <View style={styles.coinInfo}>
-                                        <Image source={{ uri: coin.icon }} style={styles.coinIcon} />
-                                        <View style={styles.coinTexts}>
-                                            <Text style={styles.coinName}>{coin.name}</Text>
-                                            <Text style={styles.coinSymbol}>{coin.symbol}</Text>
-                                        </View>
-                                    </View>
-                                    <X size={20} color="#748CAB" />
-                                </TouchableOpacity>
-                            ))}
-                </ScrollView>
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyStateText}>
-                                Tap the button above to select coins
-                            </Text>
-                        </View>
-                    )}
+                        value={jobParams.discountPct}
+                        onChange={(value) => handleUpdateParams('discountPct', value)}
+                        min={0}
+                        max={10}
+                        step={0.1}
+                        unit="%"
+                        disabled={isForce}
+                    />
                 </View>
+
+                <CoinSelector/>
             </View>
         </View>
     );
@@ -330,7 +239,7 @@ function Toggle({label, value, onChange, tooltip}: ToggleProps) {
         >
             <View style={styles.toggleLabelContainer}>
                 <Text style={styles.toggleLabel}>{label}</Text>
-                {tooltip && <Tooltip content={tooltip} position="left" size={32} />}
+                {tooltip && <Tooltip content={tooltip} position="left" size={32}/>}
             </View>
 
             <View
@@ -338,7 +247,7 @@ function Toggle({label, value, onChange, tooltip}: ToggleProps) {
             >
                 <View style={[styles.toggleHandle, value ? styles.toggleHandleActive : styles.toggleHandleInactive]}/>
             </View>
-            </TouchableOpacity>
+        </TouchableOpacity>
     );
 }
 
@@ -639,4 +548,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-}); 
+});

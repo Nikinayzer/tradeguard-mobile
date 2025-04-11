@@ -24,6 +24,8 @@ import * as Notifications from 'expo-notifications';
 import {Platform, SafeAreaView, View} from 'react-native';
 import Constants from "expo-constants";
 import {PushTokenProvider, usePushToken} from "@/contexts/PushTokenContext";
+import {Provider} from "react-redux";
+import {store} from "@/services/redux/store";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -71,6 +73,7 @@ function Navigation() {
         </Stack.Navigator>
     );
 }
+
 const linking: LinkingOptions<RootStackParamList> = {
     prefixes: [
         Linking.createURL('/'),
@@ -173,13 +176,15 @@ export default function App() {
             {showSplash ? (
                 <CustomSplashScreen/>
             ) : (
-                <PushTokenProvider>
-                    <AuthProvider>
-                        <NavigationContainer linking={linking}>
-                            <Navigation/>
-                        </NavigationContainer>
-                    </AuthProvider>
-                </PushTokenProvider>
+                <Provider store={store}>
+                    <PushTokenProvider>
+                        <AuthProvider>
+                            <NavigationContainer linking={linking}>
+                                <Navigation/>
+                            </NavigationContainer>
+                        </AuthProvider>
+                    </PushTokenProvider>
+                </Provider>
             )}
         </SafeAreaProvider>
     );

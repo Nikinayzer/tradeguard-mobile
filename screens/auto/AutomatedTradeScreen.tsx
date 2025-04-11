@@ -25,6 +25,9 @@ import {Bot, History} from 'lucide-react-native';
 import {ScreenHeader} from "@/components/screens/portfolio/ScreenHeader";
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {useDispatch, useSelector} from "react-redux";
+import {RootState} from "@/services/redux/store";
+import {setSelectedCoins} from "@/services/redux/slices/jobStateSlice";
 
 interface Coin {
     symbol: string;
@@ -67,11 +70,14 @@ export default function AutomatedTradeScreen() {
     const navigation = useNavigation<NavigationProp>();
     const [jobType, setJobType] = useState<JobStrategy>('DCA');
     const [jobs, setJobs] = useState<Job[]>([]);
-    const [selectedCoins, setSelectedCoins] = useState<Coin[]>([]);
     const [jobParams, setJobParams] = useState<JobParams>(defaultDCAJobParams);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lastUpdated, setLastUpdated] = useState("Now");
+
+    const dispatch = useDispatch();
+    //const { jobType, jobParams, selectedCoins } = useSelector((state: RootState) => state.job);
+    const { selectedCoins } = useSelector((state: RootState) => state.job);
 
     // DUPLICATE, REFACTOR
     const [notificationVisible, setNotificationVisible] = useState(false);
@@ -127,22 +133,6 @@ export default function AutomatedTradeScreen() {
         fetchJobs();
     }, []);
 
-    const handleJobTypeChange = (type: JobStrategy) => {
-        setJobType(type);
-        setJobParams(type === 'DCA' ? defaultDCAJobParams : defaultLIQJobParams);
-        setSelectedCoins([]);
-    };
-
-    const handleCoinSelection = (coin: Coin) => {
-        setSelectedCoins(prev => {
-            const isSelected = prev.some(c => c.symbol === coin.symbol);
-            if (isSelected) {
-                return prev.filter(c => c.symbol !== coin.symbol);
-            }
-            return [...prev, coin];
-        });
-    };
-
     const handleJobComplete = async () => {
         if (!jobParams || selectedCoins.length === 0) {
             showNotification(
@@ -173,9 +163,8 @@ export default function AutomatedTradeScreen() {
                 'Job Created',
                 `Your ${jobType} job was successfully created`
             );
+            dispatch(setSelectedCoins([])); //resetting only coins, assuming user doesnt want to open multiple jobs atm with same coins
 
-            setSelectedCoins([]);
-            setJobParams(jobType === 'DCA' ? defaultDCAJobParams : defaultLIQJobParams);
             await fetchJobs();
         } catch (err) {
             console.error('Error creating job:', err);
@@ -279,14 +268,7 @@ export default function AutomatedTradeScreen() {
                         onButtonPress={closeNotification}
                     />
 
-                    <JobCreator
-                        jobType={jobType}
-                        onJobTypeChange={handleJobTypeChange}
-                        params={jobParams}
-                        onUpdateParams={setJobParams}
-                        selectedCoins={selectedCoins}
-                        onSelectCoin={handleCoinSelection}
-                    />
+                    <JobCreator/>
 
                     {selectedCoins.length > 0 && (
                         <TouchableOpacity
@@ -319,7 +301,7 @@ export default function AutomatedTradeScreen() {
                         >
                             <History size={16} color="#748CAB"/>
                             <Text style={styles.tabText}>
-                                History ({finishedJobs.length})
+                                History
                             </Text>
                         </TouchableOpacity>
                     </View>

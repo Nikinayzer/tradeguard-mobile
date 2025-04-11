@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { 
-    View, 
-    StyleSheet, 
+import {
+    View,
+    StyleSheet,
     FlatList,
     Text,
     TouchableOpacity,
@@ -10,13 +10,15 @@ import {
     Platform
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Check, ChevronLeft, AlertCircle } from 'lucide-react-native';
 import { SearchBar } from '@/components/common/SearchBar';
 import { useMarketData } from '@/hooks/useMarketData';
-import type { Coin as MarketCoin } from '@/services/MarketDataManager';
+import { setSelectedCoins } from '@/services/redux/slices/jobStateSlice';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+// Define SimpleCoin type
 interface SimpleCoin {
     symbol: string;
     name: string;
@@ -26,23 +28,14 @@ interface SimpleCoin {
     isPositive: boolean;
 }
 
-type CoinSelectorScreenRouteProp = RouteProp<{
-    CoinSelector: {
-        selectedCoins: SimpleCoin[];
-        mode: 'DCA' | 'LIQ';
-        onCoinsSelected: (coins: SimpleCoin[]) => void;
-    }
-}, 'CoinSelector'>;
+// type CoinSelectorScreenRouteProp = RouteProp<{
+//     CoinSelector: {
+//         selectedCoins: SimpleCoin[];
+//         mode: 'DCA' | 'LIQ';
+//     }
+// }, 'CoinSelector'>;
 
-const CoinItem = React.memo(({ 
-    coin, 
-    isSelected, 
-    onPress 
-}: { 
-    coin: SimpleCoin;
-    isSelected: boolean;
-    onPress: () => void;
-}) => (
+const CoinItem = React.memo(({ coin, isSelected, onPress }: { coin: SimpleCoin; isSelected: boolean; onPress: () => void; }) => (
     <TouchableOpacity
         style={[styles.coinItem, isSelected && styles.selectedCoin]}
         onPress={onPress}
@@ -55,17 +48,12 @@ const CoinItem = React.memo(({
                 <Text style={styles.coinSymbol}>{coin.symbol}</Text>
             </View>
         </View>
-
         <View style={styles.priceInfo}>
             <Text style={styles.priceText}>{coin.price}</Text>
-            <Text style={[
-                styles.changeText,
-                coin.isPositive ? styles.positiveChange : styles.negativeChange
-            ]}>
+            <Text style={[styles.changeText, coin.isPositive ? styles.positiveChange : styles.negativeChange]}>
                 {coin.change24h}
             </Text>
         </View>
-
         {isSelected && (
             <View style={styles.checkmark}>
                 <Check size={16} color="white" />
@@ -78,11 +66,12 @@ export default function CoinSelectorScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const route = useRoute<CoinSelectorScreenRouteProp>();
     const insets = useSafeAreaInsets();
+    const dispatch = useDispatch();
     const { marketData, isLoading, error } = useMarketData();
+    const selectedCoins = useSelector((state: any) => state.job.selectedCoins);
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCoins, setSelectedCoins] = useState<SimpleCoin[]>(route.params.selectedCoins);
 
-    const convertToSimpleCoin = useCallback((coin: MarketCoin): SimpleCoin => ({
+    const convertToSimpleCoin = useCallback((coin: any) => ({
         symbol: coin.symbol,
         name: coin.name,
         icon: coin.icon,
@@ -98,31 +87,28 @@ export default function CoinSelectorScreen() {
             .map(convertToSimpleCoin);
 
         const query = searchQuery.toLowerCase();
-        return allCoins.filter(coin => 
-            coin.symbol.toLowerCase().includes(query) || 
+        return allCoins.filter(coin =>
+            coin.symbol.toLowerCase().includes(query) ||
             coin.name.toLowerCase().includes(query)
         );
     }, [marketData, searchQuery, convertToSimpleCoin]);
 
     const handleCoinPress = useCallback((coin: SimpleCoin) => {
-        setSelectedCoins(prev => {
-            const isSelected = prev.some(c => c.symbol === coin.symbol);
-            if (isSelected) {
-                return prev.filter(c => c.symbol !== coin.symbol);
-            }
-            return [...prev, coin];
-        });
-    }, []);
+        const newSelectedCoins = selectedCoins.some((c: any) => c.symbol === coin.symbol)
+            ? selectedCoins.filter((c: any) => c.symbol !== coin.symbol)
+            : [...selectedCoins, coin];
+
+        dispatch(setSelectedCoins(newSelectedCoins));  // Update Redux state
+    }, [selectedCoins, dispatch]);
 
     const handleConfirm = useCallback(() => {
-        route.params.onCoinsSelected(selectedCoins);
-        navigation.goBack();
-    }, [selectedCoins, route.params, navigation]);
+        navigation.goBack();  // Go back after confirming selection
+    }, [navigation]);
 
     const renderItem = useCallback(({ item }: { item: SimpleCoin }) => (
         <CoinItem
             coin={item}
-            isSelected={selectedCoins.some(c => c.symbol === item.symbol)}
+            isSelected={selectedCoins.some((c: any) => c.symbol === item.symbol)}
             onPress={() => handleCoinPress(item)}
         />
     ), [selectedCoins, handleCoinPress]);
@@ -132,7 +118,7 @@ export default function CoinSelectorScreen() {
             <AlertCircle size={24} color="#748CAB" />
             <Text style={styles.emptyStateTitle}>No Coins Found</Text>
             <Text style={styles.emptyStateMessage}>
-                {searchQuery 
+                {searchQuery
                     ? 'Try adjusting your search'
                     : 'No coins available for selection'}
             </Text>
@@ -143,7 +129,7 @@ export default function CoinSelectorScreen() {
         <View style={[styles.container, { paddingTop: insets.top }]}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.backButton}
                     onPress={navigation.goBack}
                 >
@@ -191,7 +177,7 @@ export default function CoinSelectorScreen() {
 
             {/* Floating Action Button */}
             {selectedCoins.length > 0 && (
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={[styles.confirmButton, { marginBottom: insets.bottom + 16 }]}
                     onPress={handleConfirm}
                 >
@@ -374,4 +360,4 @@ const styles = StyleSheet.create({
         marginTop: 4,
         textAlign: 'center',
     },
-}); 
+});
