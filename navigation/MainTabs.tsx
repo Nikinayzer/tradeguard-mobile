@@ -19,8 +19,8 @@ import JobDetailScreen from "../screens/auto/JobDetailScreen";
 import JobListScreen from "../screens/auto/JobListScreen";
 import CoinSelectorScreen from "../screens/auto/CoinSelectorScreen";
 import PersonalInfoScreen from '../screens/settings/PersonalInfoScreen';
-import ExchangeAccountScreen from '../screens/settings/ExchangeAccountScreen';
-import AddExchangeScreen from '../screens/settings/AddExchangeScreen';
+import ExchangeAccountScreen from '../screens/profile/ExchangeAccountScreen';
+import AddExchangeScreen from '../screens/profile/AddExchangeScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
