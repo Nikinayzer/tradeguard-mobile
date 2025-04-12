@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
         getById: (id: string) => `/jobs/${id}`,
         getJobEventsById: (id: string) => `/jobs/${id}/events`,
         pause: (id: string) => `/jobs/${id}/pause`,
+        stop: (id: string) => `/jobs/${id}/stop`,
         resume: (id: string) => `/jobs/${id}/resume`,
         cancel: (id: string) => `/jobs/${id}/cancel`,
     },

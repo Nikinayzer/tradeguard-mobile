@@ -1,29 +1,21 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-    View,
-    StyleSheet,
-    Text,
-    FlatList,
-    TouchableOpacity,
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView
+import React, {useEffect, useMemo, useState} from 'react';
+import {ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Bot, History, ArrowDown, ArrowUp, Filter, SortAsc, SortDesc } from 'lucide-react-native';
-import { JobCard } from '@/components/screens/auto/JobCard';
-import { autoService, Job } from '@/services/api/auto';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {Bot, ChevronLeft, Filter, History, SortAsc, SortDesc} from 'lucide-react-native';
+import {JobCard} from '@/components/screens/auto/JobCard';
+import {autoService, Job} from '@/services/api/auto';
+import {usePullToRefresh} from '@/hooks/usePullToRefresh';
 import NotificationModal from '@/components/modals/NotificationModal';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SearchBar } from '@/components/common/SearchBar';
+import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SearchBar} from '@/components/common/SearchBar';
 
 type JobListScreenRouteProp = RouteProp<{
     JobList: { initialTab: 'active' | 'finished' };
 }, 'JobList'>;
 
-type SortField = 'createdAt' | 'updatedAt' | 'jobId' | 'strategy' | 'status';
+type SortField = 'createdAt' | 'updatedAt' | 'id' | 'strategy' | 'status';
 type SortOrder = 'asc' | 'desc';
 
 interface SortConfig {
@@ -63,7 +55,6 @@ export default function JobListScreen() {
         }
     });
 
-    // Helper function to show notifications
     const showNotification = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
         setNotificationType(type);
         setNotificationTitle(title);
@@ -140,8 +131,8 @@ export default function JobListScreen() {
         }
     };
 
-    const handleViewJobDetails = (jobId: number) => {
-        navigation.navigate('JobDetail', { jobId });
+    const handleViewJobDetails = (id: string) => {
+        navigation.navigate('JobDetail', { id: id });
     };
 
     const handleSort = (field: SortField) => {
@@ -177,8 +168,8 @@ export default function JobListScreen() {
             let comparison = 0;
 
             switch (field) {
-                case 'jobId':
-                    comparison = a.jobId - b.jobId;
+                case 'id':
+                    comparison = Number(a.id) - Number(b.id);
                     break;
                 case 'strategy':
                     comparison = a.strategy.localeCompare(b.strategy);
@@ -200,32 +191,17 @@ export default function JobListScreen() {
         });
     }, [jobs, activeTab, searchQuery, sortConfig]);
 
-    const renderActiveJob = ({item}: { item: Job }) => (
+    const renderJob = ({item}: { item: Job }) => (
         <JobCard
-            key={item.jobId}
+            key={item.id}
             job={item}
-            onToggle={() => handleToggleJob(item.jobId)}
-            onDelete={() => handleDeleteJob(item.jobId)}
-            onStop={() => handleStopJob(item.jobId)}
-            onViewDetails={() => handleViewJobDetails(item.jobId)}
-            compact={true}
-        />
-    );
-
-    const renderFinishedJob = ({item}: { item: Job }) => (
-        <JobCard
-            key={item.jobId}
-            job={item}
-            isFinished={true}
-            onViewDetails={() => handleViewJobDetails(item.jobId)}
-            compact={true}
+            onViewDetails={() => handleViewJobDetails(item.id)}
         />
     );
 
     const renderSortButton = (field: SortField, label: string) => {
         const isActive = sortConfig.field === field;
-        const icon = isActive && sortConfig.order === 'desc' ? SortDesc : SortAsc;
-        const Icon = icon;
+        const Icon = isActive && sortConfig.order === 'desc' ? SortDesc : SortAsc;
         
         return (
             <TouchableOpacity
@@ -304,7 +280,7 @@ export default function JobListScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.sortButtonsContainer}
                     >
-                        {renderSortButton('jobId', 'ID')}
+                        {renderSortButton('id', 'ID')}
                         {renderSortButton('strategy', 'Strategy')}
                         {renderSortButton('status', 'Status')}
                         {renderSortButton('createdAt', 'Created')}
@@ -315,7 +291,7 @@ export default function JobListScreen() {
 
             <FlatList
                 data={filteredAndSortedJobs}
-                renderItem={activeTab === 'active' ? renderActiveJob : renderFinishedJob}
+                renderItem={renderJob}
                 keyExtractor={item => item.jobId.toString()}
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={

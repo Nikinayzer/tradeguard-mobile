@@ -1,42 +1,23 @@
 import React, {useState, useEffect, useMemo, createContext} from 'react';
 import {
-    View,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    ActivityIndicator,
-    ScrollView,
+    View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, ScrollView,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {JobCreator} from '@/components/screens/auto/JobCreator';
 import {JobCard} from '@/components/screens/auto/JobCard';
 import {
-    autoService,
-    Job,
-    JobStrategy,
-    JobParams,
-    DCAJobParams,
-    LIQJobParams,
+    autoService, Job, JobStrategy, JobParams, DCAJobParams, LIQJobParams,
 } from '@/services/api/auto';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
 import NotificationModal from '@/components/modals/NotificationModal';
 import {RefreshControl} from 'react-native';
 import {Bot, History} from 'lucide-react-native';
 import {ScreenHeader} from "@/components/screens/portfolio/ScreenHeader";
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "@/services/redux/store";
 import {setSelectedCoins} from "@/services/redux/slices/jobStateSlice";
-
-interface Coin {
-    symbol: string;
-    name: string;
-    icon: string;
-    price: string;
-    change24h: string;
-    isPositive: boolean;
-}
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -49,15 +30,6 @@ const defaultDCAJobParams: DCAJobParams = {
     amount: 100,
 };
 
-const defaultLIQJobParams: LIQJobParams = {
-    amount: 10,
-    coins: [],
-    side: 'SELL',
-    totalSteps: 10,
-    durationMinutes: 60,
-    discountPct: 0.5,
-};
-
 export const TooltipContext = createContext<{
     activeTooltipId: string | null;
     setActiveTooltipId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -68,16 +40,15 @@ export const TooltipContext = createContext<{
 
 export default function AutomatedTradeScreen() {
     const navigation = useNavigation<NavigationProp>();
-    const [jobType, setJobType] = useState<JobStrategy>('DCA');
+    const [jobType, setJobType] = useState<JobStrategy>('DCA'); //todo
     const [jobs, setJobs] = useState<Job[]>([]);
-    const [jobParams, setJobParams] = useState<JobParams>(defaultDCAJobParams);
+    const [jobParams, setJobParams] = useState<JobParams>(defaultDCAJobParams); //todo
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lastUpdated, setLastUpdated] = useState("Now");
 
     const dispatch = useDispatch();
-    //const { jobType, jobParams, selectedCoins } = useSelector((state: RootState) => state.job);
-    const { selectedCoins } = useSelector((state: RootState) => state.job);
+    const {selectedCoins} = useSelector((state: RootState) => state.job);
 
     // DUPLICATE, REFACTOR
     const [notificationVisible, setNotificationVisible] = useState(false);
@@ -86,12 +57,12 @@ export default function AutomatedTradeScreen() {
     const [notificationMessage, setNotificationMessage] = useState('');
 
     const activeJobs = useMemo(() =>
-        jobs.filter(job => job.status === 'IN_PROGRESS' || job.status === 'PAUSED'),
+            jobs.filter(job => job.status === 'IN_PROGRESS' || job.status === 'PAUSED'),
         [jobs]
     );
 
     const finishedJobs = useMemo(() =>
-        jobs.filter(job => job.status === 'FINISHED' || job.status === 'CANCELED'),
+            jobs.filter(job => job.status === 'FINISHED' || job.status === 'CANCELED'),
         [jobs]
     );
 
@@ -178,60 +149,12 @@ export default function AutomatedTradeScreen() {
         }
     };
 
-    const handleToggleJob = async (jobId: number) => {
-        try {
-            const job = jobs.find(job => job.jobId === Number(jobId));
-            if (!job) return;
-
-            if (job.status === 'IN_PROGRESS') {
-                await autoService.pauseJob(job.id);
-                showNotification('info', 'Job Paused', 'Your job has been paused');
-            } else if (job.status === 'PAUSED') {
-                await autoService.resumeJob(job.id);
-                showNotification('success', 'Job Resumed', 'Your job is now running');
-            }
-
-            await fetchJobs();
-        } catch (err) {
-            console.error('Error toggling job:', err);
-            showNotification('error', 'Action Failed', 'Failed to update job status');
-        }
-    };
-
-    const handleDeleteJob = async (jobId: number) => {
-        try {
-            const job = jobs.find(j => j.jobId === Number(jobId));
-            if (!job) return;
-
-            await autoService.cancelJob(job.id);
-            showNotification('info', 'Job Cancelled', 'Your job has been cancelled');
-            await fetchJobs();
-        } catch (err) {
-            console.error('Error canceling job:', err);
-            showNotification('error', 'Action Failed', 'Failed to cancel job');
-        }
-    };
-
-    const handleStopJob = async (jobId: number) => {
-        try {
-            const job = jobs.find(j => j.jobId === Number(jobId));
-            if (!job) return;
-
-            await autoService.cancelJob(job.id);
-            showNotification('success', 'Job Stopped', 'Your job has been stopped and marked as completed');
-            await fetchJobs();
-        } catch (err) {
-            console.error('Error stopping job:', err);
-            showNotification('error', 'Action Failed', 'Failed to stop job');
-        }
-    };
-
-    const handleViewJobDetails = (jobId: number) => {
-        navigation.navigate('JobDetail', { jobId });
+    const handleViewJobDetails = (id: string) => {
+        navigation.navigate('JobDetail', {id});
     };
 
     const navigateToJobList = (initialTab: 'active' | 'finished' = 'active') => {
-        navigation.navigate('JobList', { initialTab });
+        navigation.navigate('JobList', {initialTab});
     };
 
     return (
@@ -242,8 +165,8 @@ export default function AutomatedTradeScreen() {
                     lastUpdated={lastUpdated}
                     onRefresh={handleRefresh}
                 />
-                
-                <ScrollView 
+
+                <ScrollView
                     style={styles.container}
                     refreshControl={
                         <RefreshControl
@@ -308,7 +231,7 @@ export default function AutomatedTradeScreen() {
 
                     {activeJobs.length > 0 ? (
                         <View style={styles.recentJobsSection}>
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 style={styles.sectionHeader}
                                 onPress={() => navigateToJobList('active')}
                             >
@@ -325,13 +248,9 @@ export default function AutomatedTradeScreen() {
 
                             {activeJobs.map(job => (
                                 <JobCard
-                                    key={job.jobId}
+                                    key={job.id}
                                     job={job}
-                                    onToggle={() => handleToggleJob(job.jobId)}
-                                    onDelete={() => handleDeleteJob(job.jobId)}
-                                    onStop={() => handleStopJob(job.jobId)}
-                                    onViewDetails={() => handleViewJobDetails(job.jobId)}
-                                    compact={true}
+                                    onViewDetails={() => handleViewJobDetails(job.id)}
                                 />
                             ))}
                         </View>

@@ -1,215 +1,45 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, Animated, FlatList, Pressable, ActivityIndicator, GestureResponderEvent} from 'react-native';
-import {
-    Clock,
-    DollarSign,
-    ChevronDown,
-    Pause,
-    Play,
-    X,
-    ArrowRight,
-    Coins,
-    StopCircle,
-    ChevronUp,
-    ListOrdered,
-    AlertTriangle,
-    ChevronRight
-} from 'lucide-react-native';
-import {autoService, Job, JobEvent, JobStatus} from '@/services/api/auto';
-import { formatDate, formatTimeAgo, formatDateTime as dateTimeFormat, getStatusColor, getStatusText, getEventColor, getEventText, getEventDescription, calculateRemainingTime } from './jobUtils';
+import React from 'react';
+import {View, Text, StyleSheet, TouchableOpacity,} from 'react-native';
+import {Clock, DollarSign, Coins} from 'lucide-react-native';
+import {Job} from '@/services/api/auto';
+import {formatDate, formatTimeAgo, getStatusColor, getStatusText, calculateRemainingTime
+} from './jobUtils';
 
 interface JobCardProps {
     job: Job;
-    onToggle?: () => void;
-    onDelete?: () => void;
-    onStop?: () => void;
-    onViewDetails?: (jobId: number) => void;
-    isFinished?: boolean;
-    compact?: boolean;
+    onViewDetails?: (id: string) => void;
 }
 
-function formatDateTime(dateString: string): string {
-    const date = new Date(dateString);
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = months[date.getMonth()];
-    const day = date.getDate();
-    const year = date.getFullYear();
-
-    let hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-
-    return `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
-}
-
-function BaseJobCard({job, children, compact = false, onPress}: { 
-    job: Job, 
-    children?: React.ReactNode, 
-    compact?: boolean,
-    onPress?: () => void 
-}) {
-    const [showSteps, setShowSteps] = useState(false);
-    const [jobEvents, setJobEvents] = useState<JobEvent[]>([]);
-    const [isLoadingEvents, setIsLoadingEvents] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export function JobCard({ job, onViewDetails = undefined}: JobCardProps) {
+    const handleCardPress = () => {
+        if (onViewDetails) {
+            onViewDetails(job.id);
+        }
+    };
 
     const progressPercentage = (job.stepsDone / job.stepsTotal) * 100;
-
     const formattedCreatedAt = formatDate(job.createdAt);
     const timeAgo = formatTimeAgo(job.updatedAt);
 
-    const [animation] = useState(new Animated.Value(0));
-
-    const toggleSteps = async () => {
-        if (!showSteps && jobEvents.length === 0) {
-            await fetchJobEvents();
-        }
-
-        Animated.timing(animation, {
-            toValue: showSteps ? 0 : 1,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-
-        setShowSteps(!showSteps);
-    };
-
-    const fetchJobEvents = async () => {
-        try {
-            setIsLoadingEvents(true);
-            setError(null);
-
-            const events = await autoService.getJobEvents(job.jobId.toString());
-            setJobEvents(events);
-        } catch (err) {
-            console.error('Error fetching job events:', err);
-            setError('Failed to load job events');
-        } finally {
-            setIsLoadingEvents(false);
-        }
-    };
-
-    const maxHeight = animation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 400], //max height of collapsible
-    });
-
-    if (compact) {
-        return (
-            <TouchableOpacity 
-                style={[styles.container, styles.compactContainer]} 
-                activeOpacity={0.7}
-                onPress={onPress}
-            >
-                <View style={styles.header}>
-                    <View style={styles.strategyContainer}>
-                        <View
-                            style={[styles.strategyBadge, {backgroundColor: job.strategy === 'DCA' ? '#3B82F6' : '#8B5CF6'}]}>
-                            <Text style={styles.strategyText}>{job.strategy}</Text>
-                        </View>
-                        <Text style={styles.jobIdText}>#{job.jobId}</Text>
-
-                        <View style={[styles.sideBadge, {backgroundColor: job.side === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(248, 113, 113, 0.2)'}]}>
-                            <Text style={[styles.sideText, {color: job.side === 'BUY' ? '#10B981' : '#F87171'}]}>
-                                {job.side}
-                            </Text>
-                        </View>
-                    </View>
-
-                    <View style={[styles.statusBadge, {backgroundColor: getStatusColor(job.status)}]}>
-                        <Text style={styles.statusText}>{getStatusText(job.status)}</Text>
-                    </View>
-                </View>
-
-                <View style={styles.progressContainer}>
-                    <View style={styles.progressBackground}>
-                        <View
-                            style={[
-                                styles.progressFill,
-                                {
-                                    width: `${progressPercentage}%`,
-                                    backgroundColor: getStatusColor(job.status)
-                                }
-                            ]}
-                        />
-                    </View>
-                    <Text style={styles.progressText}>
-                        {job.stepsDone} of {job.stepsTotal} steps completed
-                    </Text>
-                </View>
-
-                <View style={styles.infoColumns}>
-                    {/* Left column */}
-                    <View style={styles.infoColumn}>
-                        <View style={styles.infoRow}>
-                            <Coins size={14} color="#748CAB"/>
-                            <Text style={styles.infoLabelHighlight}>Coins:</Text>
-                            <Text style={styles.infoValueHighlight} numberOfLines={1} ellipsizeMode="tail">
-                                {job.coins.join(', ')}
-                            </Text>
-                        </View>
-                        
-                        <View style={styles.infoRow}>
-                            <Clock size={14} color="#748CAB"/>
-                            <Text style={styles.infoLabel}>Created:</Text>
-                            <Text style={styles.infoValue}>{formattedCreatedAt}</Text>
-                        </View>
-                    </View>
-                    
-                    {/* Right column */}
-                    <View style={styles.infoColumn}>
-                        <View style={styles.infoRow}>
-                            <DollarSign size={14} color="#748CAB"/>
-                            <Text style={styles.infoLabelHighlight}>Amount:</Text>
-                            <Text style={styles.infoValueHighlight}>{job.amount}$</Text>
-                        </View>
-                        
-                        <View style={styles.infoRow}>
-                            <Clock size={14} color="#748CAB"/>
-                            <Text style={styles.infoLabel}>Updated:</Text>
-                            <Text style={styles.infoValue}>{timeAgo}</Text>
-                        </View>
-                    </View>
-                </View>
-
-                <View style={styles.estimateContainer}>
-                    {job.status === 'IN_PROGRESS' ? (
-                        <View style={styles.estimateContent}>
-                            <Clock size={14} color="#3B82F6"/>
-                            <Text style={styles.estimateText}>
-                                {calculateRemainingTime(job)}
-                            </Text>
-                        </View>
-                    ) : null}
-                </View>
-
-                <Text style={styles.miniHint}>
-                    Tap for {job.status === 'FINISHED' || job.status === 'CANCELED' ? 'details and history' : 'actions'}
-                </Text>
-            </TouchableOpacity>
-        );
-    }
-
     return (
-        <View style={styles.container}>
+        <TouchableOpacity style={styles.container} onPress={handleCardPress}>
             <View style={styles.header}>
                 <View style={styles.strategyContainer}>
                     <View
-                        style={[styles.strategyBadge, {backgroundColor: job.strategy === 'DCA' ? '#3B82F6' : '#8B5CF6'}]}>
+                        style={[styles.strategyBadge, { backgroundColor: job.strategy === 'DCA' ? '#3B82F6' : '#8B5CF6' }]}>
                         <Text style={styles.strategyText}>{job.strategy}</Text>
                     </View>
-                    <Text style={styles.jobIdText}>#{job.jobId}</Text>
+                    <Text style={styles.jobIdText}>#{job.id}</Text>
 
-                    <View style={[styles.sideBadge, {backgroundColor: job.side === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(248, 113, 113, 0.2)'}]}>
-                        <Text style={[styles.sideText, {color: job.side === 'BUY' ? '#10B981' : '#F87171'}]}>
+                    <View
+                        style={[styles.sideBadge, { backgroundColor: job.side === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(248, 113, 113, 0.2)' }]}>
+                        <Text style={[styles.sideText, { color: job.side === 'BUY' ? '#10B981' : '#F87171' }]}>
                             {job.side}
                         </Text>
                     </View>
                 </View>
 
-                <View style={[styles.statusBadge, {backgroundColor: getStatusColor(job.status)}]}>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(job.status) }]}>
                     <Text style={styles.statusText}>{getStatusText(job.status)}</Text>
                 </View>
             </View>
@@ -221,7 +51,7 @@ function BaseJobCard({job, children, compact = false, onPress}: {
                             styles.progressFill,
                             {
                                 width: `${progressPercentage}%`,
-                                backgroundColor: getStatusColor(job.status)
+                                backgroundColor: getStatusColor(job.status),
                             }
                         ]}
                     />
@@ -235,30 +65,30 @@ function BaseJobCard({job, children, compact = false, onPress}: {
                 {/* Left column */}
                 <View style={styles.infoColumn}>
                     <View style={styles.infoRow}>
-                        <Coins size={14} color="#748CAB"/>
+                        <Coins size={14} color="#748CAB" />
                         <Text style={styles.infoLabelHighlight}>Coins:</Text>
                         <Text style={styles.infoValueHighlight} numberOfLines={1} ellipsizeMode="tail">
                             {job.coins.join(', ')}
                         </Text>
                     </View>
-                    
+
                     <View style={styles.infoRow}>
-                        <Clock size={14} color="#748CAB"/>
+                        <Clock size={14} color="#748CAB" />
                         <Text style={styles.infoLabel}>Created:</Text>
                         <Text style={styles.infoValue}>{formattedCreatedAt}</Text>
                     </View>
                 </View>
-                
+
                 {/* Right column */}
                 <View style={styles.infoColumn}>
                     <View style={styles.infoRow}>
-                        <DollarSign size={14} color="#748CAB"/>
+                        <DollarSign size={14} color="#748CAB" />
                         <Text style={styles.infoLabelHighlight}>Amount:</Text>
                         <Text style={styles.infoValueHighlight}>100</Text>
                     </View>
-                    
+
                     <View style={styles.infoRow}>
-                        <Clock size={14} color="#748CAB"/>
+                        <Clock size={14} color="#748CAB" />
                         <Text style={styles.infoLabel}>Updated:</Text>
                         <Text style={styles.infoValue}>{timeAgo}</Text>
                     </View>
@@ -267,141 +97,15 @@ function BaseJobCard({job, children, compact = false, onPress}: {
 
             {job.status === 'IN_PROGRESS' && (
                 <View style={styles.detailRow}>
-                    <Clock size={14} color="#748CAB"/>
+                    <Clock size={14} color="#748CAB" />
                     <Text style={styles.detailLabel}>Estimate:</Text>
                     <Text style={styles.detailValue}>
                         {calculateRemainingTime(job)}
                     </Text>
                 </View>
             )}
-
-            <Pressable
-                style={styles.showStepsButton}
-                onPress={toggleSteps}
-            >
-                <ListOrdered size={14} color="#748CAB"/>
-                <Text style={styles.showStepsText}>View Steps History</Text>
-                {showSteps ? (
-                    <ChevronUp size={14} color="#748CAB"/>
-                ) : (
-                    <ChevronDown size={14} color="#748CAB"/>
-                )}
-            </Pressable>
-
-            {/* Collapsible events section */}
-            <Animated.View style={[styles.collapsibleContainer, {maxHeight}]}>
-                {isLoadingEvents ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="small" color="#3B82F6"/>
-                        <Text style={styles.loadingText}>Loading steps...</Text>
-                    </View>
-                ) : error ? (
-                    <View style={styles.errorContainer}>
-                        <AlertTriangle size={14} color="#F87171"/>
-                        <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                ) : (
-                        <FlatList
-                            data={jobEvents}
-                            keyExtractor={(item) => item.id.toString()}
-                            contentContainerStyle={styles.stepsList}
-                            ListEmptyComponent={
-                                <Text style={styles.emptyStepsText}>No events available</Text>
-                            }
-                            renderItem={({item}) => (
-                                <View style={styles.stepItem}>
-                                    <View style={styles.stepHeader}>
-                                        <View style={styles.stepNumberContainer}>
-                                            <View
-                                                style={[styles.stepStatusDot, {backgroundColor: getEventColor(item.eventType)}]}/>
-                                            <Text style={styles.stepNumber}>Event {item.id}</Text>
-                                        </View>
-                                        <Text style={[styles.stepStatus, {color: getEventColor(item.eventType)}]}>
-                                            {getEventText(item.eventType)}
-                                        </Text>
-                                    </View>
-
-                                    <Text style={styles.stepDetails}>{getEventDescription(item)}</Text>
-
-                                    {item.timestamp && (
-                                        <Text style={styles.stepTimestamp}>
-                                            {formatDateTime(item.timestamp)}
-                                        </Text>
-                                    )}
-                                </View>
-                            )}
-                        />
-                )}
-            </Animated.View>
-            {children}
-        </View>
+        </TouchableOpacity>
     );
-}
-
-// Active Job Card Component
-function ActiveJobCard({
-                           job,
-                           onToggle,
-                           onDelete,
-                           onStop,
-                           onViewDetails = undefined,
-                           compact = false
-                       }: Required<Omit<JobCardProps, 'isFinished' | 'onViewDetails'>> & { 
-                           compact?: boolean,
-                           onViewDetails?: (jobId: number) => void 
-                       }) {
-    const isActive = job.status === 'IN_PROGRESS';
-    const isPaused = job.status === 'PAUSED';
-
-    const handleCardPress = () => {
-        if (onViewDetails) {
-            onViewDetails(job.jobId);
-        }
-    };
-
-    return (
-        <BaseJobCard job={job} compact={compact} onPress={handleCardPress} />
-    );
-}
-
-function FinishedJobCard({job, onViewDetails, compact = false}: Required<Pick<JobCardProps, 'job' | 'onViewDetails'>> & {
-    isFinished: true,
-    compact?: boolean
-}) {
-    const handleCardPress = () => {
-        onViewDetails(job.jobId);
-    };
-
-    return (
-        <BaseJobCard job={job} compact={compact} onPress={handleCardPress} />
-    );
-}
-
-// Main JobCard Component (decides which version to render)
-export function JobCard(props: JobCardProps) {
-    const {isFinished, compact = false, ...otherProps} = props;
-
-    if (isFinished) {
-        if (!props.onViewDetails) {
-            console.warn('JobCard: onViewDetails prop is required for finished jobs');
-            return null;
-        }
-        return <FinishedJobCard {...otherProps as any} onViewDetails={props.onViewDetails} isFinished={true} compact={compact}/>;
-    } else {
-        // For active jobs
-        if (!props.onToggle || !props.onDelete || !props.onStop) {
-            console.warn('JobCard: onToggle, onDelete, and onStop props are required for active jobs');
-            return null;
-        }
-        return <ActiveJobCard
-            job={props.job}
-            onToggle={props.onToggle}
-            onDelete={props.onDelete}
-            onStop={props.onStop}
-            onViewDetails={props.onViewDetails}
-            compact={compact}
-        />;
-    }
 }
 
 const styles = StyleSheet.create({

@@ -103,6 +103,12 @@ export const autoService = {
         );
         return response.data;
     },
+    stopJob: async (id: string): Promise<Job> => {
+        const response = await apiClient.post(
+            `${API_ENDPOINTS.auto.stop(id)}`
+        );
+        return response.data;
+    },
     cancelJob: async (id: string): Promise<Job> => {
         const response = await apiClient.post(
             `${API_ENDPOINTS.auto.cancel(id)}`
