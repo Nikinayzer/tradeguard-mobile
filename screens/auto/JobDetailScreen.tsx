@@ -7,10 +7,10 @@ import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Job, JobEvent} from '@/services/api/auto';
 import {autoService} from '@/services/api/auto';
-import NotificationModal from '@/components/modals/NotificationModal';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {formatDate, formatDateTime, getEventColor, getEventText, getEventDescription, getStatusColor, getStatusText, calculateRemainingTime
 } from '@/components/screens/auto/jobUtils';
+import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 
 type JobDetailScreenRouteProp = RouteProp<{
     JobDetail: { id: number }
@@ -28,27 +28,12 @@ export default function JobDetailScreen() {
     const [isLoadingEvents, setIsLoadingEvents] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [notificationVisible, setNotificationVisible] = useState(false);
-    const [notificationType, setNotificationType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
-    const [notificationTitle, setNotificationTitle] = useState('');
-    const [notificationMessage, setNotificationMessage] = useState('');
+    const {alert, showAlert, hideAlert} = useAlert();
 
     const progressPercentage = job ? (job.stepsDone / job.stepsTotal) * 100 : 0;
     const isActive = job?.status === 'IN_PROGRESS';
     const isPaused = job?.status === 'PAUSED';
     const isFinished = job?.status === 'FINISHED' || job?.status === 'CANCELED';
-
-
-    const showNotification = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
-        setNotificationType(type);
-        setNotificationTitle(title);
-        setNotificationMessage(message);
-        setNotificationVisible(true);
-    };
-
-    const closeNotification = () => {
-        setNotificationVisible(false);
-    };
 
     const [isEventsExpanded, setIsEventsExpanded] = useState(true);
     const [animation] = useState(new Animated.Value(1));
@@ -72,14 +57,26 @@ export default function JobDetailScreen() {
                     setJob(job);
                     fetchJobEvents(job.id.toString());
                 } else {
-                    showNotification('error', 'Job Not Found', 'The requested job could not be found.');
-                    setTimeout(() => {
-                        navigation.goBack();
-                    }, 2000);
+                    showAlert({
+                        type: 'error',
+                        title: 'Job Not Found',
+                        message: 'The requested job could not be found.',
+                        buttons: [
+                            {
+                                text: 'OK',
+                                onPress: () => navigation.goBack(),
+                                style: 'default'
+                            }
+                        ]
+                    });
                 }
             } catch (error) {
                 console.error('Error fetching job:', error);
-                showNotification('error', 'Error', 'Failed to load job details.');
+                showAlert({
+                    type: 'error',
+                    title: 'Error',
+                    message: 'Failed to load job details.'
+                });
             } finally {
                 setLoading(false);
             }
@@ -112,30 +109,54 @@ export default function JobDetailScreen() {
         if (!job) return;
         try {
             await autoService.pauseJob(job.id);
-            showNotification('info', 'Job Paused', 'Your job has been paused');
+            showAlert({
+                type: 'info',
+                title: 'Job Paused',
+                message: 'Your job has been paused'
+            });
         } catch (err) {
             console.error('Error pausing job:', err);
-            showNotification('error', 'Action Failed', 'Failed to pause job');
+            showAlert({
+                type: 'error',
+                title: 'Action Failed',
+                message: 'Failed to pause job'
+            });
         }
     }
     const handleResumeJob = async () => {
         if (!job) return;
         try {
             await autoService.resumeJob(job.id);
-            showNotification('info', 'Job Resumed', 'Your job has been resumed');
+            showAlert({
+                type: 'info',
+                title: 'Job Resumed',
+                message: 'Your job has been resumed'
+            });
         } catch (err) {
             console.error('Error resuming job:', err);
-            showNotification('error', 'Action Failed', 'Failed to resume job');
+            showAlert({
+                type: 'error',
+                title: 'Action Failed',
+                message: 'Failed to resume job'
+            });
         }
     };
     const handleCancelJob = async () => {
         if (!job) return;
         try {
             await autoService.cancelJob(job.id);
-            showNotification('info', 'Job Cancelled', 'Your job has been cancelled');
+            showAlert({
+                type: 'info',
+                title: 'Job Cancelled',
+                message: 'Your job has been cancelled'
+            });
         } catch (err) {
             console.error('Error canceling job:', err);
-            showNotification('error', 'Action Failed', 'Failed to cancel job');
+            showAlert({
+                type: 'error',
+                title: 'Action Failed',
+                message: 'Failed to cancel job'
+            });
         }
     };
 
@@ -143,10 +164,18 @@ export default function JobDetailScreen() {
         if (!job) return;
         try {
             await autoService.stopJob(job.id);
-            showNotification('success', 'Job Stopped', 'Your job has been stopped and marked as completed');
+            showAlert({
+                type: 'success',
+                title: 'Job Stopped',
+                message: 'Your job has been stopped and marked as completed'
+            });
         } catch (err) {
             console.error('Error stopping job:', err);
-            showNotification('error', 'Action Failed', 'Failed to stop job');
+            showAlert({
+                type: 'error',
+                title: 'Action Failed',
+                message: 'Failed to stop job'
+            });
         }
     };
 
@@ -427,15 +456,7 @@ export default function JobDetailScreen() {
                 </View>
             </View>
 
-            <NotificationModal
-                visible={notificationVisible}
-                onClose={closeNotification}
-                title={notificationTitle}
-                message={notificationMessage}
-                type={notificationType}
-                buttonText="OK"
-                onButtonPress={closeNotification}
-            />
+            {alert && <CustomAlert {...alert} onClose={hideAlert} />}
 
             <View style={styles.contentContainer}>
                 {renderContent()}
