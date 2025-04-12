@@ -1,31 +1,20 @@
-import React, {useState, useEffect, useContext} from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    TextInput,
-    ScrollView,
-    Animated,
-    Image
-} from 'react-native';
-import {
-    DollarSign,
-    Percent,
-    ArrowDown,
-    Plus,
-    X
-} from 'lucide-react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, StyleSheet, TouchableOpacity, Animated,} from 'react-native';
+import {DollarSign, Percent, ArrowDown, ArrowUp, ArrowLeftRight, Clock} from 'lucide-react-native';
 import {useDispatch, useSelector} from 'react-redux';
-import {setJobType, setJobParams, setSelectedCoins} from '@/services/redux/slices/jobStateSlice'; // Redux actions
+import {setJobType, setJobParams} from '@/services/redux/slices/jobStateSlice'; // Redux actions
 import {RootState} from '@/services/redux/store';
-import {JobStrategy, DCAJobParams, LIQJobParams, JobParams} from '@/services/api/auto';
+import {JobStrategy, DCAJobParams, LIQJobParams, JobParams, JobSide} from '@/services/api/auto';
 import {CoinSelector} from '@/components';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SliderInput} from '@/components/common/SliderInput';
-import {TooltipContext} from '@/screens/auto/AutomatedTradeScreen';
 import {Tooltip} from '@/components/common/Tooltip';
+import {TimerPickerModal} from "react-native-timer-picker";
+
+interface SliderLabelProps {
+    label: string;
+    icon?: React.ReactNode;
+    tooltip?: string;
+}
 
 function SliderLabel({label, icon, tooltip}: SliderLabelProps) {
     return (
@@ -40,12 +29,88 @@ function SliderLabel({label, icon, tooltip}: SliderLabelProps) {
     );
 }
 
-export function JobCreator() {
-    const {activeTooltipId, setActiveTooltipId} = useContext(TooltipContext);
-    const navigation = useNavigation<NativeStackNavigationProp<any>>();
+interface SideSwitchProps {
+    jobType: JobStrategy;
+    currentSide: JobSide;
+    onSideChange: (side: JobSide) => void;
+}
 
+function SideSwitch({jobType, currentSide, onSideChange}: SideSwitchProps) {
+    const isDCA = jobType === 'DCA';
+
+    const getSideTip = (side: JobSide) => {
+        switch (side) {
+            case 'BUY':
+                return "Purchase assets when conditions are met";
+            case 'SELL':
+                return "Sell assets when conditions are met";
+            case 'BOTH':
+                return "Both buy and sell assets based on conditions";
+        }
+    };
+
+    if (!isDCA) return null;
+
+    return (
+        <View style={styles.sideContainer}>
+            <SliderLabel
+                label="Trade Direction"
+                tooltip="Direction of trades to execute"
+                icon={<DollarSign size={16} color="#3B82F6"/>}
+            />
+            <View style={styles.sideSelector}>
+                <TouchableOpacity
+                    style={[
+                        styles.sideOption,
+                        currentSide === 'BUY' && styles.sideOptionActive,
+                    ]}
+                    onPress={() => onSideChange('BUY')}
+                >
+                    <View style={styles.sideIconContainer}>
+                        <ArrowDown
+                            size={16}
+                            color={currentSide === 'BUY' ? '#FFFFFF' : '#748CAB'}
+                        />
+                    </View>
+                    <Text style={[
+                        styles.sideText,
+                        currentSide === 'BUY' && styles.sideTextActive,
+                    ]}>
+                        BUY
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                        styles.sideOption,
+                        currentSide === 'SELL' && styles.sideOptionActive,
+                    ]}
+                    onPress={() => onSideChange('SELL')}
+                >
+                    <View style={styles.sideIconContainer}>
+                        <ArrowUp
+                            size={16}
+                            color={currentSide === 'SELL' ? '#FFFFFF' : '#748CAB'}
+                        />
+                    </View>
+                    <Text style={[
+                        styles.sideText,
+                        currentSide === 'SELL' && styles.sideTextActive,
+                    ]}>
+                        SELL
+                    </Text>
+                </TouchableOpacity>
+            </View>
+            <Text style={styles.sideTip}>
+                {getSideTip(currentSide)}
+            </Text>
+        </View>
+    );
+}
+
+export function JobCreator() {
     const dispatch = useDispatch();
-    const {jobType, jobParams, selectedCoins} = useSelector((state: RootState) => state.job);
+    const {jobType, jobParams} = useSelector((state: RootState) => state.job);
 
     const isDCA = jobType === 'DCA';
     const [isForce, setForce] = useState(false);
@@ -54,6 +119,8 @@ export function JobCreator() {
     const liqParams = jobParams as LIQJobParams;
 
     const [tabPosition] = useState(new Animated.Value(isDCA ? 0 : 1));
+
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
     useEffect(() => {
         Animated.timing(tabPosition, {
@@ -73,23 +140,22 @@ export function JobCreator() {
         outputRange: ['#748CAB', 'white']
     });
 
+    const formatTimeFromMinutes = (minutes: number) => {
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        return `${hours}h ${remainingMinutes}m`;
+    }
     const handleJobTypeChange = (type: JobStrategy) => {
         dispatch(setJobType(type));
     };
-
 
     const handleUpdateParams = (key: keyof JobParams, value: any) => {
         const updatedJobParams = {...jobParams, [key]: value};
         dispatch(setJobParams(updatedJobParams));
     };
 
-    const handleOpenCoinSelector = () => {
-        navigation.navigate('CoinSelector');
-    };
-
-    const handleRemoveCoin = (coin: Coin) => {
-        const updatedSelectedCoins = selectedCoins.filter(c => c.symbol !== coin.symbol);
-        dispatch(setSelectedCoins(updatedSelectedCoins)); // Dispatch the updated selected coins to Redux
+    const handleSideChange = (side: JobSide) => {
+        handleUpdateParams('side', side);
     };
 
     return (
@@ -153,19 +219,6 @@ export function JobCreator() {
                                 step={10}
                                 unit=" USDT"
                             />
-
-                            <SliderLabel
-                                label="Total Steps"
-                                icon={<ArrowDown size={16} color="#3B82F6"/>}
-                                tooltip="Number of separate buy operations"
-                            />
-                            <SliderInput
-                                value={dcaParams.totalSteps}
-                                onChange={(value) => handleUpdateParams('totalSteps', value)}
-                                min={2}
-                                max={50}
-                                step={1}
-                            />
                         </>
                     ) : (
                         <>
@@ -182,26 +235,77 @@ export function JobCreator() {
                                 step={1}
                                 unit="%"
                             />
-
-                            <SliderLabel
-                                label="Total Steps"
-                                icon={<ArrowDown size={16} color="#3B82F6"/>}
-                                tooltip="Number of separate sell operations"
-                            />
-                            <SliderInput
-                                value={liqParams.totalSteps}
-                                onChange={(value) => handleUpdateParams('totalSteps', value)}
-                                min={2}
-                                max={50}
-                                step={1}
-                            />
                         </>
                     )}
+                    <SideSwitch
+                        jobType={jobType}
+                        currentSide={jobParams.side}
+                        onSideChange={handleSideChange}
+                    />
+                    <SliderLabel
+                        label="Total Steps"
+                        icon={<ArrowDown size={16} color="#3B82F6"/>}
+                        tooltip="Number of separate sell operations"
+                    />
+                    <SliderInput
+                        value={liqParams.totalSteps}
+                        onChange={(value) => handleUpdateParams('totalSteps', value)}
+                        min={2}
+                        max={50}
+                        step={1}
+                    />
+                    {/* Time Display Field */}
+                    <View style={styles.timeDisplayContainer}>
+                        <SliderLabel
+                            label="Duration"
+                            icon={<Clock size={16} color="#3B82F6"/>}
+                            tooltip="How long this job will run"
+                        />
+                        <TouchableOpacity style={styles.timeDisplay} onPress={() => {
+                            setShowTimePicker(true)
+                        }}>
+                            <Text style={styles.timeDisplayText}>
+                                {formatTimeFromMinutes(jobParams.durationMinutes)}
+                            </Text>
+                        </TouchableOpacity>
+                        <TimerPickerModal
+                            visible={showTimePicker}
+                            setIsVisible={setShowTimePicker}
+                            onConfirm={(pickedDuration) => {
+                                const value = pickedDuration.hours * 60 + pickedDuration.minutes;
+                                handleUpdateParams('durationMinutes', value);
+                                setShowTimePicker(false);
+                            }}
+                            modalTitle="Strategy Duration"
+                            onCancel={() => setShowTimePicker(false)}
+                            closeOnOverlayPress
+                            hourLabel="h"
+                            minuteLabel="m"
+                            hideSeconds={true}
+                            maximumHours={24}
+                            styles={{
+                                theme: "dark",
+                                backgroundColor: '#1B263B',
+                                pickerItem: {
+                                    color: '#E2E8F0',
+                                    fontSize: 24,
+                                },
+                                pickerLabel: {
+                                    color: '#748CAB',
+                                    fontSize: 16,
+                                },
+                            }}
+                        />
+                    </View>
+
 
                     <Toggle
                         label="Force Entry"
                         value={isForce}
-                        onChange={(value) => setForce(value)}
+                        onChange={(value: boolean) => {
+                            setForce(value);
+                            handleUpdateParams('discountPct', value ? 0 : jobParams.discountPct);
+                        }}
                         tooltip={isDCA
                             ? "Ensures trades execute even if price isn't discounted"
                             : "Execute trades immediately without waiting for market conditions"
@@ -228,6 +332,13 @@ export function JobCreator() {
             </View>
         </View>
     );
+}
+
+interface ToggleProps {
+    label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+    tooltip?: string;
 }
 
 function Toggle({label, value, onChange, tooltip}: ToggleProps) {
@@ -314,6 +425,46 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#E2E8F0',
         marginBottom: 24,
+    },
+    // Side selector styles
+    sideContainer: {
+        marginBottom: 16,
+    },
+    sideSelector: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(13, 27, 42, 0.5)',
+        borderRadius: 12,
+        padding: 4,
+        marginBottom: 8,
+    },
+    sideOption: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    sideOptionActive: {
+        backgroundColor: '#3B82F6',
+    },
+    sideIconContainer: {
+        marginRight: 4,
+    },
+    sideText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#748CAB',
+    },
+    sideTextActive: {
+        color: 'white',
+        fontWeight: '600',
+    },
+    sideTip: {
+        fontSize: 12,
+        color: '#748CAB',
+        textAlign: 'center',
+        marginTop: 4,
     },
     selectedCoinsSection: {
         marginBottom: 16,
@@ -547,5 +698,29 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
+    },
+    timeDisplayContainer: {
+        marginBottom: 16,
+        marginTop: 8,
+    },
+    timeDisplay: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(13, 27, 42, 0.5)',
+        borderRadius: 8,
+        padding: 12,
+        marginTop: 8,
+    },
+    timeDisplayText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    timeDisplayIcon: {
+        width: 24,
+        height: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

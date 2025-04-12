@@ -17,15 +17,6 @@ import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
-const defaultDCAJobParams: DCAJobParams = {
-    coins: [],
-    side: 'BUY',
-    totalSteps: 10,
-    discountPct: 0.5,
-    durationMinutes: 60,
-    amount: 100,
-};
-
 export const TooltipContext = createContext<{
     activeTooltipId: string | null;
     setActiveTooltipId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -36,15 +27,13 @@ export const TooltipContext = createContext<{
 
 export default function AutomatedTradeScreen() {
     const navigation = useNavigation<NavigationProp>();
-    const [jobType] = useState<JobStrategy>('DCA'); //todo
     const [jobs, setJobs] = useState<Job[]>([]);
-    const [jobParams] = useState<JobParams>(defaultDCAJobParams); //todo
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lastUpdated, setLastUpdated] = useState("Now");
 
     const dispatch = useDispatch();
-    const {selectedCoins} = useSelector((state: RootState) => state.job);
+    const {jobType, jobParams, selectedCoins} = useSelector((state: RootState) => state.job);
 
     const {alert, showAlert, hideAlert} = useAlert();
 

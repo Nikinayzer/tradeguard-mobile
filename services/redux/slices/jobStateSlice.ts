@@ -1,6 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Coin } from '@/services/MarketDataManager';
-import { JobStrategy, JobParams, DCAJobParams, LIQJobParams } from '@/services/api/auto';
+import {createSlice, PayloadAction} from '@reduxjs/toolkit';
+import {Coin} from '@/services/MarketDataManager';
+import {JobStrategy, JobParams} from '@/services/api/auto';
 
 interface JobState {
     jobType: JobStrategy;
@@ -11,12 +11,12 @@ interface JobState {
 const initialState: JobState = {
     jobType: 'DCA',
     jobParams: {
-        coins: [],
+        amount: 100,
         side: 'BUY',
+        coins: [],
         totalSteps: 10,
         discountPct: 0.5,
         durationMinutes: 60,
-        amount: 100,
     },
     selectedCoins: [],
 };
@@ -29,21 +29,22 @@ const jobSlice = createSlice({
             state.jobType = action.payload;
             if (action.payload === 'DCA') {
                 state.jobParams = {
-                    coins: [],
+                    amount: 100,
                     side: 'BUY',
+                    coins: [],
                     totalSteps: 10,
                     discountPct: 0.5,
                     durationMinutes: 60,
-                    amount: 100,
+
                 };
             } else if (action.payload === 'LIQ') {
                 state.jobParams = {
-                    amount: 10,
-                    coins: [],
+                    amount: 10.0,
                     side: 'SELL',
+                    coins: [],
                     totalSteps: 10,
-                    durationMinutes: 60,
                     discountPct: 0.5,
+                    durationMinutes: 60,
                 };
             }
         },
@@ -56,6 +57,6 @@ const jobSlice = createSlice({
     },
 });
 
-export const { setJobType, setJobParams, setSelectedCoins } = jobSlice.actions;
+export const {setJobType, setJobParams, setSelectedCoins} = jobSlice.actions;
 
 export default jobSlice.reducer;
