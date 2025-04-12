@@ -349,71 +349,72 @@ export default function JobDetailScreen() {
                             </View>
                         )}
 
-                        <View style={styles.section}>
-                            <Pressable
-                                style={styles.eventsSectionHeader}
-                                onPress={toggleEvents}
-                            >
-                                <View style={styles.collapsibleTitleContainer}>
-                                    <ListOrdered size={20} color="#748CAB"/>
-                                    <Text style={styles.collapsibleTitle}>Events History</Text>
-                                </View>
-                                {isEventsExpanded ? (
-                                    <ChevronUp size={20} color="#E2E8F0"/>
-                                ) : (
-                                    <ChevronDown size={20} color="#E2E8F0"/>
-                                )}
-                            </Pressable>
+                        {/* todo revert back later */}
+                        {/*<View style={styles.section}>*/}
+                        {/*    <Pressable*/}
+                        {/*        style={styles.eventsSectionHeader}*/}
+                        {/*        onPress={toggleEvents}*/}
+                        {/*    >*/}
+                        {/*        <View style={styles.collapsibleTitleContainer}>*/}
+                        {/*            <ListOrdered size={20} color="#748CAB"/>*/}
+                        {/*            <Text style={styles.collapsibleTitle}>Events History</Text>*/}
+                        {/*        </View>*/}
+                        {/*        {isEventsExpanded ? (*/}
+                        {/*            <ChevronUp size={20} color="#E2E8F0"/>*/}
+                        {/*        ) : (*/}
+                        {/*            <ChevronDown size={20} color="#E2E8F0"/>*/}
+                        {/*        )}*/}
+                        {/*    </Pressable>*/}
 
-                            <Animated.View style={[
-                                styles.eventsContent,
-                                {
-                                    opacity: animation,
-                                    maxHeight: animation.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, 1000]
-                                    })
-                                }
-                            ]}>
-                                {isLoadingEvents ? (
-                                    <View style={styles.loadingEventsContainer}>
-                                        <ActivityIndicator size="small" color="#3B82F6"/>
-                                        <Text style={styles.loadingText}>Loading events...</Text>
-                                    </View>
-                                ) : error ? (
-                                    <View style={styles.eventsErrorContainer}>
-                                        <AlertTriangle size={16} color="#F87171"/>
-                                        <Text style={styles.errorText}>{error}</Text>
-                                    </View>
-                                ) : (
-                                    <FlatList
-                                        data={jobEvents}
-                                        keyExtractor={(item) => item.id.toString()}
-                                        contentContainerStyle={styles.eventsList}
-                                        scrollEnabled={false}
-                                        ListEmptyComponent={
-                                            <Text style={styles.emptyEventsText}>No events available</Text>
-                                        }
-                                        renderItem={({item}) => (
-                                            <View style={styles.eventItem}>
-                                                <View style={styles.eventHeader}>
-                                                    <View style={styles.eventTitleContainer}>
-                                                        <View
-                                                            style={[styles.eventStatusDot, {backgroundColor: getEventColor(item.eventType)}]}/>
-                                                        <Text
-                                                            style={styles.eventTitle}>{getEventText(item.eventType)}</Text>
-                                                    </View>
-                                                    <Text style={styles.eventTimestamp}>
-                                                        {formatDateTime(item.timestamp)}
-                                                    </Text>
-                                                </View>
-                                                <Text style={styles.eventDescription}>{getEventDescription(item)}</Text>
-                                            </View>
-                                        )}
-                                    />
-                                )}
-                            </Animated.View>
-                        </View>
+                        {/*    <Animated.View style={[*/}
+                        {/*        styles.eventsContent,*/}
+                        {/*        {*/}
+                        {/*            opacity: animation,*/}
+                        {/*            maxHeight: animation.interpolate({*/}
+                        {/*                inputRange: [0, 1],*/}
+                        {/*                outputRange: [0, 1000]*/}
+                        {/*            })*/}
+                        {/*        }*/}
+                        {/*    ]}>*/}
+                        {/*        {isLoadingEvents ? (*/}
+                        {/*            <View style={styles.loadingEventsContainer}>*/}
+                        {/*                <ActivityIndicator size="small" color="#3B82F6"/>*/}
+                        {/*                <Text style={styles.loadingText}>Loading events...</Text>*/}
+                        {/*            </View>*/}
+                        {/*        ) : error ? (*/}
+                        {/*            <View style={styles.eventsErrorContainer}>*/}
+                        {/*                <AlertTriangle size={16} color="#F87171"/>*/}
+                        {/*                <Text style={styles.errorText}>{error}</Text>*/}
+                        {/*            </View>*/}
+                        {/*        ) : (*/}
+                        {/*            <FlatList*/}
+                        {/*                data={jobEvents}*/}
+                        {/*                keyExtractor={(item) => item.id.toString()}*/}
+                        {/*                contentContainerStyle={styles.eventsList}*/}
+                        {/*                scrollEnabled={false}*/}
+                        {/*                ListEmptyComponent={*/}
+                        {/*                    <Text style={styles.emptyEventsText}>No events available</Text>*/}
+                        {/*                }*/}
+                        {/*                renderItem={({item}) => (*/}
+                        {/*                    <View style={styles.eventItem}>*/}
+                        {/*                        <View style={styles.eventHeader}>*/}
+                        {/*                            <View style={styles.eventTitleContainer}>*/}
+                        {/*                                <View*/}
+                        {/*                                    style={[styles.eventStatusDot, {backgroundColor: getEventColor(item.eventType)}]}/>*/}
+                        {/*                                <Text*/}
+                        {/*                                    style={styles.eventTitle}>{getEventText(item.eventType)}</Text>*/}
+                        {/*                            </View>*/}
+                        {/*                            <Text style={styles.eventTimestamp}>*/}
+                        {/*                                {formatDateTime(item.timestamp)}*/}
+                        {/*                            </Text>*/}
+                        {/*                        </View>*/}
+                        {/*                        <Text style={styles.eventDescription}>{getEventDescription(item)}</Text>*/}
+                        {/*                    </View>*/}
+                        {/*                )}*/}
+                        {/*            />*/}
+                        {/*        )}*/}
+                        {/*    </Animated.View>*/}
+                        {/*</View>*/}
                     </View>
                 </ScrollView>
             </View>

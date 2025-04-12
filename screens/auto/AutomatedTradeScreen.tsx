@@ -1,13 +1,9 @@
 import React, {useState, useEffect, useMemo, createContext} from 'react';
-import {
-    View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, ScrollView,
-} from 'react-native';
+import {View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, ScrollView,} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {JobCreator} from '@/components/screens/auto/JobCreator';
 import {JobCard} from '@/components/screens/auto/JobCard';
-import {
-    autoService, Job, JobStrategy, JobParams, DCAJobParams, LIQJobParams,
-} from '@/services/api/auto';
+import {autoService, Job, JobStrategy, JobParams, DCAJobParams, LIQJobParams,} from '@/services/api/auto';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
 import {RefreshControl} from 'react-native';
 import {Bot, History} from 'lucide-react-native';
