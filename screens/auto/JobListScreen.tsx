@@ -6,10 +6,10 @@ import {Bot, ChevronLeft, Filter, History, SortAsc, SortDesc} from 'lucide-react
 import {JobCard} from '@/components/screens/auto/JobCard';
 import {autoService, Job} from '@/services/api/auto';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
-import NotificationModal from '@/components/modals/NotificationModal';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SearchBar} from '@/components/common/SearchBar';
+import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 
 type JobListScreenRouteProp = RouteProp<{
     JobList: { initialTab: 'active' | 'finished' };
@@ -32,10 +32,7 @@ export default function JobListScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'createdAt', order: 'desc' });
 
-    const [notificationVisible, setNotificationVisible] = useState(false);
-    const [notificationType, setNotificationType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
-    const [notificationTitle, setNotificationTitle] = useState('');
-    const [notificationMessage, setNotificationMessage] = useState('');
+    const {alert, showAlert, hideAlert} = useAlert();
 
     const activeJobs = useMemo(() =>
         jobs.filter(job => job.status === 'IN_PROGRESS' || job.status === 'PAUSED'),
@@ -50,21 +47,14 @@ export default function JobListScreen() {
     const {isRefreshing, handleRefresh} = usePullToRefresh({
         onRefresh: fetchJobs,
         onError: (error) => {
-            showNotification('error', 'Refresh Failed', 'Failed to refresh jobs');
+            showAlert({
+                type: 'error',
+                title: 'Refresh Failed',
+                message: 'Failed to refresh jobs'
+            });
             console.error('Error refreshing jobs:', error);
         }
     });
-
-    const showNotification = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
-        setNotificationType(type);
-        setNotificationTitle(title);
-        setNotificationMessage(message);
-        setNotificationVisible(true);
-    };
-
-    const closeNotification = () => {
-        setNotificationVisible(false);
-    };
 
     async function fetchJobs() {
         try {
@@ -82,54 +72,6 @@ export default function JobListScreen() {
     useEffect(() => {
         fetchJobs();
     }, []);
-
-    const handleToggleJob = async (jobId: number) => {
-        try {
-            const job = jobs.find(job => job.jobId === Number(jobId));
-            if (!job) return;
-
-            if (job.status === 'IN_PROGRESS') {
-                await autoService.pauseJob(job.id);
-                showNotification('info', 'Job Paused', 'Your job has been paused');
-            } else if (job.status === 'PAUSED') {
-                await autoService.resumeJob(job.id);
-                showNotification('success', 'Job Resumed', 'Your job is now running');
-            }
-
-            await fetchJobs();
-        } catch (err) {
-            console.error('Error toggling job:', err);
-            showNotification('error', 'Action Failed', 'Failed to update job status');
-        }
-    };
-
-    const handleDeleteJob = async (jobId: number) => {
-        try {
-            const job = jobs.find(j => j.jobId === Number(jobId));
-            if (!job) return;
-
-            await autoService.cancelJob(job.id);
-            showNotification('info', 'Job Cancelled', 'Your job has been cancelled');
-            await fetchJobs();
-        } catch (err) {
-            console.error('Error canceling job:', err);
-            showNotification('error', 'Action Failed', 'Failed to cancel job');
-        }
-    };
-
-    const handleStopJob = async (jobId: number) => {
-        try {
-            const job = jobs.find(j => j.jobId === Number(jobId));
-            if (!job) return;
-
-            await autoService.cancelJob(job.id);
-            showNotification('success', 'Job Stopped', 'Your job has been stopped and marked as completed');
-            await fetchJobs();
-        } catch (err) {
-            console.error('Error stopping job:', err);
-            showNotification('error', 'Action Failed', 'Failed to stop job');
-        }
-    };
 
     const handleViewJobDetails = (id: string) => {
         navigation.navigate('JobDetail', { id: id });
@@ -165,7 +107,7 @@ export default function JobListScreen() {
 
         return filtered.sort((a, b) => {
             const { field, order } = sortConfig;
-            let comparison = 0;
+            let comparison: number;
 
             switch (field) {
                 case 'id':
@@ -322,15 +264,7 @@ export default function JobListScreen() {
                 }
             />
 
-            <NotificationModal
-                visible={notificationVisible}
-                onClose={closeNotification}
-                title={notificationTitle}
-                message={notificationMessage}
-                type={notificationType}
-                buttonText="OK"
-                onButtonPress={closeNotification}
-            />
+            {alert && <CustomAlert {...alert} onClose={hideAlert} />}
 
             {isLoading && (
                 <View style={styles.loadingOverlay}>

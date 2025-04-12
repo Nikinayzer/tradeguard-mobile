@@ -9,7 +9,6 @@ import {
     autoService, Job, JobStrategy, JobParams, DCAJobParams, LIQJobParams,
 } from '@/services/api/auto';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
-import NotificationModal from '@/components/modals/NotificationModal';
 import {RefreshControl} from 'react-native';
 import {Bot, History} from 'lucide-react-native';
 import {ScreenHeader} from "@/components/screens/portfolio/ScreenHeader";
@@ -18,6 +17,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "@/services/redux/store";
 import {setSelectedCoins} from "@/services/redux/slices/jobStateSlice";
+import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -40,9 +40,9 @@ export const TooltipContext = createContext<{
 
 export default function AutomatedTradeScreen() {
     const navigation = useNavigation<NavigationProp>();
-    const [jobType, setJobType] = useState<JobStrategy>('DCA'); //todo
+    const [jobType] = useState<JobStrategy>('DCA'); //todo
     const [jobs, setJobs] = useState<Job[]>([]);
-    const [jobParams, setJobParams] = useState<JobParams>(defaultDCAJobParams); //todo
+    const [jobParams] = useState<JobParams>(defaultDCAJobParams); //todo
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [lastUpdated, setLastUpdated] = useState("Now");
@@ -50,39 +50,23 @@ export default function AutomatedTradeScreen() {
     const dispatch = useDispatch();
     const {selectedCoins} = useSelector((state: RootState) => state.job);
 
-    // DUPLICATE, REFACTOR
-    const [notificationVisible, setNotificationVisible] = useState(false);
-    const [notificationType, setNotificationType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
-    const [notificationTitle, setNotificationTitle] = useState('');
-    const [notificationMessage, setNotificationMessage] = useState('');
+    const {alert, showAlert, hideAlert} = useAlert();
 
     const activeJobs = useMemo(() =>
             jobs.filter(job => job.status === 'IN_PROGRESS' || job.status === 'PAUSED'),
         [jobs]
     );
-
-    const finishedJobs = useMemo(() =>
-            jobs.filter(job => job.status === 'FINISHED' || job.status === 'CANCELED'),
-        [jobs]
-    );
-
     const {isRefreshing, handleRefresh} = usePullToRefresh({
         onRefresh: fetchJobs,
         onError: (error) => {
-            showNotification('error', 'Refresh Failed', 'Failed to refresh jobs');
+            showAlert({
+                type: 'error',
+                title: 'Refresh Failed',
+                message: 'Failed to refresh jobs'
+            });
             console.error('Error refreshing jobs:', error);
         }
     });
-
-    const showNotification = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
-        setNotificationType(type);
-        setNotificationTitle(title);
-        setNotificationMessage(message);
-        setNotificationVisible(true);
-    };
-    const closeNotification = () => {
-        setNotificationVisible(false);
-    };
 
     const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
 
@@ -106,11 +90,11 @@ export default function AutomatedTradeScreen() {
 
     const handleJobComplete = async () => {
         if (!jobParams || selectedCoins.length === 0) {
-            showNotification(
-                'warning',
-                'Missing Information',
-                'Please select at least one coin to continue.'
-            );
+            showAlert({
+                type: 'warning',
+                title: 'Missing Information',
+                message: 'Please select at least one coin to continue.'
+            });
             return;
         }
 
@@ -129,21 +113,21 @@ export default function AutomatedTradeScreen() {
                 });
             }
 
-            showNotification(
-                'success',
-                'Job Created',
-                `Your ${jobType} job was successfully created`
-            );
-            dispatch(setSelectedCoins([])); //resetting only coins, assuming user doesnt want to open multiple jobs atm with same coins
+            showAlert({
+                type: 'success',
+                title: 'Job Created',
+                message: `Your ${jobType} job was successfully created`
+            });
+            dispatch(setSelectedCoins([])); //resetting only coins, assuming user doesn't want to open multiple jobs atm with same coins
 
             await fetchJobs();
         } catch (err) {
             console.error('Error creating job:', err);
-            showNotification(
-                'error',
-                'Job Creation Failed',
-                `Failed to create job. Please try again.`
-            );
+            showAlert({
+                type: 'error',
+                title: 'Job Creation Failed',
+                message: 'Failed to create job. Please try again.'
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -181,15 +165,7 @@ export default function AutomatedTradeScreen() {
                         return false;
                     }}
                 >
-                    <NotificationModal
-                        visible={notificationVisible}
-                        onClose={closeNotification}
-                        title={notificationTitle}
-                        message={notificationMessage}
-                        type={notificationType}
-                        buttonText="OK"
-                        onButtonPress={closeNotification}
-                    />
+                    {alert && <CustomAlert {...alert} onClose={hideAlert} />}
 
                     <JobCreator/>
 
