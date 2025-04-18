@@ -1,7 +1,6 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import {
     View,
-    Text,
     StyleSheet,
     ScrollView,
     TouchableOpacity,
@@ -27,6 +26,10 @@ import {
 import {profileService, UserAccountLimits} from '@/services/api/profile';
 import {useAlert} from '@/components/common/CustomAlert';
 import CustomAlert from '@/components/common/CustomAlert';
+import {useTheme} from '@/contexts/ThemeContext';
+import {ThemedView} from '@/components/ui/ThemedView';
+import {ThemedText} from '@/components/ui/ThemedText';
+import {ThemedHeader} from '@/components/ui/ThemedHeader';
 
 interface LimitSetting {
     id: keyof typeof limitMappings;
@@ -212,6 +215,26 @@ export default function AccountLimitsScreen({navigation}: any) {
     const [limits, setLimits] = useState<LimitSetting[]>([]);
     const [booleans, setBooleans] = useState<BooleanSetting[]>([]);
     const {alert, showAlert, hideAlert} = useAlert();
+    const {colors} = useTheme();
+
+    useEffect(() => {
+        // Replace hardcoded colors in icons with theme colors
+        Object.keys(limitMappings).forEach(key => {
+            const mappingKey = key as keyof typeof limitMappings;
+            limitMappings[mappingKey].icon = React.cloneElement(
+                limitMappings[mappingKey].icon as React.ReactElement,
+                {color: colors.textSecondary}
+            );
+        });
+
+        // Update boolean settings icons
+        booleanSettings.forEach(setting => {
+            setting.icon = React.cloneElement(
+                setting.icon as React.ReactElement,
+                {color: colors.textSecondary}
+            );
+        });
+    }, [colors]);
 
     const fetchLimits = useCallback(async () => {
         try {
@@ -415,7 +438,7 @@ export default function AccountLimitsScreen({navigation}: any) {
             };
 
             await profileService.updateLimits(updatedLimits);
-
+            await fetchLimits()
             showAlert({
                 type: 'success',
                 title: 'Success',
@@ -435,59 +458,66 @@ export default function AccountLimitsScreen({navigation}: any) {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6"/>
-                </View>
+            <SafeAreaView style={{...styles.safeArea, backgroundColor: colors.background}}>
+                <ThemedView variant="screen" style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary}/>
+                </ThemedView>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <ArrowLeft size={24} color="white"/>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Account Limits</Text>
-                <View style={{width: 40}}/>
-            </View>
+        <SafeAreaView style={{...styles.safeArea, backgroundColor: colors.background}}>
+            <ThemedHeader
+                title="Account Limits"
+                canGoBack={true}
+                onBack={() => navigation.goBack()}
+            />
 
-            <ScrollView style={styles.container}>
-                <Text style={styles.description}>
+            <ScrollView
+                style={styles.container}
+                contentContainerStyle={styles.scrollContent}
+            >
+                <ThemedText variant="body" secondary style={styles.description}>
                     Set up trading limits to help prevent gambling patterns and protect your account.
-                </Text>
+                </ThemedText>
 
-                <View style={styles.limitsContainer}>
+                <ThemedView variant="transparent" style={styles.limitsContainer}>
                     {limits.map((limit) => (
-                        <View key={limit.id} style={styles.limitCard}>
+                        <ThemedView key={limit.id} variant="card" style={styles.limitCard} rounded border>
                             <View style={styles.limitHeader}>
                                 <View style={styles.limitIcon}>
                                     {limit.icon}
                                 </View>
                                 <View style={styles.limitTitleContainer}>
-                                    <Text style={styles.limitTitle}>{limit.title}</Text>
-                                    <Text style={styles.limitDescription}>{limit.description}</Text>
+                                    <ThemedText variant="bodyBold" style={styles.limitTitle}>{limit.title}</ThemedText>
+                                    <ThemedText variant="caption" secondary
+                                                style={styles.limitDescription}>{limit.description}</ThemedText>
                                 </View>
                                 <Switch
                                     value={limit.enabled}
                                     onValueChange={() => toggleLimit(limit.id)}
-                                    trackColor={{false: '#22314A', true: '#3B82F6'}}
-                                    thumbColor={limit.enabled ? '#60A5FA' : '#748CAB'}
+                                    trackColor={{false: colors.backgroundTertiary, true: colors.primary}}
+                                    thumbColor={limit.enabled ? colors.buttonPrimaryText : colors.textSecondary}
                                     disabled={limit.isEditing}
                                 />
                             </View>
 
                             <View style={styles.valueContainer}>
-                                <Text style={styles.valueLabel}>Current Limit:</Text>
-                                <View style={styles.inputContainer}>
+                                <ThemedText variant="label" secondary style={styles.valueLabel}>Current
+                                    Limit:</ThemedText>
+                                <ThemedView
+                                    variant={limit.enabled ? "input" : "section"}
+                                    style={styles.inputContainer}
+                                    rounded="small"
+                                >
                                     <TextInput
                                         style={[
                                             styles.input,
-                                            !limit.enabled && styles.inputDisabled
+                                            {
+                                                color: limit.enabled ? colors.text : colors.textTertiary,
+                                                textAlign: 'right'
+                                            }
                                         ]}
                                         value={limit.isEditing
                                             ? limit.value.toString()
@@ -499,22 +529,24 @@ export default function AccountLimitsScreen({navigation}: any) {
                                         onFocus={() => handleInputFocus(limit.id)}
                                         keyboardType={limit.keyboardType || 'numeric'}
                                         placeholder={`Enter value`}
-                                        placeholderTextColor="#748CAB"
+                                        placeholderTextColor={colors.textTertiary}
                                         maxLength={10}
                                         editable={limit.enabled}
                                     />
-                                    <Text style={[
-                                        styles.unitText,
-                                        !limit.enabled && styles.textDisabled
-                                    ]}>
+                                    <ThemedText
+                                        variant="body"
+                                        color={limit.enabled ? colors.text : colors.textTertiary}
+                                        style={styles.unitText}
+                                    >
                                         {limit.unit}
-                                    </Text>
-                                </View>
+                                    </ThemedText>
+                                </ThemedView>
                             </View>
 
                             {limit.presets && (
                                 <View style={styles.presetsContainer}>
-                                    <Text style={styles.presetsLabel}>Quick Select:</Text>
+                                    <ThemedText variant="label" secondary style={styles.presetsLabel}>Quick
+                                        Select:</ThemedText>
                                     <View style={styles.presetsRow}>
                                         {limit.presets.map((preset, index) => {
                                             const currentValue = typeof limit.value === 'string'
@@ -527,8 +559,12 @@ export default function AccountLimitsScreen({navigation}: any) {
                                                     key={index}
                                                     style={[
                                                         styles.presetButton,
-                                                        isSelected && styles.presetButtonSelected,
-                                                        !limit.enabled && styles.presetButtonDisabled
+                                                        {
+                                                            backgroundColor: isSelected
+                                                                ? colors.primary
+                                                                : colors.backgroundSecondary,
+                                                            opacity: limit.enabled ? 1 : 0.5
+                                                        }
                                                     ]}
                                                     onPress={() => {
                                                         if (limit.enabled) {
@@ -548,59 +584,70 @@ export default function AccountLimitsScreen({navigation}: any) {
                                                     }}
                                                     disabled={!limit.enabled}
                                                 >
-                                                    <Text style={[
-                                                        styles.presetButtonText,
-                                                        isSelected && styles.presetButtonTextSelected,
-                                                        !limit.enabled && styles.presetButtonTextDisabled
-                                                    ]}>
+                                                    <ThemedText
+                                                        variant="caption"
+                                                        color={isSelected ? colors.buttonPrimaryText : colors.text}
+                                                    >
                                                         {limit.formatValue?.(preset)} {limit.unit}
-                                                    </Text>
+                                                    </ThemedText>
                                                 </TouchableOpacity>
                                             );
                                         })}
                                     </View>
                                 </View>
                             )}
-                        </View>
+                        </ThemedView>
                     ))}
 
-                    <View style={styles.sectionTitle}>
-                        <Text style={styles.sectionTitleText}>Advanced Settings</Text>
-                    </View>
+                    <ThemedView variant="transparent" style={styles.sectionTitle}>
+                        <ThemedText variant="heading3" style={styles.sectionTitleText}>Advanced Settings</ThemedText>
+                    </ThemedView>
 
                     {booleans.map((bool) => (
-                        <View key={bool.id} style={styles.limitCard}>
+                        <ThemedView key={bool.id} variant="card" style={styles.limitCard} rounded border>
                             <View style={styles.limitHeader}>
                                 <View style={styles.limitIcon}>
                                     {bool.icon}
                                 </View>
                                 <View style={styles.limitTitleContainer}>
-                                    <Text style={styles.limitTitle}>{bool.title}</Text>
-                                    <Text style={styles.limitDescription}>{bool.description}</Text>
+                                    <ThemedText variant="bodyBold" style={styles.limitTitle}>{bool.title}</ThemedText>
+                                    <ThemedText variant="caption" secondary
+                                                style={styles.limitDescription}>{bool.description}</ThemedText>
                                 </View>
                                 <Switch
                                     value={bool.enabled}
                                     onValueChange={() => toggleBoolean(bool.id)}
-                                    trackColor={{false: '#22314A', true: '#3B82F6'}}
-                                    thumbColor={bool.enabled ? '#60A5FA' : '#748CAB'}
+                                    trackColor={{false: colors.backgroundTertiary, true: colors.primary}}
+                                    thumbColor={bool.enabled ? colors.buttonPrimaryText : colors.textSecondary}
                                 />
                             </View>
-                        </View>
+                        </ThemedView>
                     ))}
-                </View>
+                </ThemedView>
+            </ScrollView>
 
+            <View
+                style={[
+                    styles.buttonContainer,
+                ]}
+            >
                 <TouchableOpacity
-                    style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+                    style={[
+                        styles.saveButton,
+                        {backgroundColor: colors.primary},
+                        isSaving && {opacity: 0.7}
+                    ]}
                     onPress={handleSave}
                     disabled={isSaving}
                 >
                     {isSaving ? (
-                        <ActivityIndicator color="white" size="small"/>
+                        <ActivityIndicator color={colors.buttonPrimaryText} size="small"/>
                     ) : (
-                        <Text style={styles.saveButtonText}>Save Changes</Text>
+                        <ThemedText variant="button" color={colors.buttonPrimaryText}>Save Changes</ThemedText>
                     )}
                 </TouchableOpacity>
-            </ScrollView>
+            </View>
+
             {alert && <CustomAlert {...alert} onClose={hideAlert}/>}
         </SafeAreaView>
     );
@@ -609,190 +656,107 @@ export default function AccountLimitsScreen({navigation}: any) {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#0D1B2A',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#1B263B',
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#1B263B',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: 'white',
-    },
     container: {
         flex: 1,
         padding: 16,
     },
+    scrollContent: {
+        paddingBottom: 80, // Add padding at the bottom to account for the floating button
+    },
     description: {
-        color: '#748CAB',
-        fontSize: 14,
         marginBottom: 24,
         lineHeight: 20,
     },
     limitsContainer: {
         gap: 16,
-        marginBottom: 24,
     },
     limitCard: {
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
         padding: 16,
+        marginBottom: 16,
     },
     limitHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
     limitIcon: {
         width: 40,
         height: 40,
-        borderRadius: 20,
-        backgroundColor: '#22314A',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
     },
     limitTitleContainer: {
         flex: 1,
+        marginRight: 16,
     },
     limitTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: 'white',
         marginBottom: 4,
     },
     limitDescription: {
-        fontSize: 12,
-        color: '#748CAB',
+        lineHeight: 18,
     },
     valueContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#22314A',
+        marginBottom: 16,
     },
     valueLabel: {
-        fontSize: 14,
-        color: '#748CAB',
+        marginBottom: 8,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        height: 48,
+        paddingHorizontal: 12,
     },
     input: {
-        backgroundColor: '#22314A',
-        borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        color: 'white',
+        flex: 1,
+        height: '100%',
         fontSize: 16,
-        fontWeight: '600',
-        width: 120,
-        textAlign: 'right',
-    },
-    inputDisabled: {
-        backgroundColor: '#1B263B',
-        color: '#748CAB',
-        opacity: 0.5,
-    },
-    textDisabled: {
-        opacity: 0.5,
     },
     unitText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#748CAB',
-        minWidth: 40,
-    },
-    saveButton: {
-        backgroundColor: '#3B82F6',
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 24,
-    },
-    saveButtonDisabled: {
-        opacity: 0.7,
-    },
-    saveButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    sectionTitle: {
-        marginTop: 8,
-        marginBottom: 8,
-    },
-    sectionTitleText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#748CAB',
-        textTransform: 'uppercase',
+        marginLeft: 8,
     },
     presetsContainer: {
-        marginTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#22314A',
-        paddingTop: 12,
+        marginTop: 8,
     },
     presetsLabel: {
-        fontSize: 14,
-        color: '#748CAB',
         marginBottom: 8,
     },
     presetsRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 6,
+        gap: 8,
     },
     presetButton: {
-        backgroundColor: '#22314A',
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        minWidth: 100,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 6,
+    },
+    sectionTitle: {
+        marginTop: 8,
+        marginBottom: 16,
+    },
+    sectionTitleText: {
+        marginBottom: 8,
+    },
+    buttonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 16,
+
+    },
+    saveButton: {
+        height: 50,
+        borderRadius: 25,
+        justifyContent: 'center',
         alignItems: 'center',
-    },
-    presetButtonSelected: {
-        backgroundColor: '#3B82F6',
-    },
-    presetButtonText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#748CAB',
-        textAlign: 'center',
-    },
-    presetButtonTextSelected: {
-        color: 'white',
-    },
-    presetButtonDisabled: {
-        backgroundColor: '#1B263B',
-        opacity: 0.5,
-    },
-    presetButtonTextDisabled: {
-        color: '#748CAB',
-        opacity: 0.5,
     },
 }); 

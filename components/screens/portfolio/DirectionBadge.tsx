@@ -1,22 +1,35 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, StyleSheet} from 'react-native';
 import {ArrowUpRight, ArrowDownRight} from 'lucide-react-native';
+import {useTheme} from '@/contexts/ThemeContext';
+import {ThemedText} from '@/components/ui/ThemedText';
 
 interface DirectionBadgeProps {
     isLong: boolean;
 }
 
 export const DirectionBadge: React.FC<DirectionBadgeProps> = ({isLong}) => {
+    const {colors} = useTheme();
+    
     return (
-        <View style={[styles.badge, isLong ? styles.longBadge : styles.shortBadge]}>
+        <View 
+            style={[
+                styles.badge, 
+                { backgroundColor: isLong ? `${colors.success}15` : `${colors.error}15` }
+            ]}
+        >
             {isLong ? (
-                <ArrowUpRight size={16} color="#22C55E"/>
+                <ArrowUpRight size={14} color={colors.success}/>
             ) : (
-                <ArrowDownRight size={16} color="#EF4444"/>
+                <ArrowDownRight size={14} color={colors.error}/>
             )}
-            <Text style={[styles.badgeText, isLong ? styles.longText : styles.shortText]}>
+            <ThemedText 
+                variant="caption" 
+                color={isLong ? colors.success : colors.error}
+                weight="bold"
+            >
                 {isLong ? 'LONG' : 'SHORT'}
-            </Text>
+            </ThemedText>
         </View>
     );
 };
@@ -28,13 +41,8 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         paddingHorizontal: 6,
         borderRadius: 4,
-        gap: 8,
+        gap: 4,
     },
-    longBadge: {backgroundColor: 'rgba(56,255,2,0.07)'},
-    shortBadge: {backgroundColor: 'rgba(254,226,226,0.07)'},
-    badgeText: {fontSize: 12, fontWeight: 'bold'},
-    longText: {color: '#2ac819'},
-    shortText: {color: '#B91C1C'},
 });
 
 export default DirectionBadge;

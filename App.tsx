@@ -1,5 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {StatusBar} from "react-native";
+import React, {useCallback, useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList, AuthStackParamList} from '@/navigation/navigation';
@@ -19,13 +18,14 @@ import LoginScreen from '@/screens/auth/LoginScreen';
 import RegisterScreen from '@/screens/auth/RegisterScreen';
 import DiscordAuthScreen from '@/screens/auth/DiscordAuthScreen';
 
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import {Platform, SafeAreaView, View} from 'react-native';
-import Constants from "expo-constants";
-import {PushTokenProvider, usePushToken} from "@/contexts/PushTokenContext";
+import {PushTokenProvider} from "@/contexts/PushTokenContext";
 import {Provider} from "react-redux";
 import {store} from "@/services/redux/store";
+import {ThemeProvider} from "@/contexts/ThemeContext";
+import {ThemedView} from "@/components/ui/ThemedView";
+import {StatusBarManager} from "@/components/StatusBarManager";
+import {GestureHandlerRootView} from "react-native-gesture-handler";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -48,6 +48,7 @@ function AuthNavigator() {
 
 function Navigation() {
     const {isAuthenticated, isLoading} = useAuth();
+
     if (isLoading) {
         return <LoadingScreen/>;
     }
@@ -56,6 +57,9 @@ function Navigation() {
         <Stack.Navigator
             screenOptions={{
                 headerShown: false,
+                contentStyle: {
+                    backgroundColor: 'transparent',
+                }
             }}
         >
             {!isAuthenticated ? (
@@ -116,12 +120,12 @@ export default function App() {
     const [isReady, setIsReady] = useState(false);
     const [showSplash, setShowSplash] = useState(true);
 
-    const [expoPushToken, setExpoPushToken] = useState('');
+//    const [expoPushToken, setExpoPushToken] = useState('');
     const [notification, setNotification] = useState<Notifications.Notification | undefined>(
         undefined
     );
-    const notificationListener = useRef<Notifications.EventSubscription>();
-    const responseListener = useRef<Notifications.EventSubscription>();
+    // const notificationListener = useRef<Notifications.EventSubscription>();
+    // const responseListener = useRef<Notifications.EventSubscription>();
     useEffect(() => {
         const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
             setNotification(notification);
@@ -154,12 +158,6 @@ export default function App() {
 
         prepare();
     }, []);
-    useEffect(() => {
-        //StatusBar.setBarStyle(theme == 'Light' ? 'dark-content' : 'light-content'); //todo its time to cook some themes
-        StatusBar.setBarStyle('light-content', true);
-        StatusBar.setBackgroundColor('#0D1B2A');
-        StatusBar.setTranslucent(true)
-    }, []);
 
     const onLayoutRootView = useCallback(async () => {
         if (isReady) {
@@ -172,21 +170,28 @@ export default function App() {
         return null;
     }
     return (
-        <SafeAreaProvider onLayout={onLayoutRootView}>
-            {showSplash ? (
-                <CustomSplashScreen/>
-            ) : (
-                <Provider store={store}>
-                    <PushTokenProvider>
-                        <AuthProvider>
-                            <NavigationContainer linking={linking}>
-                                <Navigation/>
-                            </NavigationContainer>
-                        </AuthProvider>
-                    </PushTokenProvider>
-                </Provider>
-            )}
-        </SafeAreaProvider>
+        <GestureHandlerRootView style={{flex: 1}}>
+            <SafeAreaProvider onLayout={onLayoutRootView}>
+                {showSplash ? (
+                    <CustomSplashScreen/>
+                ) : (
+                    <Provider store={store}>
+                        <PushTokenProvider>
+                            <AuthProvider>
+                                <ThemeProvider>
+                                    <StatusBarManager/>
+                                    <ThemedView variant="screen" style={{flex: 1}}>
+                                        <NavigationContainer linking={linking}>
+                                            <Navigation/>
+                                        </NavigationContainer>
+                                    </ThemedView>
+                                </ThemeProvider>
+                            </AuthProvider>
+                        </PushTokenProvider>
+                    </Provider>
+                )}
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
     );
 }
 

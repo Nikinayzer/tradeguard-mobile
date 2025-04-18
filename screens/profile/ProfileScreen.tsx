@@ -1,7 +1,5 @@
 import React, {useState, useEffect, useCallback} from 'react';
 import {
-    View,
-    Text,
     StyleSheet,
     TouchableOpacity,
     ScrollView,
@@ -9,6 +7,7 @@ import {
     SafeAreaView,
     RefreshControl,
     Image,
+    View,
 } from 'react-native';
 
 import {format} from 'date-fns';
@@ -28,11 +27,11 @@ import {useNavigation} from "@react-navigation/native";
 import {ProfileStackParamList} from "@/navigation/navigation";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
 import Constants from "expo-constants";
-import {useAuth} from '@/contexts/AuthContext';
 import {ExchangeAccount as APIExchangeAccount} from '@/services/api/profile';
 import DiscordLoginButton from '@/components/auth/DiscordLoginButton';
-
-type LoginScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
+import { ThemedView } from '@/components/ui/ThemedView';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface ConnectionCardProps {
     title?: string;
@@ -51,6 +50,8 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
                                                            children,
                                                            isDemo,
                                                        }) => {
+    const { colors } = useTheme();
+    
     const getProviderIcon = (provider?: string): { name: keyof typeof Ionicons.glyphMap; color: string } | null => {
         if (!provider) return null;
         switch (provider.toUpperCase()) {
@@ -59,7 +60,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
             case 'BYBIT':
             case 'BINANCE':
             default:
-                return {name: 'wallet-outline', color: '#748CAB'};
+                return {name: 'wallet-outline', color: colors.textSecondary};
         }
     };
 
@@ -67,7 +68,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
     return (
         <TouchableOpacity onPress={onPress}>
-            <View style={styles.connectionCard}>
+            <ThemedView variant="card" rounded padding="medium" style={styles.connectionCard}>
                 <View style={styles.connectionTitleContainer}>
                     {providerIcon && (
                         <View style={styles.providerHeader}>
@@ -76,16 +77,16 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
                                 size={16}
                                 color={providerIcon.color}
                             />
-                            <Text style={styles.providerText}>{provider}</Text>
+                            <ThemedText variant="label" secondary style={styles.providerText}>{provider}</ThemedText>
                         </View>
                     )}
                     {title && (
                         <View style={styles.connectionTitleLeft}>
-                            <Text style={styles.connectionTitle}>{title}</Text>
+                            <ThemedText variant="bodyBold">{title}</ThemedText>
                             {isDemo && (
-                                <View style={styles.demoBadge}>
-                                    <Text style={styles.demoBadgeText}>DEMO</Text>
-                                </View>
+                                <ThemedView style={styles.demoBadge} rounded="small">
+                                    <ThemedText variant="caption" color={colors.success} weight="600">DEMO</ThemedText>
+                                </ThemedView>
                             )}
                         </View>
                     )}
@@ -95,12 +96,14 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
                         {children}
                     </View>
                 )}
-            </View>
+            </ThemedView>
         </TouchableOpacity>
     );
 };
 
 const DiscordConnection: React.FC<{ discordAccount: User['discordAccount'] }> = ({discordAccount}) => {
+    const { colors } = useTheme();
+    
     const avatarUrl = discordAccount?.discordId
         ? `https://cdn.discordapp.com/avatars/${discordAccount.discordId}/${discordAccount.avatar}.png`
         : null;
@@ -114,16 +117,14 @@ const DiscordConnection: React.FC<{ discordAccount: User['discordAccount'] }> = 
                         style={styles.discordAvatar}
                     />
                 ) : (
-                    <View style={styles.discordAvatar}>
-                        <UserIcon size={24} color="#748CAB"/>
-                    </View>
+                    <ThemedView variant="section" style={styles.discordAvatar} rounded="full">
+                        <UserIcon size={24} color={colors.textSecondary}/>
+                    </ThemedView>
                 )}
                 <View style={styles.discordUserInfo}>
-                    <Text style={styles.discordUsername}>
-                        {discordAccount?.username || 'Unknown'}
-                    </Text>
+                    <ThemedText variant="bodyBold">{discordAccount?.username || 'Unknown'}</ThemedText>
                     <View style={styles.discordId}>
-                        <Text style={styles.discordIdText}>ID: {discordAccount?.discordId || 'Unknown'}</Text>
+                        <ThemedText variant="caption" secondary>ID: {discordAccount?.discordId || 'Unknown'}</ThemedText>
                     </View>
                 </View>
             </View>
@@ -144,23 +145,35 @@ interface ExchangeCardProps {
 
 const ExchangeCard: React.FC<ExchangeCardProps> = ({exchangeAccount}) => {
     const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
+    const { colors } = useTheme();
 
     return (
         <TouchableOpacity
-            style={styles.exchangeCard}
             onPress={() => navigation.navigate('ExchangeAccount', {accountId: exchangeAccount.id.toString()})}
         >
-            <View style={styles.exchangeHeader}>
-                <View style={styles.exchangeTitleContainer}>
-                    <Text style={styles.providerText}>{exchangeAccount.provider}</Text>
-                    <View style={[styles.accountTypeBadge, exchangeAccount.demo && styles.demoBadge]}>
-                        <Text style={[styles.accountTypeText, exchangeAccount.demo && styles.demoBadgeText]}>
-                            {exchangeAccount.demo ? 'Demo' : 'Live'}
-                        </Text>
+            <ThemedView variant="card" rounded padding="medium">
+                <View style={styles.exchangeHeader}>
+                    <View style={styles.exchangeTitleContainer}>
+                        <ThemedText variant="label" secondary style={styles.providerText}>{exchangeAccount.provider}</ThemedText>
+                        <ThemedView 
+                            rounded="small" 
+                            style={{
+                                ...styles.accountTypeBadge,
+                                backgroundColor: exchangeAccount.demo ? `${colors.success}15` : `${colors.warning}15`
+                            }}
+                        >
+                            <ThemedText 
+                                variant="caption" 
+                                weight="600" 
+                                color={exchangeAccount.demo ? colors.success : colors.warning}
+                            >
+                                {exchangeAccount.demo ? 'Demo' : 'Live'}
+                            </ThemedText>
+                        </ThemedView>
                     </View>
+                    <ThemedText variant="bodyBold">{exchangeAccount.name}</ThemedText>
                 </View>
-                <Text style={styles.accountName}>{exchangeAccount.name}</Text>
-            </View>
+            </ThemedView>
         </TouchableOpacity>
     );
 };
@@ -174,6 +187,7 @@ interface AddExchangeButtonProps {
 
 const AddExchangeButton: React.FC<AddExchangeButtonProps> = ({showAlert, hasAccount}) => {
     const navigation = useNavigation<ProfileScreenNavigationProp>();
+    const { colors } = useTheme();
     
     const handleAddExchange = () => {
         if (hasAccount) {
@@ -188,30 +202,13 @@ const AddExchangeButton: React.FC<AddExchangeButtonProps> = ({showAlert, hasAcco
     };
     
     return (
-        <TouchableOpacity 
-            style={styles.addButton}
-            onPress={handleAddExchange}
-        >
-            <View style={styles.addButtonContent}>
-                <Ionicons name="add-circle-outline" size={24} color="#3B82F6" />
-                <Text style={styles.addButtonText}>Add Exchange</Text>
-            </View>
-        </TouchableOpacity>
-    );
-};
-
-const ConnectDiscordButton = () => {
-    return (
-        <TouchableOpacity
-            style={styles.connectButton}
-            onPress={() => {
-                // TODO: Implement Discord connection logic
-            }}
-        >
-            <View style={styles.connectButtonContent}>
-                <Ionicons name="logo-discord" size={20} color="#5865F2"/>
-                <Text style={styles.connectButtonText}>Connect Discord</Text>
-            </View>
+        <TouchableOpacity onPress={handleAddExchange}>
+            <ThemedView variant="card" rounded padding="medium">
+                <View style={styles.addButtonContent}>
+                    <Ionicons name="add-circle-outline" size={24} color={colors.primary} />
+                    <ThemedText variant="bodyBold">Add Exchange</ThemedText>
+                </View>
+            </ThemedView>
         </TouchableOpacity>
     );
 };
@@ -221,7 +218,7 @@ export default function ProfileScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const {alert, showAlert, hideAlert} = useAlert();
     const navigation = useNavigation<ProfileScreenNavigationProp>();
-    const {user: authUser} = useAuth();
+    const { colors } = useTheme();
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -250,66 +247,67 @@ export default function ProfileScreen() {
     }, []);
 
     const getInitials = (firstName?: string, lastName?: string) => {
-        return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || user?.username?.[0]?.toUpperCase() || '?';
+        return (firstName?.charAt(0) || "") + (lastName?.charAt(0) || "");
     };
 
     const handleSettingsPress = () => {
         navigation.navigate('SettingsStack', {
-            screen: 'Settings'
+            screen: 'Settings' 
         });
     };
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0D1B2A"/>
-            </SafeAreaView>
+            <ThemedView variant="screen" style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary}/>
+            </ThemedView>
         );
     }
 
     if (!user) {
         return (
-            <SafeAreaView style={styles.errorContainer}>
-                <AlertCircle size={48} color="#DC2626"/>
-                <Text style={styles.errorText}>Failed to load profile</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={fetchProfile}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
+            <ThemedView variant="screen" style={styles.errorContainer}>
+                <AlertCircle size={50} color={colors.error}/>
+                <ThemedText variant="bodyBold" color={colors.error} mt={16} mb={16}>Failed to load profile</ThemedText>
+                <TouchableOpacity
+                    style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                    onPress={fetchProfile}
+                >
+                    <ThemedText variant="button" color={colors.buttonPrimaryText}>Retry</ThemedText>
                 </TouchableOpacity>
-            </SafeAreaView>
+            </ThemedView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
+        <SafeAreaView style={[styles.safeArea, { marginTop: Constants.statusBarHeight }]}>
+            <ThemedView variant="screen" style={styles.container}>
                 <View style={styles.header}>
                     <View style={styles.headerContent}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>
-                                {getInitials(user.firstName, user.lastName)}
-                            </Text>
-                        </View>
+                        <ThemedView variant="section" style={styles.avatar} rounded="full">
+                            <ThemedText variant="heading1" size={24} color={colors.primary}>{getInitials(user.firstName, user.lastName)}</ThemedText>
+                        </ThemedView>
                         <View style={styles.headerInfo}>
-                            <Text style={styles.name}>
-                                {user.firstName && user.lastName
-                                    ? `${user.firstName} ${user.lastName}`
-                                    : user.username}
-                            </Text>
+                            <ThemedText variant="heading2" size={22}>{`${user.firstName} ${user.lastName}`}</ThemedText>
                             <View style={styles.userMetaContainer}>
-                                <Text style={styles.username}>@{user.username}</Text>
-                                <View style={styles.roleChip}>
-                                    <Text style={styles.roleText}>{user.roles[0]}</Text>
-                                </View>
-                                <View
-                                    style={[
-                                        styles.statusDot,
-                                        {backgroundColor: user.enabled ? '#22C55E' : '#DC2626'}
-                                    ]}
-                                />
+                                <ThemedText variant="bodySmall" secondary>@{user.username}</ThemedText>
+                                <ThemedView
+                                    style={{
+                                        ...styles.statusDot,
+                                        backgroundColor: user.enabled ? colors.success : colors.error
+                                    }}
+                                    rounded="full"
+                                >
+                                    <View />
+                                </ThemedView>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.settingsButton} onPress={handleSettingsPress}>
-                            <Settings size={24} color="#3B82F6"/>
+                        <TouchableOpacity 
+                            style={[styles.settingsButton, { backgroundColor: colors.backgroundTertiary }]} 
+                            onPress={handleSettingsPress}
+                            activeOpacity={0.7}
+                        >
+                            <Settings size={22} color={colors.primary}/>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -322,40 +320,36 @@ export default function ProfileScreen() {
                         <RefreshControl
                             refreshing={isRefreshing}
                             onRefresh={handleRefresh}
-                            tintColor="#3B82F6"
-                            colors={["#3B82F6"]}
+                            tintColor={colors.primary}
+                            colors={[colors.primary]}
                         />
                     }
                 >
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Personal Information</Text>
+                    <ThemedView style={styles.section}>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle} mb={12}>PERSONAL INFORMATION</ThemedText>
                         <View style={styles.infoList}>
                             <View style={styles.infoRow}>
-                                <View style={styles.infoIcon}>
-                                    <Mail size={18} color="#748CAB" strokeWidth={1.5}/>
-                                </View>
+                                <Mail size={26} color={colors.textSecondary} strokeWidth={1.5} style={styles.infoIcon}/>
                                 <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Email</Text>
-                                    <Text style={styles.infoValue}>{user.email || 'Not set'}</Text>
+                                    <ThemedText variant="caption" secondary>Email</ThemedText>
+                                    <ThemedText variant="bodyBold">{user.email || 'Not set'}</ThemedText>
                                 </View>
                             </View>
 
                             <View style={styles.infoRow}>
-                                <View style={styles.infoIcon}>
-                                    <Calendar size={18} color="#748CAB" strokeWidth={1.5}/>
-                                </View>
+                                <Calendar size={26} color={colors.textSecondary} strokeWidth={1.5} style={styles.infoIcon}/>
                                 <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Member Since</Text>
-                                    <Text style={styles.infoValue}>
+                                    <ThemedText variant="caption" secondary>Member Since</ThemedText>
+                                    <ThemedText variant="bodyBold">
                                         {format(new Date(user.registeredAt), 'MMMM d, yyyy')}
-                                    </Text>
+                                    </ThemedText>
                                 </View>
                             </View>
                         </View>
-                    </View>
+                    </ThemedView>
 
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>My Connections</Text>
+                    <ThemedView style={styles.section}>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle} mb={12}>MY CONNECTIONS</ThemedText>
                         <View style={styles.connectionsList}>
                             {user.discordAccount?.discordId ? (
                                 <ConnectionCard
@@ -372,10 +366,10 @@ export default function ProfileScreen() {
                                 />
                             )}
                         </View>
-                    </View>
+                    </ThemedView>
 
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Exchange Accounts</Text>
+                    <ThemedView style={styles.section}>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle} mb={12}>EXCHANGE ACCOUNTS</ThemedText>
                         <View style={styles.connectionsList}>
                             {user.exchangeAccounts?.map((account: APIExchangeAccount, index: number) => {
                                 if (!account.id || !account.name || !account.provider || account.demo === undefined) {
@@ -398,9 +392,9 @@ export default function ProfileScreen() {
                                 hasAccount={(user.exchangeAccounts?.length ?? 0) > 0}
                             />
                         </View>
-                    </View>
+                    </ThemedView>
                 </ScrollView>
-            </View>
+            </ThemedView>
             {alert && <CustomAlert {...alert} onClose={hideAlert}/>}
         </SafeAreaView>
     );
@@ -408,9 +402,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
     safeArea: {
-        marginTop: Constants.statusBarHeight, //todo why? Refactor whole page later
         flex: 1,
-        backgroundColor: '#0D1B2A',
     },
     container: {
         flex: 1,
@@ -426,20 +418,12 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#0D1B2A',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#0D1B2A',
         padding: 16,
-    },
-    errorText: {
-        fontSize: 16,
-        color: '#DC2626',
-        marginVertical: 16,
-        fontWeight: '500',
     },
     header: {
         marginBottom: 24,
@@ -452,117 +436,63 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#22314A',
         justifyContent: 'center',
         alignItems: 'center',
     },
     avatar: {
         width: 64,
         height: 64,
-        borderRadius: 32,
-        backgroundColor: '#22314A',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
     },
-    avatarText: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#3B82F6',
-    },
     headerInfo: {
         flex: 1,
-    },
-    name: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 4,
     },
     userMetaContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-    },
-    username: {
-        fontSize: 14,
-        color: '#748CAB',
-        marginRight: 8,
+        marginTop: 4,
     },
     section: {
         marginBottom: 24,
     },
     sectionTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#748CAB',
-        marginBottom: 12,
         textTransform: 'uppercase',
     },
     infoIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#22314A',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
+        marginRight: 16,
+        marginTop: 4,
     },
     infoList: {
-        paddingVertical: 8,
-        gap: 24,
+        paddingVertical: 12,
+        gap: 28,
     },
     infoRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
     infoContent: {
         flex: 1,
     },
-    infoLabel: {
-        fontSize: 14,
-        color: '#748CAB',
-        marginBottom: 4,
-    },
-    infoValue: {
-        fontSize: 16,
-        color: 'white',
-        fontWeight: '500',
-    },
     roleChip: {
         paddingHorizontal: 8,
-        paddingVertical: 4,
-        backgroundColor: '#22314A',
-        borderRadius: 12,
-    },
-    roleText: {
-        fontSize: 12,
-        color: '#3B82F6',
-        fontWeight: '500',
     },
     statusDot: {
         width: 8,
         height: 8,
-        borderRadius: 4,
     },
     retryButton: {
-        backgroundColor: '#3B82F6',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,
-    },
-    retryButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
     },
     connectionsList: {
         gap: 16,
     },
     connectionCard: {
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
-        padding: 16,
+        // styles will be provided by ThemedView
     },
     connectionContent: {
         marginTop: 16,
@@ -575,39 +505,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    connectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
-    },
     providerText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#748CAB',
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
     accountTypeBadge: {
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 4,
     },
     demoBadge: {
         backgroundColor: 'rgba(20, 184, 166, 0.1)',
-    },
-    accountTypeText: {
-        color: '#F59E0B',
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    demoBadgeText: {
-        color: '#14B8A6',
-    },
-    exchangeCard: {
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
-        padding: 16,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
     },
     exchangeHeader: {
         gap: 8,
@@ -616,11 +526,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-    },
-    accountName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
     },
     discordContent: {
         gap: 8,
@@ -633,8 +538,6 @@ const styles = StyleSheet.create({
     discordAvatar: {
         width: 48,
         height: 48,
-        borderRadius: 24,
-        backgroundColor: '#22314A',
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
@@ -643,39 +546,20 @@ const styles = StyleSheet.create({
         flex: 1,
         gap: 4,
     },
-    discordUsername: {
-        fontSize: 16,
-        color: 'white',
-        fontWeight: '500',
-    },
     discordId: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-    },
-    discordIdText: {
-        fontSize: 12,
-        color: '#748CAB',
     },
     providerHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
     },
-    addButton: {
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
-        padding: 16,
-    },
     addButtonContent: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-    },
-    addButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#FFFFFF',
     },
     connectButton: {
         backgroundColor: '#1B263B',
@@ -683,16 +567,10 @@ const styles = StyleSheet.create({
         padding: 12,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#5865F2',
     },
     connectButtonContent: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-    },
-    connectButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#FFFFFF',
     },
 });

@@ -7,9 +7,11 @@ import {
     TextInput,
     Modal,
     Pressable,
+    Animated,
 } from 'react-native';
 import { Plus, Minus } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SliderInputProps {
     value: number;
@@ -19,6 +21,8 @@ interface SliderInputProps {
     step: number;
     unit?: string;
     disabled?: boolean;
+    label?: string;
+    icon?: React.ReactNode;
 }
 
 export function SliderInput({
@@ -29,18 +33,20 @@ export function SliderInput({
     step,
     unit = '',
     disabled = false,
+    label,
+    icon,
 }: SliderInputProps) {
-    // Modal state
+    const { colors } = useTheme();
     const [isEditing, setIsEditing] = useState(false);
     const [textInputValue, setTextInputValue] = useState(value.toString());
-    
-    // Sliding state
     const [slidingValue, setSlidingValue] = useState<number | null>(null);
     const [isSliding, setIsSliding] = useState(false);
+    const [animation] = useState(new Animated.Value(0));
 
     useEffect(() => {
         setTextInputValue(value.toString());
     }, [value]);
+
 
     const handleSlidingStart = useCallback((initialValue: number) => {
         setIsSliding(true);
@@ -59,18 +65,6 @@ export function SliderInput({
         onChange(finalValue);
     }, [onChange]);
 
-    const handleIncrement = useCallback(() => {
-        if (disabled) return;
-        const newValue = Math.min(value + step, max);
-        onChange(newValue);
-    }, [value, step, max, disabled, onChange]);
-
-    const handleDecrement = useCallback(() => {
-        if (disabled) return;
-        const newValue = Math.max(value - step, min);
-        onChange(newValue);
-    }, [value, step, min, disabled, onChange]);
-
     const handleSubmit = useCallback(() => {
         if (disabled) return;
         const parsed = parseFloat(textInputValue);
@@ -88,47 +82,45 @@ export function SliderInput({
 
     const displayValue = isSliding && slidingValue !== null ? slidingValue : value;
 
+    const progressPercent = ((displayValue - min) / (max - min)) * 100;
+
     return (
         <View style={styles.container}>
-            <View style={styles.controlsContainer}>
+            {/* Label and Value Row */}
+            <View style={styles.labelValueRow}>
+                {label && (
+                    <View style={styles.labelContainer}>
+                        {icon &&
+                            <View style={styles.inputIcon}>{React.cloneElement(icon as React.ReactElement, {size: 20})}</View>}
+                        <Text style={[styles.inputLabel, {color: colors.text}]}>{label}</Text>
+                    </View>
+                )}
+                
                 <TouchableOpacity
                     style={[
-                        styles.button,
-                        styles.decrementButton,
-                        disabled && styles.buttonDisabled
+                        styles.valueDisplay, 
+                        {
+                            backgroundColor: colors.backgroundSecondary,
+                            borderColor: disabled ? colors.buttonDisabled : colors.primary + '33' // 20% opacity
+                        },
+                        disabled && {
+                            opacity: 0.7
+                        }
                     ]}
-                    onPress={handleDecrement}
-                    disabled={disabled}
-                >
-                    <Minus size={16} color={disabled ? "#748CAB" : "#FFFFFF"} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.valueDisplay, disabled && styles.valueDisplayDisabled]}
                     onPress={() => !disabled && setIsEditing(true)}
+                    activeOpacity={0.7}
                 >
-                    <Text style={[styles.valueText, disabled && styles.valueTextDisabled]}>
+                    <Text style={[
+                        styles.valueText, 
+                        {color: disabled ? colors.buttonDisabledText : colors.text}
+                    ]}>
                         {displayValue.toFixed(step < 1 ? 1 : 0)}{unit}
                     </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[
-                        styles.button,
-                        styles.incrementButton,
-                        disabled && styles.buttonDisabled
-                    ]}
-                    onPress={handleIncrement}
-                    disabled={disabled}
-                >
-                    <Plus size={16} color={disabled ? "#748CAB" : "#FFFFFF"} />
                 </TouchableOpacity>
             </View>
 
             <View style={styles.sliderContainer}>
-                <Text style={[styles.rangeLabel, disabled && styles.rangeLabelDisabled]}>
-                    {min}
-                </Text>
+                {/*todo migrate to awesome slider*/}
                 <Slider
                     style={styles.slider}
                     minimumValue={min}
@@ -138,15 +130,26 @@ export function SliderInput({
                     onSlidingStart={handleSlidingStart}
                     onValueChange={handleValueChange}
                     onSlidingComplete={handleSlidingComplete}
-                    minimumTrackTintColor={disabled ? "#1B263B" : "#3B82F6"}
-                    maximumTrackTintColor="#1B263B"
-                    thumbTintColor={disabled ? "#748CAB" : "#3B82F6"}
+                    minimumTrackTintColor={colors.primary}
+                    maximumTrackTintColor={`${colors.primary}80`}
+                    thumbTintColor={disabled ? colors.buttonDisabled : colors.primary}
                     disabled={disabled}
                     tapToSeek={true}
                 />
-                <Text style={[styles.rangeLabel, disabled && styles.rangeLabelDisabled]}>
-                    {max}
-                </Text>
+                <View style={styles.labelsContainer}>
+                    <Text style={[
+                        styles.rangeLabel, 
+                        {color: disabled ? colors.buttonDisabledText : colors.textSecondary}
+                    ]}>
+                        {min}
+                    </Text>
+                    <Text style={[
+                        styles.rangeLabel, 
+                        {color: disabled ? colors.buttonDisabledText : colors.textSecondary}
+                    ]}>
+                        {max}
+                    </Text>
+                </View>
             </View>
 
             <Modal
@@ -159,10 +162,17 @@ export function SliderInput({
                     style={styles.modalOverlay}
                     onPress={handleCancel}
                 >
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Enter Value</Text>
+                    <View style={[styles.modalContent, {
+                        backgroundColor: colors.card,
+                        borderColor: colors.cardBorder
+                    }]}>
+                        <Text style={[styles.modalTitle, {color: colors.text}]}>Enter Value</Text>
                         <TextInput
-                            style={styles.modalInput}
+                            style={[styles.modalInput, {
+                                backgroundColor: colors.backgroundSecondary,
+                                borderColor: colors.inputBorder,
+                                color: colors.text
+                            }]}
                             keyboardType="numeric"
                             value={textInputValue}
                             onChangeText={setTextInputValue}
@@ -170,16 +180,20 @@ export function SliderInput({
                         />
                         <View style={styles.modalButtons}>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
+                                style={[styles.modalButton, styles.cancelButton, {
+                                    backgroundColor: colors.buttonSecondary
+                                }]}
                                 onPress={handleCancel}
                             >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                <Text style={[styles.cancelButtonText, {color: colors.buttonSecondaryText}]}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalButton, styles.submitButton]}
+                                style={[styles.modalButton, styles.submitButton, {
+                                    backgroundColor: colors.primary
+                                }]}
                                 onPress={handleSubmit}
                             >
-                                <Text style={styles.submitButtonText}>Confirm</Text>
+                                <Text style={[styles.submitButtonText, {color: colors.buttonPrimaryText}]}>Confirm</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -191,74 +205,71 @@ export function SliderInput({
 
 const styles = StyleSheet.create({
     container: {
-        marginBottom: 8,
-    },
-    controlsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         marginBottom: 12,
     },
-    button: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        justifyContent: 'center',
+    labelValueRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 16,
     },
-    decrementButton: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    },
-    incrementButton: {
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    },
-    buttonDisabled: {
-        backgroundColor: 'rgba(27, 38, 59, 0.4)',
-    },
-    valueDisplay: {
-        flex: 0.8,
-        backgroundColor: 'rgba(27, 38, 59, 0.5)',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-        marginHorizontal: 8,
-        alignItems: 'center',
-    },
-    valueDisplayDisabled: {
-        backgroundColor: 'rgba(27, 38, 59, 0.3)',
-    },
-    valueText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    valueTextDisabled: {
-        color: '#748CAB',
-    },
-    sliderContainer: {
+    labelContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        flex: 1,
+    },
+    inputIcon: {
+        marginRight: 12,
+    },
+    inputLabel: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    valueDisplay: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+        borderWidth: 1,
+        minWidth: 80,
+    },
+    valueText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    sliderContainer: {
         width: '100%',
-        paddingVertical: 12,
+        paddingVertical: 6,
+    },
+    sliderTrack: {
+        flex: 1,
+        height: 6,
+        borderRadius: 3,
+        marginHorizontal: 12,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    sliderFill: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        height: '100%',
+        borderRadius: 3,
     },
     slider: {
-        flex: 1,
-        height: 50,
-        marginHorizontal: 12,
-        transform: [
-            { scaleX: 1.2 },
-            { scaleY: 1.2 }
-        ],
+        width: '100%',
+        height: 30,
+        marginTop: -12, // Adjust to center the thumb
+    },
+    labelsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginTop: -10,
     },
     rangeLabel: {
         fontSize: 12,
-        color: '#748CAB',
-        minWidth: 32,
         textAlign: 'center',
-    },
-    rangeLabelDisabled: {
-        color: '#4A5568',
     },
     modalOverlay: {
         flex: 1,
@@ -268,24 +279,22 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         width: '80%',
-        backgroundColor: '#1B263B',
         borderRadius: 12,
         padding: 20,
+        borderWidth: 1,
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 12,
+        fontWeight: '600',
+        marginBottom: 16,
+        textAlign: 'center',
     },
     modalInput: {
-        backgroundColor: '#0D1B2A',
+        padding: 12,
         borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        color: 'white',
-        fontSize: 18,
+        borderWidth: 1,
         marginBottom: 16,
+        fontSize: 16,
     },
     modalButtons: {
         flexDirection: 'row',
@@ -293,26 +302,20 @@ const styles = StyleSheet.create({
     },
     modalButton: {
         flex: 1,
-        paddingVertical: 12,
+        padding: 12,
         borderRadius: 8,
         alignItems: 'center',
     },
     cancelButton: {
         marginRight: 8,
-        backgroundColor: '#0D1B2A',
-    },
-    cancelButtonText: {
-        color: '#748CAB',
-        fontSize: 16,
-        fontWeight: '600',
     },
     submitButton: {
         marginLeft: 8,
-        backgroundColor: '#3B82F6',
+    },
+    cancelButtonText: {
+        fontWeight: '600',
     },
     submitButtonText: {
-        color: 'white',
-        fontSize: 16,
         fontWeight: '600',
     },
 }); 

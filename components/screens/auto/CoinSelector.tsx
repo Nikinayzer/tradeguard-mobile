@@ -1,112 +1,158 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
-import {Plus, X} from 'lucide-react-native';
+import {View, TouchableOpacity, StyleSheet, Image} from 'react-native';
+import {Plus, X, ChevronRight} from 'lucide-react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {RootState} from '@/services/redux/store';
 import {setSelectedCoins} from '@/services/redux/slices/jobStateSlice';
 import {Coin} from "@/services/MarketDataManager";
 import {useNavigation} from "@react-navigation/native";
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useTheme} from '@/contexts/ThemeContext';
+import {ThemedTitle} from '@/components/ui/ThemedTitle';
+import {ThemedText} from '@/components/ui/ThemedText';
+import {ThemedView} from '@/components/ui/ThemedView';
 
+type NavigationProp = NativeStackNavigationProp<any>;
 
 export function CoinSelector() {
     const dispatch = useDispatch();
     const selectedCoins = useSelector((state: RootState) => state.job.selectedCoins);
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp>();
+    const { colors } = useTheme();
 
     const handleOpenCoinSelector = () => {
         navigation.navigate('CoinSelector');
     };
+    
     const handleRemoveCoin = (coin: Coin) => {
         const updatedSelectedCoins = selectedCoins.filter(c => c.symbol !== coin.symbol);
-        dispatch(setSelectedCoins(updatedSelectedCoins)); // Dispatch the updated selected coins to Redux
+        dispatch(setSelectedCoins(updatedSelectedCoins));
     };
 
+    const renderCoinItem = (item: Coin) => (
+        <TouchableOpacity
+            key={item.symbol}
+            style={styles.selectedCoinItem}
+            onPress={() => handleRemoveCoin(item)}
+            activeOpacity={0.7}
+        >
+            <ThemedView 
+                variant="card" 
+                style={styles.selectedCoinItemContent}
+                border
+                rounded="medium"
+                padding="medium"
+            >
+                <View style={styles.coinInfo}>
+                    <Image source={{uri: item.icon}} style={styles.coinIcon}/>
+                    <View style={styles.coinTexts}>
+                        <ThemedText variant="bodyBold" style={styles.coinName}>{item.name}</ThemedText>
+                        <ThemedText variant="caption" color={colors.textTertiary}>{item.symbol}</ThemedText>
+                    </View>
+                </View>
+                <ThemedView 
+                    style={styles.removeIconContainer} 
+                    variant="section" 
+                    rounded="full"
+                >
+                    <X size={16} color={colors.textTertiary}/>
+                </ThemedView>
+            </ThemedView>
+        </TouchableOpacity>
+    );
+
     return (
-        // Selected Coins Section
-        <View style={styles.selectedCoinsSection}>
+        <ThemedView style={styles.selectedCoinsSection} variant="transparent">
             <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Selected Coins</Text>
+                <View style={[styles.sectionHeader, {flexDirection: 'column', justifyContent: 'flex-end' }]}>
+                    <ThemedText size={22} weight={"bold"}>Your Coins</ThemedText>
+                </View>
+                {selectedCoins.length > 0 && (
                 <TouchableOpacity
-                    style={styles.addButton}
+                    style={{
+                        ...styles.addButton,
+                        backgroundColor: `${colors.primary}19`,
+                        borderColor: `${colors.primary}33`
+                    }}
                     onPress={handleOpenCoinSelector}
                 >
-                    <Plus size={20} color="#3B82F6"/>
-                    <Text style={styles.addButtonText}>Add Coins</Text>
+                    <Plus size={18} color={colors.primary}/>
+
+                    <ThemedText variant="label" color={colors.primary} ml={8} weight="600">
+                        Add Coins
+                    </ThemedText>
                 </TouchableOpacity>
+                )}
             </View>
 
             {selectedCoins.length > 0 ? (
-                <View
-                    style={styles.selectedCoinsList}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {selectedCoins.map((coin) => (
-                        <TouchableOpacity
-                            key={coin.symbol}
-                            style={styles.selectedCoinItem}
-                            onPress={() => handleRemoveCoin(coin)}
-                        >
-                            <View style={styles.coinInfo}>
-                                <Image source={{uri: coin.icon}} style={styles.coinIcon}/>
-                                <View style={styles.coinTexts}>
-                                    <Text style={styles.coinName}>{coin.name}</Text>
-                                    <Text style={styles.coinSymbol}>{coin.symbol}</Text>
-                                </View>
-                            </View>
-                            <X size={20} color="#748CAB"/>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                <ThemedView style={styles.selectedCoinsContainer} variant="transparent">
+                    {selectedCoins.map(coin => renderCoinItem(coin))}
+                </ThemedView>
             ) : (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>
-                        Tap the button above to select coins
-                    </Text>
-                </View>
+                <ThemedView style={styles.emptyState} variant="transparent">
+                    <ThemedView
+                        variant="card"
+                        style={styles.emptyStateGradient}
+                        border
+                        rounded="medium"
+                        padding="large"
+                    >
+                        <ThemedText 
+                            variant="body" 
+                            color={colors.textSecondary}
+                            centered
+                            mb={16}
+                        >
+                            Tap the button above to select coins
+                        </ThemedText>
+                        <TouchableOpacity 
+                            style={{
+                                ...styles.emptyStateButton,
+                                backgroundColor: `${colors.primary}19`,
+                                borderColor: `${colors.primary}33`
+                            }}
+                            onPress={handleOpenCoinSelector}
+                        >
+                            <ThemedText variant="label" color={colors.primary} weight="600" mr={8}>
+                                Browse Available Coins
+                            </ThemedText>
+                            <ChevronRight size={16} color={colors.primary} />
+                        </TouchableOpacity>
+                    </ThemedView>
+                </ThemedView>
             )}
-        </View>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
-    sectionTitle: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#E2E8F0',
-    },
     selectedCoinsSection: {
-        marginBottom: 16,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        padding: 10,
     },
     addButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        borderWidth: 1,
     },
-    addButtonText: {
-        color: '#3B82F6',
-        fontSize: 14,
-        fontWeight: '500',
-        marginLeft: 6,
-    },
-    selectedCoinsList: {
+    selectedCoinsContainer: {
+        overflow: 'hidden',
     },
     selectedCoinItem: {
+        marginBottom: 5,
+    },
+    selectedCoinItemContent: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 8,
     },
     coinInfo: {
         flexDirection: 'row',
@@ -114,35 +160,36 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     coinIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        marginRight: 12,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        marginRight: 14,
     },
     coinTexts: {
         flex: 1,
     },
     coinName: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: 'white',
-        marginBottom: 2,
+        marginBottom: 4,
     },
-    coinSymbol: {
-        fontSize: 12,
-        color: '#748CAB',
-    },
-    emptyState: {
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-        borderRadius: 8,
-        padding: 16,
+    removeIconContainer: {
+        width: 32,
+        height: 32,
         alignItems: 'center',
         justifyContent: 'center',
-        height: 100,
     },
-    emptyStateText: {
-        color: '#748CAB',
-        fontSize: 14,
-        textAlign: 'center',
+    emptyState: {
+        marginBottom: 0,
+    },
+    emptyStateGradient: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyStateButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+        borderWidth: 1,
     },
 });

@@ -3,7 +3,7 @@ import {API_ENDPOINTS} from '@/config/api';
 
 export type JobStrategy = 'DCA' | 'LIQ';
 export type JobStatus = 'CREATED' | 'PAUSED' | 'IN_PROGRESS' | 'CANCELED' | 'FINISHED';
-export type JobSide = 'BUY' | 'SELL' | 'BOTH' ; //todo both or not to both
+export type JobSide = 'BUY' | 'SELL';
 
 interface BaseJobParams {
     amount: number;

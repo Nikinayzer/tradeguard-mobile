@@ -1,11 +1,9 @@
 import React, {useState, useMemo, useCallback} from "react";
 import {
     View,
-    Text,
     StyleSheet,
     FlatList,
     ListRenderItem,
-    ActivityIndicator,
     RefreshControl
 } from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
@@ -15,10 +13,13 @@ import {Coin, Categories} from "@/services/MarketDataManager";
 import {useNavigation} from "@react-navigation/native";
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {MarketStackParamList} from '@/navigation/navigation';
-import {ScreenHeader} from "@/components/screens/portfolio/ScreenHeader";
 import {usePullToRefresh} from "@/hooks/usePullToRefresh";
 import {SearchBar} from "@/components/common/SearchBar";
 import {ScreenLoader} from '@/components/common/ScreenLoader';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { ThemedHeader } from '@/components/ui/ThemedHeader';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Section {
     title: string;
@@ -29,11 +30,12 @@ export default function MarketScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<MarketStackParamList>>();
     const {marketData, categories, isLoading, isLoadingInitialData} = useMarketData();
     const [searchQuery, setSearchQuery] = useState("");
-    const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
+    const [lastUpdated, setLastUpdated] = useState(new Date());
+    const { colors } = useTheme();
 
     const {isRefreshing, handleRefresh} = usePullToRefresh({
         onRefresh: async () => {
-            setLastUpdated(new Date().toLocaleTimeString());
+            setLastUpdated(new Date());
         },
         onError: (error) => {
             console.error('Failed to refresh market data:', error);
@@ -83,8 +85,8 @@ export default function MarketScreen() {
     ), [handleCoinPress]);
 
     const renderSection: ListRenderItem<Section> = useCallback(({item: section}) => (
-        <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+        <ThemedView style={styles.sectionContainer}>
+            <ThemedText variant="heading3" style={styles.sectionTitle}>{section.title}</ThemedText>
             <FlatList
                 data={section.data}
                 renderItem={renderMarketItem}
@@ -93,7 +95,7 @@ export default function MarketScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.sectionList}
             />
-        </View>
+        </ThemedView>
     ), [renderMarketItem]);
 
     if (isLoadingInitialData) {
@@ -105,12 +107,12 @@ export default function MarketScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                <ScreenHeader
+        <SafeAreaView style={[styles.safeArea, {backgroundColor: colors.background}]}>
+                <ThemedHeader
                     title="Market"
-                    lastUpdated={lastUpdated}
                     onRefresh={handleRefresh}
+                    canRefresh={true}
+                    subtitle="Live prices and market data"
                 />
                 <SearchBar
                     placeholder="Search coins..."
@@ -118,7 +120,7 @@ export default function MarketScreen() {
                     onChangeText={setSearchQuery}
                     containerStyle={styles.searchContainer}
                 />
-
+                <ThemedView variant="screen" style={styles.container}>
                 <FlatList
                     data={sections}
                     renderItem={renderSection}
@@ -129,19 +131,19 @@ export default function MarketScreen() {
                         <RefreshControl
                             refreshing={isRefreshing || isLoading}
                             onRefresh={handleRefresh}
-                            tintColor="#3B82F6"
-                            colors={["#3B82F6"]}
+                            tintColor={colors.primary}
+                            colors={[colors.primary]}
                         />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>
+                        <ThemedView style={styles.emptyContainer}>
+                            <ThemedText variant="body" secondary style={styles.emptyText}>
                                 {searchQuery ? 'No coins found matching your search' : 'No market data available'}
-                            </Text>
-                        </View>
+                            </ThemedText>
+                        </ThemedView>
                     }
                 />
-            </View>
+            </ThemedView>
         </SafeAreaView>
     );
 }
@@ -149,37 +151,29 @@ export default function MarketScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: "#0D1B2A",
     },
     container: {
         flex: 1,
-        paddingHorizontal: 16,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        color: '#748CAB',
-        marginTop: 12,
-        fontSize: 16,
+        paddingHorizontal: 10,
+        paddingRight: 0,
     },
     searchContainer: {
-        marginBottom: 16,
+        paddingHorizontal: 20,
+        marginTop: 8,
+        maxWidth:"95%",
+        alignSelf:"center",
+        marginBottom:5
     },
     sectionContainer: {
         marginBottom: 24,
     },
     sectionTitle: {
-        color: "white",
-        fontSize: 20,
-        fontWeight: "600",
         marginBottom: 12,
         paddingHorizontal: 4,
     },
     sectionList: {
         paddingLeft: 4,
+        paddingRight: 4,
     },
     listContent: {
         paddingBottom: 20,
@@ -189,10 +183,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 32,
+        paddingHorizontal: 16,
     },
     emptyText: {
-        color: '#748CAB',
-        fontSize: 16,
         textAlign: 'center',
     },
 });

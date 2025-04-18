@@ -51,17 +51,17 @@ export function formatTimeAgo(dateString: string): string {
 export const getStatusColor = (status: JobStatus) => {
     switch (status) {
         case 'CANCELED':
-            return '#F87171';
+            return '#EF4444';
         case 'FINISHED':
             return '#10B981';
         case 'PAUSED':
-            return '#F59E0B';
+            return '#FBBF24';
         case 'IN_PROGRESS':
-            return '#3B82F6';
+            return '#3E7BFA';
         case 'CREATED':
-            return '#3B82F6';
+            return '#3E7BFA';
         default:
-            return '#3B82F6';
+            return '#3E7BFA';
     }
 };
 
@@ -89,17 +89,17 @@ export const getEventColor = (eventType: JobEvent['eventType']) => {
         case 'STEP_DONE':
             return '#10B981';
         case 'CREATED':
-            return '#3B82F6';
+            return '#3E7BFA';
         case 'RESUMED':
-            return '#3B82F6';
+            return '#3E7BFA';
         case 'PAUSED':
-            return '#F59E0B';
+            return '#FBBF24';
         case 'CANCELED_ORDERS':
-            return '#F87171';
+            return '#EF4444';
         case 'STOPPED':
-            return '#F87171';
+            return '#EF4444';
         default:
-            return '#748CAB';
+            return '#94A3B8';
     }
 };
 

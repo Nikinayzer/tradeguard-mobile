@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = async (token: string, userData: User) => {
         try {
             await secureStorage.setToken(token);
+            console.log(userData);
             setUser(userData);
             setIsAuthenticated(true);
         } catch (error) {

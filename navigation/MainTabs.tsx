@@ -2,6 +2,7 @@ import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {Home, BarChart2, User, Bot, TrendingUp, HeartPulse} from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
 
 import HomeScreen from '../screens/home/HomeScreen';
 import MarketScreen from '../screens/market/MarketScreen';
@@ -115,6 +116,8 @@ function HealthStack() {
 }
 
 function ProfileStack() {
+    const { colors } = useTheme();
+    
     return (
         <Stack.Navigator
             screenOptions={{
@@ -123,7 +126,7 @@ function ProfileStack() {
                 animationDuration: 150,
                 presentation: 'transparentModal' as const,
                 contentStyle: {
-                    backgroundColor: '#0D1B2A',
+                    backgroundColor: colors.background,
                 },
             }}
         >
@@ -145,6 +148,7 @@ function SettingsStack() {
         >
             <Stack.Screen name="Settings" component={SettingsScreen}/>
             <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen}/>
+            <Stack.Screen name="AccountLimits" component={AccountLimitsScreen}/>
             <Stack.Screen name="Security" component={SecuritySettingsScreen}/>
             <Stack.Screen name="APISettings" component={APISettingsScreen}/>
             <Stack.Screen name="Notifications" component={NotificationsSettingsScreen}/>
@@ -167,12 +171,14 @@ function PortfolioStack() {
 }
 
 export default function MainTabs() {
+    const { colors } = useTheme();
+    
     return (
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: '#1B263B',
+                    backgroundColor: colors.backgroundSecondary,
                     borderTopWidth: 0,
                     elevation: 0,
                     shadowOpacity: 0,
@@ -180,8 +186,8 @@ export default function MainTabs() {
                     paddingBottom: 8,
                     paddingTop: 8,
                 },
-                tabBarActiveTintColor: '#3B82F6',
-                tabBarInactiveTintColor: '#748CAB',
+                tabBarActiveTintColor: colors.primary,
+                tabBarInactiveTintColor: colors.textTertiary,
                 tabBarLabelStyle: {
                     fontSize: 12,
                     fontWeight: '500',

@@ -3,13 +3,12 @@ import {
     View,
     StyleSheet,
     FlatList,
-    Text,
     TouchableOpacity,
     Image,
     ActivityIndicator,
     Platform
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Check, ChevronLeft, AlertCircle } from 'lucide-react-native';
@@ -17,8 +16,10 @@ import { SearchBar } from '@/components/common/SearchBar';
 import { useMarketData } from '@/hooks/useMarketData';
 import { setSelectedCoins } from '@/services/redux/slices/jobStateSlice';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { ThemedText } from '@/components/ui/ThemedText';
 
-// Define SimpleCoin type
 interface SimpleCoin {
     symbol: string;
     name: string;
@@ -28,48 +29,65 @@ interface SimpleCoin {
     isPositive: boolean;
 }
 
-// type CoinSelectorScreenRouteProp = RouteProp<{
-//     CoinSelector: {
-//         selectedCoins: SimpleCoin[];
-//         mode: 'DCA' | 'LIQ';
-//     }
-// }, 'CoinSelector'>;
+const CoinItem = React.memo(({ coin, isSelected, onPress }: { coin: SimpleCoin; isSelected: boolean; onPress: () => void; }) => {
+    const { colors } = useTheme();
+    
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <ThemedView 
+                variant="card" 
+                style={{
+                    ...styles.coinItem,
+                    ...(isSelected ? {
+                        backgroundColor: `${colors.primary}19`,
+                        borderColor: colors.primary
+                    } : {})
+                }}
 
-const CoinItem = React.memo(({ coin, isSelected, onPress }: { coin: SimpleCoin; isSelected: boolean; onPress: () => void; }) => (
-    <TouchableOpacity
-        style={[styles.coinItem, isSelected && styles.selectedCoin]}
-        onPress={onPress}
-        activeOpacity={0.7}
-    >
-        <View style={styles.coinInfo}>
-            <Image source={{ uri: coin.icon }} style={styles.icon} />
-            <View style={styles.coinTexts}>
-                <Text style={styles.coinName}>{coin.name}</Text>
-                <Text style={styles.coinSymbol}>{coin.symbol}</Text>
-            </View>
-        </View>
-        <View style={styles.priceInfo}>
-            <Text style={styles.priceText}>{coin.price}</Text>
-            <Text style={[styles.changeText, coin.isPositive ? styles.positiveChange : styles.negativeChange]}>
-                {coin.change24h}
-            </Text>
-        </View>
-        {isSelected && (
-            <View style={styles.checkmark}>
-                <Check size={16} color="white" />
-            </View>
-        )}
-    </TouchableOpacity>
-));
+                rounded="medium"
+            >
+                <View style={styles.coinInfo}>
+                    <Image source={{ uri: coin.icon }} style={styles.icon} />
+                    <View style={styles.coinTexts}>
+                        <ThemedText variant="bodyBold" style={styles.coinName}>{coin.name}</ThemedText>
+                        <ThemedText variant="caption" color={colors.textTertiary}>{coin.symbol}</ThemedText>
+                    </View>
+                </View>
+                <View style={styles.priceInfo}>
+                    <ThemedText variant="body">{coin.price}</ThemedText>
+                    <ThemedText 
+                        variant="caption" 
+                        color={coin.isPositive ? colors.profit : colors.loss}
+                    >
+                        {coin.change24h}
+                    </ThemedText>
+                </View>
+                {isSelected && (
+                    <ThemedView 
+                        style={styles.checkmark}
+                        variant="transparent"
+                        rounded="full"
+                    >
+                        <Check size={16} color={colors.primary} />
+                    </ThemedView>
+                )}
+            </ThemedView>
+        </TouchableOpacity>
+    );
+});
 
 export default function CoinSelectorScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
-    const route = useRoute<CoinSelectorScreenRouteProp>();
+    const route = useRoute();
     const insets = useSafeAreaInsets();
     const dispatch = useDispatch();
     const { marketData, isLoading, error } = useMarketData();
     const selectedCoins = useSelector((state: any) => state.job.selectedCoins);
     const [searchQuery, setSearchQuery] = useState('');
+    const { colors } = useTheme();
 
     const convertToSimpleCoin = useCallback((coin: any) => ({
         symbol: coin.symbol,
@@ -98,11 +116,11 @@ export default function CoinSelectorScreen() {
             ? selectedCoins.filter((c: any) => c.symbol !== coin.symbol)
             : [...selectedCoins, coin];
 
-        dispatch(setSelectedCoins(newSelectedCoins));  // Update Redux state
+        dispatch(setSelectedCoins(newSelectedCoins));
     }, [selectedCoins, dispatch]);
 
     const handleConfirm = useCallback(() => {
-        navigation.goBack();  // Go back after confirming selection
+        navigation.goBack();
     }, [navigation]);
 
     const renderItem = useCallback(({ item }: { item: SimpleCoin }) => (
@@ -114,32 +132,32 @@ export default function CoinSelectorScreen() {
     ), [selectedCoins, handleCoinPress]);
 
     const ListEmptyComponent = useCallback(() => (
-        <View style={styles.emptyState}>
-            <AlertCircle size={24} color="#748CAB" />
-            <Text style={styles.emptyStateTitle}>No Coins Found</Text>
-            <Text style={styles.emptyStateMessage}>
+        <ThemedView style={styles.emptyState} variant="transparent">
+            <AlertCircle size={24} color={colors.textTertiary} />
+            <ThemedText variant="bodyBold" mt={12} mb={8}>No Coins Found</ThemedText>
+            <ThemedText variant="body" color={colors.textSecondary} centered>
                 {searchQuery
                     ? 'Try adjusting your search'
                     : 'No coins available for selection'}
-            </Text>
-        </View>
-    ), [searchQuery]);
+            </ThemedText>
+        </ThemedView>
+    ), [searchQuery, colors]);
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <ThemedView style={{ ...styles.container, paddingTop: insets.top }} variant="screen">
             {/* Header */}
-            <View style={styles.header}>
+            <ThemedView style={styles.header} variant="card" border>
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={{ ...styles.backButton, backgroundColor: `${colors.primary}19` }}
                     onPress={navigation.goBack}
                 >
-                    <ChevronLeft size={24} color="white" />
+                    <ChevronLeft size={24} color={colors.primary} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Select Coins</Text>
-                <Text style={styles.selectedCount}>
+                <ThemedText variant="heading2" style={styles.headerTitle}>Select Coins</ThemedText>
+                <ThemedText variant="label" color={colors.primary} weight="500">
                     {selectedCoins.length} selected
-                </Text>
-            </View>
+                </ThemedText>
+            </ThemedView>
 
             {/* Search */}
             <SearchBar
@@ -151,16 +169,16 @@ export default function CoinSelectorScreen() {
 
             {/* Coins List */}
             {isLoading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6" />
-                    <Text style={styles.loadingText}>Loading coins...</Text>
-                </View>
+                <ThemedView style={styles.loadingContainer} variant="transparent">
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ThemedText variant="body" mt={16}>Loading coins...</ThemedText>
+                </ThemedView>
             ) : error ? (
-                <View style={styles.errorContainer}>
-                    <AlertCircle size={24} color="#EF4444" />
-                    <Text style={styles.errorText}>Failed to load coins</Text>
-                    <Text style={styles.errorSubtext}>Please try again later</Text>
-                </View>
+                <ThemedView style={styles.errorContainer} variant="transparent">
+                    <AlertCircle size={24} color={colors.error} />
+                    <ThemedText variant="bodyBold" color={colors.error} mt={12} mb={8}>Failed to load coins</ThemedText>
+                    <ThemedText variant="body" color={colors.textSecondary}>Please try again later</ThemedText>
+                </ThemedView>
             ) : (
                 <FlatList
                     data={availableCoins}
@@ -178,22 +196,25 @@ export default function CoinSelectorScreen() {
             {/* Floating Action Button */}
             {selectedCoins.length > 0 && (
                 <TouchableOpacity
-                    style={[styles.confirmButton, { marginBottom: insets.bottom + 16 }]}
+                    style={{
+                        ...styles.confirmButton, 
+                        marginBottom: insets.bottom + 16, 
+                        backgroundColor: colors.primary
+                    }}
                     onPress={handleConfirm}
                 >
-                    <Text style={styles.confirmButtonText}>
+                    <ThemedText variant="button" color={colors.buttonPrimaryText}>
                         Add {selectedCoins.length} coin{selectedCoins.length !== 1 ? 's' : ''}
-                    </Text>
+                    </ThemedText>
                 </TouchableOpacity>
             )}
-        </View>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0D1B2A',
     },
     header: {
         flexDirection: 'row',
@@ -201,25 +222,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingVertical: 12,
-        backgroundColor: '#1B263B',
     },
     backButton: {
         padding: 8,
         marginRight: 8,
         borderRadius: 8,
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
     },
     headerTitle: {
         flex: 1,
-        fontSize: 18,
-        fontWeight: '600',
-        color: 'white',
         marginLeft: 8,
-    },
-    selectedCount: {
-        fontSize: 14,
-        color: '#3B82F6',
-        fontWeight: '500',
     },
     searchBar: {
         margin: 16,
@@ -231,15 +242,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#1B263B',
-        padding: 16,
-        borderRadius: 12,
         marginBottom: 8,
-    },
-    selectedCoin: {
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderColor: '#3B82F6',
-        borderWidth: 1,
+        padding: 10,
     },
     coinInfo: {
         flexDirection: 'row',
@@ -256,108 +260,46 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     coinName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: 'white',
         marginBottom: 4,
-    },
-    coinSymbol: {
-        fontSize: 14,
-        color: '#748CAB',
     },
     priceInfo: {
         alignItems: 'flex-end',
         marginRight: 8,
     },
-    priceText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: 'white',
-        marginBottom: 4,
-    },
-    changeText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    positiveChange: {
-        color: '#10B981',
-    },
-    negativeChange: {
-        color: '#EF4444',
-    },
     checkmark: {
-        backgroundColor: '#3B82F6',
         width: 24,
         height: 24,
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    confirmButton: {
-        position: 'absolute',
-        bottom: 0,
-        left: 16,
-        right: 16,
-        backgroundColor: '#3B82F6',
-        paddingVertical: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    confirmButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        color: '#748CAB',
-        fontSize: 16,
-        marginTop: 12,
-    },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    errorText: {
-        color: '#EF4444',
-        fontSize: 16,
-        fontWeight: '600',
-        marginTop: 12,
-    },
-    errorSubtext: {
-        color: '#748CAB',
-        fontSize: 14,
-        marginTop: 4,
-    },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
     },
-    emptyStateTitle: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        marginTop: 12,
+    loadingContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    emptyStateMessage: {
-        color: '#748CAB',
-        fontSize: 14,
-        marginTop: 4,
-        textAlign: 'center',
+    errorContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    confirmButton: {
+        position: 'absolute',
+        bottom: 16,
+        left: 16,
+        right: 16,
+        padding: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 4,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
     },
 });

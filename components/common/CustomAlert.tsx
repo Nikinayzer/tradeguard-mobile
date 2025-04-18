@@ -7,9 +7,12 @@ import {
     TouchableOpacity,
     Dimensions,
     TouchableWithoutFeedback,
-    Animated,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import {ThemedView} from "@/components/ui/ThemedView";
+import {ThemedText} from "@/components/ui/ThemedText";
+import {useTheme} from "@/contexts/ThemeContext";
 
 export type AlertType = 'success' | 'error' | 'warning' | 'info';
 
@@ -72,6 +75,8 @@ export default function CustomAlert({
     onClose,
     buttons = [{ text: 'OK', onPress: () => {}, style: 'default' }],
 }: CustomAlertProps) {
+
+    const {colors} = useTheme();
     const getIconName = () => {
         switch (type) {
             case 'success':
@@ -104,11 +109,12 @@ export default function CustomAlert({
             transparent
             animationType="fade"
             onRequestClose={onClose}
+            statusBarTranslucent={true}
         >
             <TouchableWithoutFeedback onPress={onClose}>
                 <View style={styles.overlay}>
                     <TouchableWithoutFeedback>
-                        <View style={styles.alertContainer}>
+                        <ThemedView style={styles.alertContainer} variant={"modal"}>
                             <View style={styles.iconContainer}>
                                 <Ionicons
                                     name={getIconName()}
@@ -116,8 +122,9 @@ export default function CustomAlert({
                                     color={getIconColor()}
                                 />
                             </View>
-                            <Text style={styles.title}>{title}</Text>
-                            <Text style={styles.message}>{message}</Text>
+                            <ThemedText style={styles.title} size={22}>{title}</ThemedText>
+                            <ThemedText style={styles.message} size={16} color={colors.textTertiary}>{message}</ThemedText>
+                            
                             <View style={styles.buttonContainer}>
                                 {buttons.map((button, index) => (
                                     <TouchableOpacity
@@ -145,7 +152,7 @@ export default function CustomAlert({
                                     </TouchableOpacity>
                                 ))}
                             </View>
-                        </View>
+                        </ThemedView>
                     </TouchableWithoutFeedback>
                 </View>
             </TouchableWithoutFeedback>
@@ -157,13 +164,18 @@ const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
     overlay: {
-        flex: 1,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         backgroundColor: 'rgba(13, 27, 42, 0.8)',
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 1000,
+        elevation: 1000,
     },
     alertContainer: {
-        backgroundColor: '#1B263B',
         borderRadius: 16,
         padding: 24,
         width: width * 0.85,
@@ -177,20 +189,17 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
+        zIndex: 1001,
     },
     iconContainer: {
         marginBottom: 16,
     },
     title: {
-        fontSize: 20,
         fontWeight: '600',
-        color: '#FFFFFF',
         marginBottom: 8,
         textAlign: 'center',
     },
     message: {
-        fontSize: 16,
-        color: '#748CAB',
         marginBottom: 24,
         textAlign: 'center',
         lineHeight: 22,
@@ -219,7 +228,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     buttonTextCancel: {
-        color: '#748CAB',
+        color: '#d8d8d8',
     },
     buttonTextDestructive: {
         color: '#FFFFFF',

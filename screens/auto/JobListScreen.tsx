@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View
+import {ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {Bot, ChevronLeft, Filter, History, SortAsc, SortDesc} from 'lucide-react-native';
@@ -10,6 +10,10 @@ import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SearchBar} from '@/components/common/SearchBar';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
+import {useTheme} from '@/contexts/ThemeContext';
+import {ThemedView} from '@/components/ui/ThemedView';
+import {ThemedText} from '@/components/ui/ThemedText';
+import {ThemedHeader} from '@/components/ui/ThemedHeader';
 
 type JobListScreenRouteProp = RouteProp<{
     JobList: { initialTab: 'active' | 'finished' };
@@ -31,6 +35,7 @@ export default function JobListScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'createdAt', order: 'desc' });
+    const {colors} = useTheme();
 
     const {alert, showAlert, hideAlert} = useAlert();
 
@@ -149,58 +154,90 @@ export default function JobListScreen() {
             <TouchableOpacity
                 style={[
                     styles.sortButton,
-                    isActive && styles.sortButtonActive
+                    isActive && styles.sortButtonActive,
+                    { 
+                        backgroundColor: isActive 
+                            ? `${colors.primary}15` 
+                            : colors.backgroundTertiary,
+                        borderColor: isActive ? colors.primary : 'transparent'
+                    }
                 ]}
                 onPress={() => handleSort(field)}
             >
-                <Icon size={14} color={isActive ? '#3B82F6' : '#748CAB'} />
-                <Text style={[
-                    styles.sortButtonText,
-                    isActive && styles.sortButtonTextActive
-                ]}>
+                <Icon size={14} color={isActive ? colors.primary : colors.textSecondary} />
+                <ThemedText 
+                    variant="caption" 
+                    color={isActive ? colors.primary : colors.textSecondary}
+                    style={{
+                        ...styles.sortButtonText,
+                        ...(isActive ? { fontWeight: '600' } : {})
+                    }}
+                >
                     {label}
-                </Text>
+                </ThemedText>
             </TouchableOpacity>
         );
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <ChevronLeft size={24} color="white" />
-                </TouchableOpacity>
-                
-                <Text style={styles.headerTitle}>All Jobs</Text>
-                <View style={styles.headerSpacer} />
-            </View>
+        <SafeAreaView style={{...styles.safeArea, backgroundColor: colors.background}}>
+            <ThemedHeader
+                title="All Jobs"
+                canGoBack={true}
+                onBack={() => navigation.goBack()}
+            />
 
-            <View style={styles.tabContainer}>
+            <ThemedView 
+                variant="section" 
+                style={styles.tabContainer}
+                rounded="large"
+            >
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
+                    style={[
+                        styles.tab, 
+                        activeTab === 'active' && {
+                            backgroundColor: `${colors.primary}15`,
+                        }
+                    ]}
                     onPress={() => setActiveTab('active')}
                 >
-                    <Bot size={16} color={activeTab === 'active' ? "#3B82F6" : "#748CAB"}/>
-                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>
+                    <Bot size={16} color={activeTab === 'active' ? colors.primary : colors.textSecondary}/>
+                    <ThemedText 
+                        variant="bodySmall" 
+                        color={activeTab === 'active' ? colors.primary : colors.textSecondary}
+                        style={{
+                            ...styles.tabText, 
+                            ...(activeTab === 'active' ? { fontWeight: '600' } : {})
+                        }}
+                    >
                         Active ({activeJobs.length})
-                    </Text>
+                    </ThemedText>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === 'finished' && styles.activeTab]}
+                    style={[
+                        styles.tab, 
+                        activeTab === 'finished' && {
+                            backgroundColor: `${colors.primary}15`,
+                        }
+                    ]}
                     onPress={() => setActiveTab('finished')}
                 >
-                    <History size={16} color={activeTab === 'finished' ? "#3B82F6" : "#748CAB"}/>
-                    <Text style={[styles.tabText, activeTab === 'finished' && styles.activeTabText]}>
+                    <History size={16} color={activeTab === 'finished' ? colors.primary : colors.textSecondary}/>
+                    <ThemedText 
+                        variant="bodySmall" 
+                        color={activeTab === 'finished' ? colors.primary : colors.textSecondary}
+                        style={{
+                            ...styles.tabText, 
+                            ...(activeTab === 'finished' ? { fontWeight: '600' } : {})
+                        }}
+                    >
                         History ({finishedJobs.length})
-                    </Text>
+                    </ThemedText>
                 </TouchableOpacity>
-            </View>
+            </ThemedView>
 
-            <View style={styles.toolbarContainer}>
+            <ThemedView variant="transparent" style={styles.toolbarContainer}>
                 <View style={styles.searchContainer}>
                     <SearchBar
                         placeholder="Search by ID, strategy, status..."
@@ -213,8 +250,8 @@ export default function JobListScreen() {
                 <View style={styles.sortingContainer}>
                     <View style={styles.sortingHeader}>
                         <View style={styles.sortingTitleContainer}>
-                            <Filter size={16} color="#748CAB" />
-                            <Text style={styles.sortingTitle}>Sort by</Text>
+                            <Filter size={16} color={colors.textSecondary} />
+                            <ThemedText variant="caption" secondary style={styles.sortingTitle}>Sort by</ThemedText>
                         </View>
                     </View>
                     <ScrollView 
@@ -222,14 +259,13 @@ export default function JobListScreen() {
                         showsHorizontalScrollIndicator={false}
                         contentContainerStyle={styles.sortButtonsContainer}
                     >
-                        {renderSortButton('id', 'ID')}
                         {renderSortButton('strategy', 'Strategy')}
                         {renderSortButton('status', 'Status')}
                         {renderSortButton('createdAt', 'Created')}
                         {renderSortButton('updatedAt', 'Updated')}
                     </ScrollView>
                 </View>
-            </View>
+            </ThemedView>
 
             <FlatList
                 data={filteredAndSortedJobs}
@@ -237,29 +273,29 @@ export default function JobListScreen() {
                 keyExtractor={item => item.jobId.toString()}
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyStateText}>
+                    <ThemedView variant="transparent" style={styles.emptyState} rounded="large">
+                        <ThemedText variant="bodyBold" style={styles.emptyStateText}>
                             {searchQuery
                                 ? 'No jobs match your search'
                                 : activeTab === 'active'
                                     ? 'No Active Jobs'
                                     : 'No Job History'}
-                        </Text>
-                        <Text style={styles.emptyStateSubtext}>
+                        </ThemedText>
+                        <ThemedText variant="caption" secondary style={styles.emptyStateSubtext}>
                             {searchQuery
                                 ? 'Try adjusting your search terms'
                                 : activeTab === 'active'
                                     ? 'When you create jobs, they will appear here while running'
                                     : 'Completed and canceled jobs will appear here'}
-                        </Text>
-                    </View>
+                        </ThemedText>
+                    </ThemedView>
                 }
                 refreshControl={
                     <RefreshControl
                         refreshing={isRefreshing}
                         onRefresh={handleRefresh}
-                        colors={["#3B82F6"]}
-                        tintColor="#3B82F6"
+                        colors={[colors.primary]}
+                        tintColor={colors.primary}
                     />
                 }
             />
@@ -267,46 +303,24 @@ export default function JobListScreen() {
             {alert && <CustomAlert {...alert} onClose={hideAlert} />}
 
             {isLoading && (
-                <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#3B82F6"/>
-                </View>
+                <ThemedView 
+                    variant="section" 
+                    style={styles.loadingOverlay}
+                >
+                    <ActivityIndicator size="large" color={colors.primary}/>
+                </ThemedView>
             )}
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    safeArea: {
         flex: 1,
-        backgroundColor: '#0D1B2A',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(116, 140, 171, 0.2)',
-    },
-    backButton: {
-        padding: 8,
-        borderRadius: 20,
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-    },
-    headerTitle: {
-        flex: 1,
-        color: 'white',
-        fontSize: 18,
-        fontWeight: '700',
-        textAlign: 'center',
-    },
-    headerSpacer: {
-        width: 40,
     },
     tabContainer: {
         flexDirection: 'row',
         margin: 16,
-        backgroundColor: 'rgba(13, 27, 42, 0.7)',
-        borderRadius: 12,
         padding: 4,
     },
     tab: {
@@ -317,24 +331,13 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 10,
     },
-    activeTab: {
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    },
     tabText: {
         fontSize: 14,
-        color: '#748CAB',
-        fontWeight: '500',
         marginLeft: 8,
-    },
-    activeTabText: {
-        color: '#3B82F6',
-        fontWeight: '600',
     },
     toolbarContainer: {
         paddingHorizontal: 16,
         paddingBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(116, 140, 171, 0.1)',
     },
     searchContainer: {
         marginBottom: 12,
@@ -356,9 +359,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sortingTitle: {
-        color: '#748CAB',
         fontSize: 13,
-        fontWeight: '500',
         marginLeft: 6,
     },
     sortButtonsContainer: {
@@ -370,24 +371,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 8,
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
         marginRight: 8,
         borderWidth: 1,
-        borderColor: 'transparent',
-    },
-    sortButtonActive: {
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderColor: '#3B82F6',
     },
     sortButtonText: {
-        color: '#748CAB',
         fontSize: 13,
-        fontWeight: '500',
         marginLeft: 6,
-    },
-    sortButtonTextActive: {
-        color: '#3B82F6',
-        fontWeight: '600',
     },
     listContent: {
         padding: 16,
@@ -396,24 +385,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 24,
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-        borderRadius: 12,
     },
     emptyStateText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: 'white',
         marginBottom: 8,
     },
     emptyStateSubtext: {
-        fontSize: 14,
-        color: '#748CAB',
         textAlign: 'center',
     },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(13, 27, 42, 0.7)',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    sortButtonActive: {
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderColor: '#3B82F6',
     },
 }); 

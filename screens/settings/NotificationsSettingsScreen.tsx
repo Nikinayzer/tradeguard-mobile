@@ -1,18 +1,57 @@
 import React, {useState} from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SettingsStackParamList } from "@/navigation/navigation";
 import NotificationModal from "@/components/modals/NotificationModal";
 import CooldownWarningModal from "@/components/modals/CooldownWarningModal";
 import CooldownPromptModal from "@/components/modals/CooldownPromptModal";
+import { ThemedView } from "@/components/ui/ThemedView";
+import { ThemedText } from "@/components/ui/ThemedText";
+import { ThemedHeader } from "@/components/ui/ThemedHeader";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type NotificationsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
+interface ToggleProps {
+    value: boolean;
+    onChange: (value: boolean) => void;
+}
+
+function Toggle({value, onChange}: ToggleProps) {
+    const { colors } = useTheme();
+    
+    return (
+        <TouchableOpacity
+            onPress={() => onChange(!value)}
+            activeOpacity={0.8}
+            style={styles.toggleButtonContainer}
+        >
+            <View
+                style={[
+                    styles.toggleButton, 
+                    { 
+                        backgroundColor: value ? 
+                            colors.primary : 
+                            colors.backgroundTertiary 
+                    }
+                ]}
+            >
+                <View style={[
+                    styles.toggleHandle, 
+                    { backgroundColor: colors.buttonPrimaryText },
+                    value ? styles.toggleHandleActive : styles.toggleHandleInactive
+                ]}/>
+            </View>
+        </TouchableOpacity>
+    );
+}
+
 export default function NotificationsSettingsScreen() {
     const navigation = useNavigation<NotificationsScreenNavigationProp>();
+    const { colors } = useTheme();
+    
     const [notifications, setNotifications] = React.useState({
         tradeAlerts: true,
         priceAlerts: true,
@@ -45,116 +84,149 @@ export default function NotificationsSettingsScreen() {
         console.log("Justification:", justification);
     };
 
-    return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => navigation.goBack()}
-                    >
-                        <ChevronLeft size={24} color="#3B82F6" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Notifications</Text>
-                </View>
+    const renderMenuItem = (
+        title: string,
+        description: string,
+        value: boolean,
+        onChange: () => void
+    ) => (
+        <ThemedView
+            variant="card"
+            style={styles.menuItem}
+            border
+            rounded="medium"
+            padding="medium"
+        >
+            <View style={styles.menuContent}>
+                <ThemedText variant="bodyBold">{title}</ThemedText>
+                <ThemedText variant="caption" secondary>{description}</ThemedText>
+            </View>
+            <Toggle value={value} onChange={onChange} />
+        </ThemedView>
+    );
 
-                <ScrollView style={styles.content}>
+    return (
+        <ThemedView variant="screen" style={styles.container}>
+            <SafeAreaView edges={['top']} style={styles.safeArea}>
+                <ThemedHeader
+                    title="Notifications"
+                    canGoBack={true}
+                    onBack={() => navigation.goBack()}
+                />
+
+                <ScrollView 
+                    style={styles.content}
+                    showsVerticalScrollIndicator={false}
+                >
                     {/* Trading Notifications */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Trading</Text>
-                        <View style={styles.menuItem}>
-                            <View style={styles.menuContent}>
-                                <Text style={styles.menuText}>Trade Alerts</Text>
-                                <Text style={styles.menuDescription}>Get notified about your trades</Text>
-                            </View>
-                            <Switch
-                                value={notifications.tradeAlerts}
-                                onValueChange={() => toggleNotification('tradeAlerts')}
-                                trackColor={{ false: "#22314A", true: "#3B82F6" }}
-                                thumbColor="#ffffff"
-                            />
-                        </View>
-                        <View style={styles.menuItem}>
-                            <View style={styles.menuContent}>
-                                <Text style={styles.menuText}>Price Alerts</Text>
-                                <Text style={styles.menuDescription}>Get notified about price movements</Text>
-                            </View>
-                            <Switch
-                                value={notifications.priceAlerts}
-                                onValueChange={() => toggleNotification('priceAlerts')}
-                                trackColor={{ false: "#22314A", true: "#3B82F6" }}
-                                thumbColor="#ffffff"
-                            />
-                        </View>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle}>
+                            TRADING
+                        </ThemedText>
+                        
+                        {renderMenuItem(
+                            "Trade Alerts",
+                            "Get notified about your trades",
+                            notifications.tradeAlerts,
+                            () => toggleNotification('tradeAlerts')
+                        )}
+                        
+                        {renderMenuItem(
+                            "Price Alerts",
+                            "Get notified about price movements",
+                            notifications.priceAlerts,
+                            () => toggleNotification('priceAlerts')
+                        )}
                     </View>
 
                     {/* Security Notifications */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Security</Text>
-                        <View style={styles.menuItem}>
-                            <View style={styles.menuContent}>
-                                <Text style={styles.menuText}>Security Alerts</Text>
-                                <Text style={styles.menuDescription}>Get notified about security events</Text>
-                            </View>
-                            <Switch
-                                value={notifications.securityAlerts}
-                                onValueChange={() => toggleNotification('securityAlerts')}
-                                trackColor={{ false: "#22314A", true: "#3B82F6" }}
-                                thumbColor="#ffffff"
-                            />
-                        </View>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle}>
+                            SECURITY
+                        </ThemedText>
+                        
+                        {renderMenuItem(
+                            "Security Alerts",
+                            "Get notified about security events",
+                            notifications.securityAlerts,
+                            () => toggleNotification('securityAlerts')
+                        )}
                     </View>
 
                     {/* Marketing Notifications */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Marketing</Text>
-                        <View style={styles.menuItem}>
-                            <View style={styles.menuContent}>
-                                <Text style={styles.menuText}>News Updates</Text>
-                                <Text style={styles.menuDescription}>Receive news and updates</Text>
-                            </View>
-                            <Switch
-                                value={notifications.newsUpdates}
-                                onValueChange={() => toggleNotification('newsUpdates')}
-                                trackColor={{ false: "#22314A", true: "#3B82F6" }}
-                                thumbColor="#ffffff"
-                            />
-                        </View>
-                        <View style={styles.menuItem}>
-                            <View style={styles.menuContent}>
-                                <Text style={styles.menuText}>Marketing Emails</Text>
-                                <Text style={styles.menuDescription}>Receive marketing communications</Text>
-                            </View>
-                            <Switch
-                                value={notifications.marketingEmails}
-                                onValueChange={() => toggleNotification('marketingEmails')}
-                                trackColor={{ false: "#22314A", true: "#3B82F6" }}
-                                thumbColor="#ffffff"
-                            />
-                        </View>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle}>
+                            MARKETING
+                        </ThemedText>
+                        
+                        {renderMenuItem(
+                            "News Updates",
+                            "Receive news and updates",
+                            notifications.newsUpdates,
+                            () => toggleNotification('newsUpdates')
+                        )}
+                        
+                        {renderMenuItem(
+                            "Marketing Emails",
+                            "Receive marketing communications",
+                            notifications.marketingEmails,
+                            () => toggleNotification('marketingEmails')
+                        )}
                     </View>
+                    
                     {/* Example notifications with modals */}
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Example notifications:</Text>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle}>
+                            EXAMPLE NOTIFICATIONS:
+                        </ThemedText>
 
                         {/* Simple Notification Button */}
-                        <TouchableOpacity style={styles.button} onPress={() => setShowNotification(true)}>
-                            <Text style={styles.menuText}>Show Notification</Text>
-                        </TouchableOpacity>
+                        <ThemedView 
+                            variant="card" 
+                            border 
+                            rounded="medium" 
+                            style={styles.button}
+                        >
+                            <TouchableOpacity 
+                                onPress={() => setShowNotification(true)}
+                                style={styles.buttonContainer}
+                            >
+                                <ThemedText variant="bodyBold">Show Notification</ThemedText>
+                            </TouchableOpacity>
+                        </ThemedView>
 
                         {/* Cooldown Warning Button */}
-                        <TouchableOpacity style={styles.button} onPress={() => setShowCooldownWarning(true)}>
-                            <Text style={styles.menuText}>Show Cooldown Warning</Text>
-                        </TouchableOpacity>
+                        <ThemedView 
+                            variant="card" 
+                            border 
+                            rounded="medium" 
+                            style={styles.button}
+                        >
+                            <TouchableOpacity 
+                                onPress={() => setShowCooldownWarning(true)}
+                                style={styles.buttonContainer}
+                            >
+                                <ThemedText variant="bodyBold">Show Cooldown Warning</ThemedText>
+                            </TouchableOpacity>
+                        </ThemedView>
 
                         {/* Cooldown with Prompt Button */}
-                        <TouchableOpacity style={styles.button} onPress={() => setShowCooldownPrompt(true)}>
-                            <Text style={styles.menuText}>Show Cooldown with Prompt</Text>
-                        </TouchableOpacity>
+                        <ThemedView 
+                            variant="card" 
+                            border 
+                            rounded="medium" 
+                            style={styles.button}
+                        >
+                            <TouchableOpacity 
+                                onPress={() => setShowCooldownPrompt(true)}
+                                style={styles.buttonContainer}
+                            >
+                                <ThemedText variant="bodyBold">Show Cooldown with Prompt</ThemedText>
+                            </TouchableOpacity>
+                        </ThemedView>
                     </View>
                 </ScrollView>
-            </View>
+            </SafeAreaView>
 
             {/* Simple Notification Modal */}
             <NotificationModal
@@ -187,76 +259,61 @@ export default function NotificationsSettingsScreen() {
                 promptText="Please explain why you want to disable all notifications"
                 onConfirm={handleCooldownPromptConfirm}
             />
-        </SafeAreaView>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: "#0D1B2A",
     },
     container: {
         flex: 1,
-        padding: 16,
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 24,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "#22314A",
-        justifyContent: "center",
-        alignItems: "center",
-        marginRight: 12,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "white",
     },
     content: {
         flex: 1,
+        paddingHorizontal: 16,
     },
     section: {
         marginBottom: 24,
     },
     sectionTitle: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#748CAB",
         marginBottom: 12,
         textTransform: "uppercase",
+        paddingLeft: 4,
+        letterSpacing: 1,
     },
     menuItem: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: "#1B263B",
-        padding: 16,
-        borderRadius: 12,
         marginBottom: 8,
     },
     menuContent: {
         flex: 1,
     },
-    menuText: {
-        fontSize: 16,
-        color: "white",
-        marginBottom: 4,
-    },
-    menuDescription: {
-        fontSize: 14,
-        color: "#748CAB",
-    },
     button: {
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
+        marginBottom: 8,
+    },
+    buttonContainer: {
         padding: 16,
-        marginBottom: 12,
+        width: '100%',
+    },
+    toggleButton: {
+        width: 44,
+        height: 26,
+        borderRadius: 13,
+        padding: 2,
+    },
+    toggleHandle: {
+        width: 22,
+        height: 22,
+        borderRadius: 11,
+    },
+    toggleHandleActive: {
+        transform: [{translateX: 18}],
+    },
+    toggleHandleInactive: {
+        transform: [{translateX: 0}],
     },
 });

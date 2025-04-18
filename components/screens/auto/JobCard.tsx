@@ -1,9 +1,10 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity,} from 'react-native';
-import {Clock, DollarSign, Coins} from 'lucide-react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {Clock, DollarSign, Coins, ChevronRight} from 'lucide-react-native';
 import {Job} from '@/services/api/auto';
-import {formatDate, formatTimeAgo, getStatusColor, getStatusText, calculateRemainingTime
-} from './jobUtils';
+import {formatDate, formatTimeAgo, getStatusColor, getStatusText, calculateRemainingTime} from '../../../utils/formatUtils';
+import {useTheme} from '@/contexts/ThemeContext';
+
 
 interface JobCardProps {
     job: Job;
@@ -11,6 +12,8 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, onViewDetails = undefined}: JobCardProps) {
+    const { colors } = useTheme();
+    
     const handleCardPress = () => {
         if (onViewDetails) {
             onViewDetails(job.id);
@@ -20,374 +23,240 @@ export function JobCard({ job, onViewDetails = undefined}: JobCardProps) {
     const progressPercentage = (job.stepsDone / job.stepsTotal) * 100;
     const formattedCreatedAt = formatDate(job.createdAt);
     const timeAgo = formatTimeAgo(job.updatedAt);
+    const isPaused = job.status === 'PAUSED';
+    const statusColor = getStatusColor(job.status);
+    const strategyColor = job.strategy === 'DCA' ? colors.primary : colors.secondary;
+    const sideColor = job.side === 'BUY' ? colors.success : job.side === 'SELL' ? colors.error : colors.primary;
 
     return (
-        <TouchableOpacity style={styles.container} onPress={handleCardPress}>
-            <View style={styles.header}>
-                <View style={styles.strategyContainer}>
-                    <View
-                        style={[styles.strategyBadge, { backgroundColor: job.strategy === 'DCA' ? '#3B82F6' : '#8B5CF6' }]}>
-                        <Text style={styles.strategyText}>{job.strategy}</Text>
-                    </View>
-                    <Text style={styles.jobIdText}>#{job.id}</Text>
+        <TouchableOpacity 
+            style={styles.container} 
+            onPress={handleCardPress}
+            activeOpacity={0.7}
+        >
+            <View
+                style={[styles.cardGradient, {
+                    backgroundColor: colors.card,
+                    borderColor: colors.cardBorder
+                }]}
+            >
+                <View style={styles.header}>
+                    <View style={styles.strategyContainer}>
+                        <View
+                            style={[styles.strategyBadge, { backgroundColor: strategyColor }]}>
+                            <Text style={[styles.strategyText, { color: colors.buttonPrimaryText }]}>{job.strategy}</Text>
+                        </View>
+                        <Text style={[styles.jobIdText, { color: colors.textTertiary }]}>#{job.id.substring(0, 8)}</Text>
 
-                    <View
-                        style={[styles.sideBadge, { backgroundColor: job.side === 'BUY' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(248, 113, 113, 0.2)' }]}>
-                        <Text style={[styles.sideText, { color: job.side === 'BUY' ? '#10B981' : '#F87171' }]}>
-                            {job.side}
+                        <View
+                            style={[styles.sideBadge, { backgroundColor: `${sideColor}20` }]}>
+                            <Text style={[styles.sideText, { color: sideColor }]}>
+                                {job.side}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+                        <Text style={[styles.statusText, { color: colors.buttonPrimaryText }]}>{getStatusText(job.status)}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.progressSection}>
+                    <View style={styles.progressContainer}>
+                        <View style={[styles.progressBackground, { backgroundColor: colors.backgroundTertiary }]}>
+                            <View
+                                style={[
+                                    styles.progressFill,
+                                    {
+                                        width: `${progressPercentage}%`,
+                                        backgroundColor: isPaused ? colors.inactive : statusColor,
+                                    }
+                                ]}
+                            />
+                        </View>
+                        <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+                            {job.stepsDone} of {job.stepsTotal} steps completed
                         </Text>
                     </View>
                 </View>
 
-                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(job.status) }]}>
-                    <Text style={styles.statusText}>{getStatusText(job.status)}</Text>
+                <View style={styles.infoColumns}>
+                    {/* Left column */}
+                    <View style={styles.infoColumn}>
+                        <View style={styles.infoRow}>
+                            <Coins size={16} color={colors.textTertiary} style={styles.infoIcon} />
+                            <View>
+                                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Coins</Text>
+                                <Text style={[styles.infoValueHighlight, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                                    {job.coins.join(', ')}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Clock size={16} color={colors.textTertiary} style={styles.infoIcon} />
+                            <View>
+                                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Created</Text>
+                                <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{formattedCreatedAt}</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Right column */}
+                    <View style={styles.infoColumn}>
+                        <View style={styles.infoRow}>
+                            <DollarSign size={16} color={colors.textTertiary} style={styles.infoIcon} />
+                            <View>
+                                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Amount</Text>
+                                <Text style={[styles.infoValueHighlight, { color: colors.text }]}>
+                                    {job.amount}{job.strategy === 'DCA' ? ' USDT' : '%'}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.infoRow}>
+                            <Clock size={16} color={colors.textTertiary} style={styles.infoIcon} />
+                            <View>
+                                <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Updated</Text>
+                                <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{timeAgo}</Text>
+                            </View>
+                        </View>
+                    </View>
                 </View>
+
+                {job.status === 'IN_PROGRESS' && (
+                    <View style={[styles.footerSection, { borderTopColor: colors.divider }]}>
+                        <View style={styles.estimateContainer}>
+                            <Clock size={14} color={statusColor} />
+                            <Text style={[styles.estimateText, {color: statusColor}]}>
+                                {calculateRemainingTime(job)}
+                            </Text>
+                        </View>
+                        <ChevronRight size={20} color={colors.textTertiary} />
+                    </View>
+                )}
             </View>
-
-            <View style={styles.progressContainer}>
-                <View style={styles.progressBackground}>
-                    <View
-                        style={[
-                            styles.progressFill,
-                            {
-                                width: `${progressPercentage}%`,
-                                backgroundColor: getStatusColor(job.status),
-                            }
-                        ]}
-                    />
-                </View>
-                <Text style={styles.progressText}>
-                    {job.stepsDone} of {job.stepsTotal} steps completed
-                </Text>
-            </View>
-
-            <View style={styles.infoColumns}>
-                {/* Left column */}
-                <View style={styles.infoColumn}>
-                    <View style={styles.infoRow}>
-                        <Coins size={14} color="#748CAB" />
-                        <Text style={styles.infoLabelHighlight}>Coins:</Text>
-                        <Text style={styles.infoValueHighlight} numberOfLines={1} ellipsizeMode="tail">
-                            {job.coins.join(', ')}
-                        </Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Clock size={14} color="#748CAB" />
-                        <Text style={styles.infoLabel}>Created:</Text>
-                        <Text style={styles.infoValue}>{formattedCreatedAt}</Text>
-                    </View>
-                </View>
-
-                {/* Right column */}
-                <View style={styles.infoColumn}>
-                    <View style={styles.infoRow}>
-                        <DollarSign size={14} color="#748CAB" />
-                        <Text style={styles.infoLabelHighlight}>Amount:</Text>
-                        <Text style={styles.infoValueHighlight}>100</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                        <Clock size={14} color="#748CAB" />
-                        <Text style={styles.infoLabel}>Updated:</Text>
-                        <Text style={styles.infoValue}>{timeAgo}</Text>
-                    </View>
-                </View>
-            </View>
-
-            {job.status === 'IN_PROGRESS' && (
-                <View style={styles.detailRow}>
-                    <Clock size={14} color="#748CAB" />
-                    <Text style={styles.detailLabel}>Estimate:</Text>
-                    <Text style={styles.detailValue}>
-                        {calculateRemainingTime(job)}
-                    </Text>
-                </View>
-            )}
         </TouchableOpacity>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
-        padding: 16,
+        borderRadius: 16,
         marginBottom: 16,
         shadowColor: '#000',
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOffset: {width: 0, height: 4},
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 5,
+        overflow: 'hidden',
+    },
+    cardGradient: {
+        borderRadius: 16,
+        padding: 20,
+        borderWidth: 1,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 16,
     },
     strategyContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     strategyBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        marginRight: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+        marginRight: 10,
     },
     strategyText: {
-        color: 'white',
         fontWeight: '600',
-        fontSize: 12,
+        fontSize: 13,
     },
     jobIdText: {
-        color: '#748CAB',
-        fontSize: 12,
+        fontSize: 13,
     },
-    statusBadge: {
+    sideBadge: {
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
+        marginLeft: 8,
+    },
+    sideText: {
+        fontSize: 11,
+        fontWeight: '600',
+    },
+    statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
     },
     statusText: {
-        color: 'white',
         fontWeight: '600',
-        fontSize: 12,
+        fontSize: 13,
+    },
+    progressSection: {
+        marginBottom: 16,
     },
     progressContainer: {
-        marginBottom: 12,
+        marginBottom: 4,
     },
     progressBackground: {
-        height: 8,
-        backgroundColor: '#0D1B2A',
-        borderRadius: 4,
+        height: 6,
+        borderRadius: 3,
         overflow: 'hidden',
-        marginBottom: 6,
     },
     progressFill: {
         height: '100%',
-        borderRadius: 4,
+        borderRadius: 3,
     },
     progressText: {
-        color: '#748CAB',
         fontSize: 12,
-        textAlign: 'right',
-    },
-    contentArea: {
-        marginBottom: 12,
+        marginTop: 4,
     },
     infoColumns: {
         flexDirection: 'row',
-        marginBottom: 12,
+        marginBottom: 16,
     },
     infoColumn: {
         flex: 1,
     },
     infoRow: {
         flexDirection: 'row',
+        marginBottom: 12,
         alignItems: 'center',
-        marginBottom: 10,
+    },
+    infoIcon: {
+        marginRight: 10,
     },
     infoLabel: {
-        color: '#748CAB',
         fontSize: 12,
-        marginLeft: 4,
-        marginRight: 4,
-        width: 52,
-    },
-    infoLabelHighlight: {
-        color: '#748CAB',
-        fontSize: 13,
-        fontWeight: '600',
-        marginLeft: 4,
-        marginRight: 4,
-        width: 52,
+        marginBottom: 2,
     },
     infoValue: {
-        color: '#E2E8F0',
-        fontSize: 12,
-        flex: 1,
+        fontSize: 14,
     },
     infoValueHighlight: {
-        color: '#E2E8F0',
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: '600',
-        flex: 1,
     },
-    detailRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    detailLabel: {
-        color: '#748CAB',
-        fontSize: 13,
-        marginLeft: 8,
-        marginRight: 8,
-        width: 60,
-    },
-    detailValue: {
-        color: '#E2E8F0',
-        fontSize: 13,
-        flex: 1,
-    },
-    showStepsButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        marginTop: 8,
-        marginBottom: 8,
-    },
-    showStepsText: {
-        color: '#748CAB',
-        fontSize: 13,
-        fontWeight: '500',
-        marginLeft: 8,
-        marginRight: 8,
-        flex: 1,
-    },
-    collapsibleContainer: {
-        overflow: 'hidden',
-    },
-    miniHint: {
-        color: '#748CAB',
-        fontSize: 12,
-        textAlign: 'center',
-        position: 'absolute',
-        bottom: 8,
-        left: 0,
-        right: 0,
-    },
-    stepsList: {
-        paddingTop: 8,
-        paddingBottom: 12,
-    },
-    stepItem: {
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 12,
-    },
-    stepHeader: {
+    footerSection: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
-    },
-    stepNumberContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    stepStatusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 6,
-    },
-    stepNumber: {
-        color: 'white',
-        fontWeight: '600',
-        fontSize: 12,
-    },
-    stepStatus: {
-        fontWeight: '500',
-        fontSize: 12,
-    },
-    stepDetails: {
-        color: '#E2E8F0',
-        fontSize: 13,
-        marginBottom: 8,
-    },
-    stepTimestamp: {
-        color: '#748CAB',
-        fontSize: 12,
-        marginBottom: 4,
-    },
-    loadingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-    },
-    loadingText: {
-        color: '#748CAB',
-        marginLeft: 8,
-        fontSize: 13,
-    },
-    errorContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        backgroundColor: 'rgba(248, 113, 113, 0.1)',
-        borderRadius: 8,
-    },
-    errorText: {
-        color: '#F87171',
-        marginLeft: 8,
-        fontSize: 13,
-    },
-    emptyStepsText: {
-        color: '#748CAB',
-        textAlign: 'center',
-        padding: 16,
-        fontSize: 13,
-    },
-    sideBadge: {
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginLeft: 8,
-    },
-    sideText: {
-        fontWeight: '600',
-        fontSize: 10,
+        borderTopWidth: 1,
+        paddingTop: 16,
     },
     estimateContainer: {
-        height: 28, // Fixed height container for estimate
-        marginBottom: 4,
-    },
-    estimateContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 8,
-        alignSelf: 'flex-start',
     },
     estimateText: {
-        color: '#3B82F6',
-        fontSize: 12,
-        fontWeight: '500',
         marginLeft: 6,
-    },
-    timeRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-        justifyContent: 'space-between',
-    },
-    timeItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    timeLabel: {
-        color: '#748CAB',
-        fontSize: 12,
-        marginLeft: 4,
-        marginRight: 4,
-    },
-    timeValue: {
-        color: '#E2E8F0',
-        fontSize: 12,
-    },
-    compactContainer: {
-        height: 220, // Fixed height for consistency
+        fontSize: 13,
+        fontWeight: '600',
     },
 });

@@ -8,8 +8,7 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {Job, JobEvent} from '@/services/api/auto';
 import {autoService} from '@/services/api/auto';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {formatDate, formatDateTime, getEventColor, getEventText, getEventDescription, getStatusColor, getStatusText, calculateRemainingTime
-} from '@/components/screens/auto/jobUtils';
+import {formatDateTime, calculateRemainingTime} from '@/utils/formatUtils';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 
 type JobDetailScreenRouteProp = RouteProp<{
@@ -705,8 +704,6 @@ const styles = StyleSheet.create({
         color: '#E2E8F0',
         fontSize: 14,
     },
-
-    // Loading states
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',

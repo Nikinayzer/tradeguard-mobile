@@ -1,23 +1,26 @@
 import React, {useState, useEffect} from 'react';
 import {
     View,
-    Text,
     StyleSheet,
     TouchableOpacity,
     TextInput,
     ScrollView,
     ActivityIndicator,
-    SafeAreaView,
 } from 'react-native';
-import {ChevronLeft, Mail, Calendar} from 'lucide-react-native';
+import {Calendar, User, AlertCircle} from 'lucide-react-native';
 import {useNavigation} from "@react-navigation/native";
 import {NativeStackNavigationProp} from "@react-navigation/native-stack";
 import {SettingsStackParamList} from "@/navigation/navigation";
-import {profileService, User, UserUpdateRequest} from '@/services/api/profile';
+import {profileService, User as UserType, UserUpdateRequest} from '@/services/api/profile';
 import {useAlert} from '@/components/common/CustomAlert';
 import CustomAlert from '@/components/common/CustomAlert';
 import {useFormValidation, ValidationRules} from '@/hooks/useFormValidation';
 import {format} from 'date-fns';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { ThemedHeader } from '@/components/ui/ThemedHeader';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type PersonalInfoScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
@@ -28,11 +31,12 @@ type ValidationErrors = {
 };
 
 export default function PersonalInfoScreen() {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<UserType | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const {alert, showAlert, hideAlert} = useAlert();
     const navigation = useNavigation<PersonalInfoScreenNavigationProp>();
+    const { colors } = useTheme();
 
     const validationRules: ValidationRules<UserUpdateRequest> = {
         email: {
@@ -138,194 +142,237 @@ export default function PersonalInfoScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0D1B2A"/>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <ThemedView variant="screen" style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary}/>
+                </ThemedView>
             </SafeAreaView>
         );
     }
 
     if (!user) {
         return (
-            <SafeAreaView style={styles.errorContainer}>
-                <Text style={styles.errorText}>Failed to load profile</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={fetchProfile}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
-                </TouchableOpacity>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <ThemedView variant="screen" style={styles.errorContainer}>
+                    <AlertCircle size={50} color={colors.error} />
+                    <ThemedText variant="bodyBold" color={colors.error} mt={16} mb={16}>
+                        Failed to load profile
+                    </ThemedText>
+                    <TouchableOpacity 
+                        style={{
+                            ...styles.retryButton,
+                            backgroundColor: colors.primary
+                        }}
+                        onPress={fetchProfile}
+                    >
+                        <ThemedText variant="button" color={colors.buttonPrimaryText}>
+                            Retry
+                        </ThemedText>
+                    </TouchableOpacity>
+                </ThemedView>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => navigation.goBack()}
-                    >
-                        <ChevronLeft size={24} color="#3B82F6"/>
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Personal Information</Text>
-                </View>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+            <ThemedView variant="screen" style={styles.container}>
+                <ThemedHeader
+                    title="Personal Information"
+                    canGoBack
+                    onBack={() => navigation.goBack()}
+                />
 
-                <ScrollView style={styles.content}>
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Profile Details</Text>
-                        <View style={styles.form}>
+                <ScrollView 
+                    style={styles.content} 
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContentContainer}
+                >
+                    <ThemedView variant="transparent" style={styles.section}>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle} mb={12}>
+                            PROFILE DETAILS
+                        </ThemedText>
+                        <ThemedView variant="transparent" style={styles.form}>
                             <View style={styles.formField}>
-                                <Text style={styles.label}>First Name</Text>
-                                <TextInput
-                                    style={[styles.input, touchedFields.firstName && errors.firstName && styles.inputError]}
-                                    value={formData.firstName}
-                                    onChangeText={(text) => handleChange('firstName', text)}
-                                    onBlur={() => handleBlur('firstName')}
-                                    placeholder="Enter first name"
-                                    placeholderTextColor="#748CAB"
-                                    maxLength={50}
-                                />
+                                <ThemedText variant="label" secondary mb={8}>
+                                    First Name
+                                </ThemedText>
+                                <ThemedView
+                                    variant="input"
+                                    style={{
+                                        ...styles.inputContainer,
+                                        ...(touchedFields.firstName && errors.firstName ? { borderColor: colors.error } : {})
+                                    }}
+                                    rounded
+                                >
+                                    <TextInput
+                                        style={{
+                                            ...styles.input,
+                                            color: colors.text
+                                        }}
+                                        value={formData.firstName}
+                                        onChangeText={(text) => handleChange('firstName', text)}
+                                        onBlur={() => handleBlur('firstName')}
+                                        placeholder="Enter first name"
+                                        placeholderTextColor={colors.textTertiary}
+                                        maxLength={50}
+                                    />
+                                </ThemedView>
                                 {touchedFields.firstName && errors.firstName && (
-                                    <Text style={styles.errorText}>{errors.firstName}</Text>
+                                    <ThemedText variant="caption" color={colors.error} mt={4}>
+                                        {errors.firstName}
+                                    </ThemedText>
                                 )}
                             </View>
                             <View style={styles.formField}>
-                                <Text style={styles.label}>Last Name</Text>
-                                <TextInput
-                                    style={[styles.input, touchedFields.lastName && errors.lastName && styles.inputError]}
-                                    value={formData.lastName}
-                                    onChangeText={(text) => handleChange('lastName', text)}
-                                    onBlur={() => handleBlur('lastName')}
-                                    placeholder="Enter last name"
-                                    placeholderTextColor="#748CAB"
-                                    maxLength={50}
-                                />
+                                <ThemedText variant="label" secondary mb={8}>
+                                    Last Name
+                                </ThemedText>
+                                <ThemedView
+                                    variant="input"
+                                    style={{
+                                        ...styles.inputContainer,
+                                        ...(touchedFields.lastName && errors.lastName ? { borderColor: colors.error } : {})
+                                    }}
+                                    rounded
+                                >
+                                    <TextInput
+                                        style={{
+                                            ...styles.input,
+                                            color: colors.text
+                                        }}
+                                        value={formData.lastName}
+                                        onChangeText={(text) => handleChange('lastName', text)}
+                                        onBlur={() => handleBlur('lastName')}
+                                        placeholder="Enter last name"
+                                        placeholderTextColor={colors.textTertiary}
+                                        maxLength={50}
+                                    />
+                                </ThemedView>
                                 {touchedFields.lastName && errors.lastName && (
-                                    <Text style={styles.errorText}>{errors.lastName}</Text>
+                                    <ThemedText variant="caption" color={colors.error} mt={4}>
+                                        {errors.lastName}
+                                    </ThemedText>
                                 )}
                             </View>
                             <View style={styles.formField}>
-                                <Text style={styles.label}>Email</Text>
-                                <TextInput
-                                    style={[styles.input, touchedFields.email && errors.email && styles.inputError]}
-                                    value={formData.email}
-                                    onChangeText={(text) => handleChange('email', text)}
-                                    onBlur={() => handleBlur('email')}
-                                    placeholder="Enter email"
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    placeholderTextColor="#748CAB"
-                                />
+                                <ThemedText variant="label" secondary mb={8}>
+                                    Email
+                                </ThemedText>
+                                <ThemedView
+                                    variant="input"
+                                    style={{
+                                        ...styles.inputContainer,
+                                        ...(touchedFields.email && errors.email ? { borderColor: colors.error } : {})
+                                    }}
+                                    rounded
+                                >
+                                    <TextInput
+                                        style={{
+                                            ...styles.input,
+                                            color: colors.text
+                                        }}
+                                        value={formData.email}
+                                        onChangeText={(text) => handleChange('email', text)}
+                                        onBlur={() => handleBlur('email')}
+                                        placeholder="Enter email"
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        placeholderTextColor={colors.textTertiary}
+                                    />
+                                </ThemedView>
                                 {touchedFields.email && errors.email && (
-                                    <Text style={styles.errorText}>{errors.email}</Text>
+                                    <ThemedText variant="caption" color={colors.error} mt={4}>
+                                        {errors.email}
+                                    </ThemedText>
                                 )}
                             </View>
-                        </View>
-                    </View>
+                        </ThemedView>
+                    </ThemedView>
 
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Account Information</Text>
+                    <ThemedView variant="transparent" style={styles.section}>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle} mb={12}>
+                            ACCOUNT INFORMATION
+                        </ThemedText>
                         <View style={styles.infoList}>
                             <View style={styles.infoRow}>
-                                <View style={styles.infoIcon}>
-                                    <Mail size={18} color="#748CAB" strokeWidth={1.5}/>
-                                </View>
+                                <User size={26} color={colors.textSecondary} strokeWidth={1.5} style={styles.infoIcon}/>
                                 <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Username</Text>
-                                    <Text style={styles.infoValue}>@{user.username}</Text>
+                                    <ThemedText variant="caption" secondary>
+                                        Username
+                                    </ThemedText>
+                                    <ThemedText variant="bodyBold">
+                                        @{user.username}
+                                    </ThemedText>
                                 </View>
                             </View>
 
                             <View style={styles.infoRow}>
-                                <View style={styles.infoIcon}>
-                                    <Calendar size={18} color="#748CAB" strokeWidth={1.5}/>
-                                </View>
+                                <Calendar size={26} color={colors.textSecondary} strokeWidth={1.5} style={styles.infoIcon}/>
                                 <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Member Since</Text>
-                                    <Text style={styles.infoValue}>
+                                    <ThemedText variant="caption" secondary>
+                                        Member Since
+                                    </ThemedText>
+                                    <ThemedText variant="bodyBold">
                                         {format(new Date(user.registeredAt), 'MMMM d, yyyy')}
-                                    </Text>
+                                    </ThemedText>
                                 </View>
                             </View>
                         </View>
-                    </View>
+                    </ThemedView>
 
                     <TouchableOpacity 
-                        style={[styles.saveButton, isSaving && styles.saveButtonDisabled]} 
+                        style={{
+                            ...styles.saveButton, 
+                            backgroundColor: colors.primary,
+                            ...(isSaving && styles.saveButtonDisabled)
+                        }}
                         onPress={handleSave}
                         disabled={isSaving}
+                        activeOpacity={0.7}
                     >
                         {isSaving ? (
-                            <ActivityIndicator color="white" size="small"/>
+                            <ActivityIndicator color={colors.buttonPrimaryText} size="small"/>
                         ) : (
-                            <Text style={styles.saveButtonText}>Save Changes</Text>
+                            <ThemedText variant="button" color={colors.buttonPrimaryText}>
+                                Save Changes
+                            </ThemedText>
                         )}
                     </TouchableOpacity>
                 </ScrollView>
-            </View>
+            </ThemedView>
             {alert && <CustomAlert {...alert} onClose={hideAlert}/>}
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: '#0D1B2A',
-    },
     container: {
         flex: 1,
-        padding: 16,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#0D1B2A',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#0D1B2A',
         padding: 16,
-    },
-    errorText: {
-        fontSize: 16,
-        color: '#DC2626',
-        marginVertical: 16,
-        fontWeight: '500',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#22314A',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
     },
     content: {
         flex: 1,
+    },
+    scrollContentContainer: {
+        padding: 16,
+        paddingBottom: 32,
     },
     section: {
         marginBottom: 24,
     },
     sectionTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#748CAB',
-        marginBottom: 12,
-        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     form: {
         gap: 16,
@@ -333,78 +380,44 @@ const styles = StyleSheet.create({
     formField: {
         marginBottom: 16,
     },
-    label: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#748CAB',
-        marginBottom: 8,
+    inputContainer: {
+        borderWidth: 1,
+        borderRadius: 8,
+        overflow: 'hidden',
     },
     input: {
-        borderWidth: 1,
-        borderColor: '#22314A',
-        borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        color: 'white',
-        backgroundColor: '#1B263B',
-    },
-    inputError: {
-        borderColor: '#DC2626',
+        width: '100%',
     },
     infoList: {
-        paddingVertical: 8,
-        gap: 24,
+        paddingVertical: 12,
+        gap: 28,
     },
     infoRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
     },
     infoIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#22314A',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
+        marginRight: 16,
+        marginTop: 4,
     },
     infoContent: {
         flex: 1,
     },
-    infoLabel: {
-        fontSize: 14,
-        color: '#748CAB',
-        marginBottom: 4,
-    },
-    infoValue: {
-        fontSize: 16,
-        color: 'white',
-        fontWeight: '500',
-    },
     retryButton: {
-        backgroundColor: '#3B82F6',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,
     },
-    retryButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
     saveButton: {
-        backgroundColor: '#3B82F6',
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
         marginTop: 8,
+        marginBottom: 24,
     },
     saveButtonDisabled: {
         opacity: 0.7,
-    },
-    saveButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
     },
 }); 

@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { ThemedView } from '@/components/ui/ThemedView';
 
 export interface ClosedPosition {
     id: string;
@@ -20,61 +23,67 @@ interface ClosedPositionCardProps {
 }
 
 export function ClosedPositionCard({ position, onPress }: ClosedPositionCardProps) {
+    const { colors } = useTheme();
+    const isLong = position.direction === "long";
+    const isProfit = !position.pnl.includes("-");
+
     return (
-        <TouchableOpacity style={styles.closedPositionCard}>
-            <View style={styles.closedPositionHeader}>
-                <View style={styles.closedPositionSymbol}>
-                    <Text style={styles.symbolText}>{position.symbol}</Text>
-                    <View style={[
-                        styles.directionBadge,
-                        position.direction === "long" ? styles.longBadge : styles.shortBadge
-                    ]}>
-                        {position.direction === "long" ? (
-                            <ArrowUpRight size={12} color="#22C55E" />
-                        ) : (
-                            <ArrowDownRight size={12} color="#EF4444" />
-                        )}
-                        <Text style={[
-                            styles.directionText,
-                            position.direction === "long" ? styles.greenText : styles.redText
+        <ThemedView variant="card" style={styles.closedPositionCard} border rounded="medium">
+            <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.cardTouchable}>
+                <View style={styles.closedPositionHeader}>
+                    <View style={styles.closedPositionSymbol}>
+                        <ThemedText variant="bodyBold" style={styles.symbolText}>{position.symbol}</ThemedText>
+                        <View style={[
+                            styles.directionBadge,
+                            { backgroundColor: isLong ? `${colors.success}15` : `${colors.error}15` }
                         ]}>
-                            {position.direction.toUpperCase()}
-                        </Text>
+                            {isLong ? (
+                                <ArrowUpRight size={12} color={colors.success} />
+                            ) : (
+                                <ArrowDownRight size={12} color={colors.error} />
+                            )}
+                            <ThemedText 
+                                variant="caption" 
+                                color={isLong ? colors.success : colors.error}
+                                style={styles.directionText}
+                            >
+                                {position.direction.toUpperCase()}
+                            </ThemedText>
+                        </View>
                     </View>
+                    <ThemedText 
+                        variant="bodyBold" 
+                        color={isProfit ? colors.success : colors.error}
+                        style={styles.closedPositionPnl}
+                    >
+                        {position.pnl} USDT
+                    </ThemedText>
                 </View>
-                <Text style={[
-                    styles.closedPositionPnl,
-                    position.pnl.includes("-") ? styles.redText : styles.greenText
-                ]}>
-                    {position.pnl} USDT
-                </Text>
-            </View>
-            <View style={styles.closedPositionDetails}>
-                <View style={styles.closedDetailItem}>
-                    <Text style={styles.closedDetailLabel}>Entry</Text>
-                    <Text style={styles.closedDetailValue}>{position.entry}</Text>
-                </View>
-                <View style={styles.closedDetailItem}>
-                    <Text style={styles.closedDetailLabel}>Exit</Text>
-                    <Text style={styles.closedDetailValue}>{position.exit}</Text>
-                </View>
-                <View style={styles.closedDetailItem}>
-                    <Text style={styles.closedDetailLabel}>Duration</Text>
-                    <Text style={styles.closedDetailValue}>{position.duration}</Text>
-                </View>
-            </View>
-        </TouchableOpacity>
+                <ThemedView variant="section" style={styles.closedPositionDetails} rounded="small">
+                    <View style={styles.closedDetailItem}>
+                        <ThemedText variant="caption" secondary style={styles.closedDetailLabel}>Entry</ThemedText>
+                        <ThemedText variant="body">{position.entry}</ThemedText>
+                    </View>
+                    <View style={styles.closedDetailItem}>
+                        <ThemedText variant="caption" secondary style={styles.closedDetailLabel}>Exit</ThemedText>
+                        <ThemedText variant="body">{position.exit}</ThemedText>
+                    </View>
+                    <View style={styles.closedDetailItem}>
+                        <ThemedText variant="caption" secondary style={styles.closedDetailLabel}>Duration</ThemedText>
+                        <ThemedText variant="body">{position.duration}</ThemedText>
+                    </View>
+                </ThemedView>
+            </TouchableOpacity>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
     closedPositionCard: {
-        backgroundColor: "#1B263B",
-        padding: 16,
-        borderRadius: 12,
         marginBottom: 12,
-        borderWidth: 1,
-        borderColor: "#22314A",
+    },
+    cardTouchable: {
+        padding: 16,
     },
     closedPositionHeader: {
         flexDirection: "row",
@@ -90,47 +99,25 @@ const styles = StyleSheet.create({
     },
     closedPositionPnl: {
         fontSize: 18,
-        fontWeight: "700",
     },
     closedPositionDetails: {
         flexDirection: "row",
         justifyContent: "space-between",
         gap: 8,
-        backgroundColor: "#22314A",
         padding: 12,
-        borderRadius: 8,
     },
     closedDetailItem: {
         flex: 1,
         alignItems: "center",
     },
     closedDetailLabel: {
-        fontSize: 12,
-        color: "#748CAB",
         marginBottom: 4,
-        fontWeight: "500",
-    },
-    closedDetailValue: {
-        fontSize: 14,
-        color: "white",
-        fontWeight: "500",
     },
     symbolText: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: "white",
         lineHeight: 28,
     },
     directionText: {
-        fontSize: 12,
-        fontWeight: "600",
         marginLeft: 2,
-    },
-    greenText: {
-        color: "#22C55E",
-    },
-    redText: {
-        color: "#EF4444",
     },
     directionBadge: {
         flexDirection: "row",
@@ -140,11 +127,4 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginLeft: 8,
     },
-    longBadge: {
-        backgroundColor: "rgba(34, 197, 94, 0.1)",
-    },
-    shortBadge: {
-        backgroundColor: "rgba(239, 68, 68, 0.1)",
-    },
-
 });

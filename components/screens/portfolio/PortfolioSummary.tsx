@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { DollarSign, BarChart2, Percent } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { ThemedView } from '@/components/ui/ThemedView';
 
 interface PortfolioSummaryProps {
     netValue: string;
@@ -10,18 +13,20 @@ interface PortfolioSummaryProps {
 }
 
 export function PortfolioSummary({ netValue, usdtEquity, combinedValue, avgLeverage }: PortfolioSummaryProps) {
+    const { colors } = useTheme();
+    
     return (
-        <View style={styles.valueCard}>
+        <ThemedView variant="card" style={styles.valueCard} border rounded="large" padding="large">
             <View style={styles.valueHeader}>
-                <Text style={styles.valueLabel}>Total Value</Text>
-                <Text style={styles.valueAmount}>{netValue}</Text>
+                <ThemedText variant="label" secondary mb={8}>Total Value</ThemedText>
+                <ThemedText variant="heading1" style={styles.valueAmount}>{netValue}</ThemedText>
             </View>
             <View style={styles.valueStats}>
                 <StatBox icon={DollarSign} value={usdtEquity} label="USDT Equity" />
                 <StatBox icon={BarChart2} value={combinedValue} label="Combined Value" />
                 <StatBox icon={Percent} value={`${avgLeverage}x`} label="Avg Leverage" />
             </View>
-        </View>
+        </ThemedView>
     );
 }
 
@@ -32,34 +37,27 @@ interface StatBoxProps {
 }
 
 function StatBox({ icon: Icon, value, label }: StatBoxProps) {
+    const { colors } = useTheme();
+    
     return (
-        <View style={styles.statBox}>
-            <Icon size={20} color="#748CAB" />
-            <Text style={styles.statValue}>{value}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
-        </View>
+        <ThemedView variant="section" style={styles.statBox} rounded="medium">
+            <Icon size={20} color={colors.textSecondary} />
+            <ThemedText variant="bodyBold" mt={8} mb={4}>{value}</ThemedText>
+            <ThemedText variant="caption" secondary>{label}</ThemedText>
+        </ThemedView>
     );
 }
 
 const styles = StyleSheet.create({
     valueCard: {
-        backgroundColor: "#1B263B",
-        padding: 20,
-        borderRadius: 16,
         marginBottom: 24,
     },
     valueHeader: {
         marginBottom: 20,
     },
-    valueLabel: {
-        fontSize: 14,
-        color: "#748CAB",
-        marginBottom: 8,
-    },
     valueAmount: {
         fontSize: 36,
         fontWeight: "bold",
-        color: "white",
     },
     valueStats: {
         flexDirection: "row",
@@ -68,20 +66,7 @@ const styles = StyleSheet.create({
     statBox: {
         flex: 1,
         alignItems: "center",
-        backgroundColor: "#22314A",
         padding: 12,
-        borderRadius: 12,
         marginHorizontal: 4,
-    },
-    statValue: {
-        fontSize: 16,
-        fontWeight: "600",
-        color: "white",
-        marginTop: 8,
-        marginBottom: 4,
-    },
-    statLabel: {
-        fontSize: 12,
-        color: "#748CAB",
     },
 }); 

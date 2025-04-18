@@ -1,22 +1,36 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, TextInputProps } from 'react-native';
+import { View, TextInput, StyleSheet, TextInputProps, ViewStyle } from 'react-native';
 import { Search } from 'lucide-react-native';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ThemedView } from '@/components/ui/ThemedView';
 
 interface SearchBarProps extends Omit<TextInputProps, 'style'> {
-    containerStyle?: object;
+    containerStyle?: ViewStyle;
 }
 
 export function SearchBar({ containerStyle, ...props }: SearchBarProps) {
+    const { colors } = useTheme();
+
+    const containerStyles: ViewStyle = {
+        ...styles.container,
+        ...(containerStyle || {})
+    };
+    
     return (
-        <View style={[styles.container, containerStyle]}>
-            <Search size={18} color="#748CAB" style={styles.icon} />
+        <ThemedView 
+            variant="section" 
+            rounded 
+            border
+            style={containerStyles}
+        >
+            <Search size={18} color={colors.textTertiary} style={styles.icon} />
             <TextInput
                 {...props}
-                style={styles.input}
-                placeholderTextColor="#748CAB"
-                selectionColor="#3B82F6"
+                style={[styles.input, { color: colors.text }]}
+                placeholderTextColor={colors.textTertiary}
+                selectionColor={colors.primary}
             />
-        </View>
+        </ThemedView>
     );
 }
 
@@ -24,19 +38,14 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#1B263B',
-        borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderWidth: 1,
-        borderColor: '#22314A',
     },
     icon: {
         marginRight: 8,
     },
     input: {
         flex: 1,
-        color: 'white',
         fontSize: 14,
         padding: 0,
         height: 24,
