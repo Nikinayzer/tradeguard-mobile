@@ -372,7 +372,7 @@ export default function ProfileScreen() {
                         <ThemedText variant="label" secondary style={styles.sectionTitle} mb={12}>EXCHANGE ACCOUNTS</ThemedText>
                         <View style={styles.connectionsList}>
                             {user.exchangeAccounts?.map((account: APIExchangeAccount, index: number) => {
-                                if (!account.id || !account.name || !account.provider || account.demo === undefined) {
+                                if (!account.id || !account.name || !account.provider) {
                                     return null;
                                 }
                                 return (

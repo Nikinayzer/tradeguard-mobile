@@ -17,7 +17,7 @@ const CACHE_CONFIG = {
 
 const logPerformance = (action: string, startTime: number) => {
     const duration = Date.now() - startTime;
-    console.log(`🕒 [MarketDataManager] ${action} took ${duration}ms`);
+    //console.log(`🕒 [MarketDataManager] ${action} took ${duration}ms`);
     return duration;
 };
 
@@ -201,7 +201,7 @@ class MarketDataManager {
     private async saveToCache(): Promise<void> {
         try {
             const startTime = Date.now();
-            console.log('💾 [MarketDataManager] Saving to cache...');
+            //console.log('💾 [MarketDataManager] Saving to cache...');
 
             const cacheData: CacheData = {
                 marketData: this.categoryData,

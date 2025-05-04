@@ -1,107 +1,155 @@
-import React, {useState, useCallback} from 'react';
-import {View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity} from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
-import {usePullToRefresh} from '@/hooks/usePullToRefresh';
-import {PortfolioSummary} from '@/components/screens/portfolio/PortfolioSummary';
-import {OpenPosition, PositionCard} from '@/components/screens/portfolio/PositionCard';
-import {ChevronRight} from "lucide-react-native";
-import {ClosedPosition, ClosedPositionCard} from "@/components/screens/portfolio/ClosedPositionCard";
-import {useTheme} from '@/contexts/ThemeContext';
-import {ThemedText} from '@/components/ui/ThemedText';
-import {ThemedView} from '@/components/ui/ThemedView';
-import {ThemedHeader} from "@/components/ui/ThemedHeader";
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PortfolioSummary } from '@/components/screens/portfolio/PortfolioSummary';
+import { PositionCard } from '@/components/screens/portfolio/PositionCard';
+import { ChevronRight, AlertCircle, Plus } from "lucide-react-native";
+import { useTheme } from '@/contexts/ThemeContext';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { ThemedHeader } from "@/components/ui/ThemedHeader";
+import { ThemedButton } from "@/components/ui/ThemedButton";
+import { usePositions, useEquity } from '@/services/redux/hooks';
+import { Position } from '@/services/api/events';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '@/navigation/navigation';
+import { disconnectEventListeners, initializeEventListeners } from '@/services/redux/eventMiddleware';
+import { formatCurrency, formatNumber } from '@/utils/formatNumber';
 
-interface PortfolioData {
-    summary: {
-        netValue: string;
-        usdtEquity: string;
-        combinedValue: string;
-        avgLeverage: string;
-    };
-    openPositions: OpenPosition[];
-    closedTrades: ClosedPosition[];
-}
-
-const mockData: PortfolioData = {
-    summary: {
-        netValue: "$1630.89",
-        usdtEquity: "$311.55",
-        combinedValue: "$1630.89",
-        avgLeverage: "0.00",
-    },
-    openPositions: [
-        {
-            id: "1",
-            symbol: "SOL",
-            direction: "long" as const,
-            amount: "2667",
-            entry: "141.48",
-            mark: "140.39",
-            bust: "130.97",
-            upl: "-21",
-            cumPL: "0",
-            change24h: "0.00%",
-            lev: "0.00",
-            vol: "0.00",
-            fund: "0.0000",
-            tp: "150.00",
-            sl: "135.00"
-        },
-    ],
-    closedTrades: [
-        {
-            id: "1",
-            symbol: "BTC",
-            direction: "long",
-            amount: "5000",
-            entry: "45000",
-            exit: "46000",
-            pnl: "+1000",
-            duration: "2h",
-            date: "2024-03-20"
-        },
-    ],
-};
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function PortfolioScreen() {
     const [isLoading, setIsLoading] = useState(false);
-    const [lastUpdated, setLastUpdated] = useState("Now");
-    const [portfolioData, setPortfolioData] = useState(mockData);
-    const {colors} = useTheme();
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const { colors } = useTheme();
+    const navigation = useNavigation<NavigationProp>();
+
+    // Get positions and equity data from Redux
+    const positionsData = usePositions();
+    const equityData = useEquity();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // In production, fetch data from API
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setLastUpdated("just now");
+            // Reconnect to event stream to refresh data
+            disconnectEventListeners();
+            await initializeEventListeners();
+            setLastUpdated(new Date());
         } catch (error) {
-            console.error('Error loading portfolio data:', error);
+            console.error('Error refreshing portfolio data:', error);
         } finally {
             setIsLoading(false);
         }
     }, []);
 
-    const {isRefreshing, handleRefresh} = usePullToRefresh({
+    // Initial load
+    useEffect(() => {
+        if (!positionsData.lastUpdated && !equityData.lastUpdated) {
+            loadData();
+        }
+    }, []);
+
+    // Update lastUpdated when we get new data
+    useEffect(() => {
+        if (positionsData.lastUpdated || equityData.lastUpdated) {
+            const lastUpdateTime = positionsData.lastUpdated && equityData.lastUpdated 
+                ? new Date(Math.max(
+                    new Date(positionsData.lastUpdated).getTime(),
+                    new Date(equityData.lastUpdated).getTime()
+                  ))
+                : new Date(positionsData.lastUpdated || equityData.lastUpdated);
+                
+            setLastUpdated(lastUpdateTime);
+        }
+    }, [positionsData.lastUpdated, equityData.lastUpdated]);
+
+    const { isRefreshing, handleRefresh } = usePullToRefresh({
         onRefresh: loadData,
         refreshDelay: 1000,
     });
 
-    if (isLoading && !isRefreshing) {
+    const handlePositionPress = (position: Position) => {
+        // Navigate to position details
+        console.log('Position pressed:', position);
+    };
+
+    const navigateToAllPositions = (type: 'active' | 'closed') => {
+        // Navigate to all positions
+        console.log(`Navigate to all ${type} positions`);
+    };
+    
+    const navigateToAddExchange = () => {
+        // Navigate to the Profile tab
+        // @ts-ignore - Navigation typing is complex with nested navigators
+        navigation.navigate('Profile');
+    };
+
+    // Show loading indicator during initial load
+    if (isLoading && !isRefreshing && !positionsData.activePositions.length) {
         return (
             <ThemedView variant="screen" style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary}/>
+                <ActivityIndicator size="large" color={colors.primary} />
             </ThemedView>
+        );
+    }
+    
+    // Check if the user has any exchange accounts
+    const hasNoAccounts = !equityData.venueEquities || equityData.venueEquities.length === 0;
+
+    // Render empty state when there are no venue equities
+    if (hasNoAccounts && !isRefreshing) {
+        return (
+            <SafeAreaView style={{ ...styles.safeArea, backgroundColor: colors.background }}>
+                <ThemedHeader
+                    title="Portfolio"
+                    subtitle="Your active positions and balances"
+                    canRefresh={true}
+                    onRefresh={handleRefresh}
+                    lastUpdated={lastUpdated || undefined}
+                    showLastUpdated={false}
+                />
+                <View style={styles.emptyStateContainer}>
+                    <ThemedView 
+                        variant="section" 
+                        style={styles.emptyStateIcon} 
+                        rounded="full"
+                    >
+                        <AlertCircle size={32} color={colors.primary} />
+                    </ThemedView>
+                    <ThemedText variant="heading3" style={styles.emptyStateTitle}>
+                        No Exchange Accounts Found
+                    </ThemedText>
+                    <ThemedText variant="body" secondary style={styles.emptyStateDescription}>
+                        We could not load your accounts. Perhaps, you have not added one yet?
+                    </ThemedText>
+                    <ThemedButton 
+                        variant="primary" 
+                        onPress={navigateToAddExchange} 
+                        style={styles.emptyStateButton}
+                    >
+                        <View style={styles.buttonContent}>
+                            <Plus size={18} color={colors.buttonPrimaryText} />
+                            <ThemedText variant="button" color={colors.buttonPrimaryText} ml={8}>
+                                Add Exchange Account
+                            </ThemedText>
+                        </View>
+                    </ThemedButton>
+                </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView style={{...styles.safeArea, backgroundColor: colors.background}}>
+        <SafeAreaView style={{ ...styles.safeArea, backgroundColor: colors.background }}>
             <ThemedHeader
-                title={"Portfolio"}
-                subtitle={"Take a look at your assets"}
+                title="Portfolio"
+                subtitle="Your active positions and balances"
                 canRefresh={true}
-                onRefresh={() => console.log("refreshed")}
+                onRefresh={handleRefresh}
+                lastUpdated={lastUpdated || undefined}
+                showLastUpdated={true}
             />
             <ScrollView
                 style={styles.container}
@@ -111,38 +159,65 @@ export default function PortfolioScreen() {
                         refreshing={isRefreshing}
                         onRefresh={handleRefresh}
                         colors={[colors.primary]}
+                        tintColor={colors.primary}
                     />
                 }
             >
-                <PortfolioSummary {...portfolioData.summary} />
+                <PortfolioSummary 
+                    totalWalletBalance={equityData.totalWalletBalance}
+                    totalAvailableBalance={equityData.totalAvailableBalance}
+                    totalUnrealizedPnl={equityData.totalUnrealizedPnl}
+                    totalBnbBalanceUsdt={equityData.totalBnbBalanceUsdt}
+                    venueEquities={equityData.venueEquities}
+                />
 
-                {/* OPEN POSITIONS */}
+                {/* ACTIVE POSITIONS */}
                 <ThemedView variant="transparent" style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <View>
                             <ThemedText variant="heading3" style={styles.sectionTitle}>Open Positions</ThemedText>
                             <ThemedText variant="caption" secondary style={styles.sectionSubtitle}>
-                                {mockData.openPositions.length} active trades
+                                {positionsData.activePositionsCount} active {positionsData.activePositionsCount === 1 ? 'position' : 'positions'}
                             </ThemedText>
                         </View>
-                        <TouchableOpacity style={styles.seeAllButton}>
+                        <TouchableOpacity 
+                            style={styles.seeAllButton}
+                            onPress={() => navigateToAllPositions('active')}
+                        >
                             <ThemedText variant="bodySmall" color={colors.primary} style={styles.seeAllText}>
                                 See All
                             </ThemedText>
-                            <ChevronRight size={16} color={colors.primary}/>
+                            <ChevronRight size={16} color={colors.primary} />
                         </TouchableOpacity>
                     </View>
 
+                    {positionsData.activePositions.length > 0 ? (
                     <View>
-                        {portfolioData.openPositions.map(position => (
+                            {positionsData.activePositions.slice(0, 3).map((position, index) => (
                             <PositionCard
-                                key={position.id}
+                                    key={`${position.symbol}-${position.venue}-${index}`}
                                 position={position}
-                                onPress={() => {
-                                }}
+                                    onPress={() => handlePositionPress(position)}
                             />
                         ))}
+                            
+                            {positionsData.activePositions.length > 3 && (
+                                <TouchableOpacity 
+                                    style={styles.viewMoreButton}
+                                    onPress={() => navigateToAllPositions('active')}
+                                >
+                                    <ThemedText variant="bodySmall" color={colors.primary}>
+                                        View {positionsData.activePositions.length - 3} more positions
+                                    </ThemedText>
+                                    <ChevronRight size={14} color={colors.primary} />
+                                </TouchableOpacity>
+                            )}
                     </View>
+                    ) : (
+                        <ThemedView variant="section" style={styles.emptyPositionsContainer} rounded="medium">
+                            <ThemedText variant="body" secondary>No open positions</ThemedText>
+                        </ThemedView>
+                    )}
                 </ThemedView>
 
                 {/* CLOSED POSITIONS */}
@@ -151,27 +226,48 @@ export default function PortfolioScreen() {
                         <View>
                             <ThemedText variant="heading3" style={styles.sectionTitle}>Closed Positions</ThemedText>
                             <ThemedText variant="caption" secondary style={styles.sectionSubtitle}>
-                                Last 7 days
+                                Recent closed positions
                             </ThemedText>
                         </View>
-                        <TouchableOpacity style={styles.seeAllButton}>
+                        <TouchableOpacity 
+                            style={styles.seeAllButton}
+                            onPress={() => navigateToAllPositions('closed')}
+                        >
                             <ThemedText variant="bodySmall" color={colors.primary} style={styles.seeAllText}>
                                 See All
                             </ThemedText>
-                            <ChevronRight size={16} color={colors.primary}/>
+                            <ChevronRight size={16} color={colors.primary} />
                         </TouchableOpacity>
                     </View>
 
+                    {positionsData.inactivePositions.length > 0 ? (
                     <View>
-                        {portfolioData.closedTrades.map(position => (
-                            <ClosedPositionCard
-                                key={position.id}
+                            {positionsData.inactivePositions.slice(0, 3).map((position, index) => (
+                            <PositionCard
+                                    key={`${position.symbol}-${position.venue}-${index}`}
                                 position={position}
-                                onPress={() => {
-                                }}
+                                    onPress={() => handlePositionPress(position)}
+                                    isClosed={true}
                             />
                         ))}
+                            
+                            {positionsData.inactivePositions.length > 3 && (
+                                <TouchableOpacity 
+                                    style={styles.viewMoreButton}
+                                    onPress={() => navigateToAllPositions('closed')}
+                                >
+                                    <ThemedText variant="bodySmall" color={colors.primary}>
+                                        View {positionsData.inactivePositions.length - 3} more positions
+                                    </ThemedText>
+                                    <ChevronRight size={14} color={colors.primary} />
+                                </TouchableOpacity>
+                            )}
                     </View>
+                    ) : (
+                        <ThemedView variant="section" style={styles.emptyPositionsContainer} rounded="medium">
+                            <ThemedText variant="body" secondary>No closed positions</ThemedText>
+                        </ThemedView>
+                    )}
                 </ThemedView>
             </ScrollView>
         </SafeAreaView>
@@ -212,5 +308,46 @@ const styles = StyleSheet.create({
     },
     seeAllText: {
         marginRight: 4,
+    },
+    emptyPositionsContainer: {
+        padding: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    viewMoreButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 12,
+    },
+    emptyStateContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+    },
+    emptyStateIcon: {
+        width: 80,
+        height: 80,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+    },
+    emptyStateTitle: {
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    emptyStateDescription: {
+        textAlign: 'center',
+        marginBottom: 32,
+        maxWidth: '80%',
+    },
+    emptyStateButton: {
+        minWidth: 220,
+    },
+    buttonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 }); 

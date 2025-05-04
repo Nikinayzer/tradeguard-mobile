@@ -11,13 +11,7 @@ import {SplashScreen as CustomSplashScreen} from './components/SplashScreen';
 import MarketDataManager from '@/services/MarketDataManager';
 import * as Linking from 'expo-linking';
 import {LinkingOptions} from '@react-navigation/native';
-
-// Screens
-import LoadingScreen from '@/screens/LoadingScreen';
-import LoginScreen from '@/screens/auth/LoginScreen';
-import RegisterScreen from '@/screens/auth/RegisterScreen';
-import DiscordAuthScreen from '@/screens/auth/DiscordAuthScreen';
-
+import { useEventConnection } from '@/hooks/useEventConnection';
 import * as Notifications from 'expo-notifications';
 import {PushTokenProvider} from "@/contexts/PushTokenContext";
 import {Provider} from "react-redux";
@@ -26,6 +20,12 @@ import {ThemeProvider} from "@/contexts/ThemeContext";
 import {ThemedView} from "@/components/ui/ThemedView";
 import {StatusBarManager} from "@/components/StatusBarManager";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
+
+// Screens
+import LoadingScreen from '@/screens/LoadingScreen';
+import LoginScreen from '@/screens/auth/LoginScreen';
+import RegisterScreen from '@/screens/auth/RegisterScreen';
+import DiscordAuthScreen from '@/screens/auth/DiscordAuthScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -48,6 +48,8 @@ function AuthNavigator() {
 
 function Navigation() {
     const {isAuthenticated, isLoading} = useAuth();
+
+    useEventConnection(isAuthenticated);
 
     if (isLoading) {
         return <LoadingScreen/>;

@@ -56,4 +56,7 @@ export const API_ENDPOINTS = {
         getNotifications: '/settings/notifications',
         updateNotifications: '/settings/notifications',
     },
+    events: {
+        stream: '/events/stream',
+    },
 } as const;
