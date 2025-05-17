@@ -16,7 +16,7 @@ export const API_ENDPOINTS = {
         login: '/auth/login',
         register: '/auth/register',
         logout: '/auth/logout',
-        discord: '/auth/discord/callback',
+        discord: '/auth/discord/exchange',
     },
     profile: {
         getMe: '/users/me',
@@ -27,6 +27,8 @@ export const API_ENDPOINTS = {
         deleteExchangeAccount: (id: string) => `/users/me/exchange-accounts/${id}/delete`,
         getLimits: '/users/me/limits',
         updateLimits: '/users/me/limits',
+        getNotifications: '/users/me/notifications',
+        markAsReadNotification: (id: string) => `/users/me/notifications/${id}/read`,
     },
     market: {
         getCategories: '/market/categories',
@@ -53,7 +55,6 @@ export const API_ENDPOINTS = {
     settings: {
         getSettings: '/settings',
         updateSettings: '/settings',
-        getNotifications: '/settings/notifications',
         updateNotifications: '/settings/notifications',
     },
     events: {

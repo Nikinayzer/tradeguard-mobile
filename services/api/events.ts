@@ -2,7 +2,9 @@ import { API_ENDPOINTS } from '@/config/api';
 import apiClient from './client';
 import { secureStorage } from '@/services/storage/secureStorage';
 import EventSource, { EventSourceListener } from 'react-native-sse';
-
+import {authService} from "@/services/api/auth";
+import {useAuth} from "@/contexts/AuthContext";
+// TODO REWRITE BOTH events and middleware
 type CustomEvents = 'ping' | 'heartbeat' | 'positions' | 'equity';
 
 export interface PingEvent {
@@ -176,6 +178,9 @@ export class EventService {
           this.reconnectAttempts = 0;
         } else if (event.type === 'error') {
           console.error('SSE connection error:', event.message);
+          if (event.xhrStatus === 403) {
+            // log out here
+          }
           this.isConnected = false;
           this.reconnectAttempts++;
           

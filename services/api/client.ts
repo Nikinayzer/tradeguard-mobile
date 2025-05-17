@@ -1,9 +1,7 @@
 import axios, {AxiosResponse, InternalAxiosRequestConfig} from 'axios';
 import {secureStorage} from '@/services/storage/secureStorage';
-import {useAuth} from "@/contexts/AuthContext";
 import {API_CONFIG} from "@/config/api";
 import { Platform } from 'react-native';
-import Constants from "expo-constants";
 
 export interface ApiResponse<T = any> {
     data: T;
@@ -46,7 +44,7 @@ apiClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error) => {
         if (error.response?.status === 401) {
-            await useAuth().logout(); //todo check how it works with short TTL tokens
+            console.log('401, token probably expired');
         }
         return Promise.reject(error);
     }

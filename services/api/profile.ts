@@ -90,9 +90,15 @@ export const profileService = {
         const response = await apiClient.get<UserAccountLimits>(API_ENDPOINTS.profile.getLimits);
         return response.data;
     },
-
     updateLimits: async (data: UserAccountLimits): Promise<void> => {
         console.log(data)
         await apiClient.post(API_ENDPOINTS.profile.updateLimits, data);
+    },
+    getNotifications: async (): Promise<any> => {
+        const response = await apiClient.get(API_ENDPOINTS.profile.getNotifications);
+        return response.data;
+    },
+    markAsReadNotification: async (notificationId: string): Promise<void>=> {
+        await apiClient.post(API_ENDPOINTS.profile.markAsReadNotification(notificationId));
     }
 };

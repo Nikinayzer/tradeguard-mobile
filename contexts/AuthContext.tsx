@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { secureStorage } from '@/services/storage/secureStorage';
-import {usePushToken} from "@/contexts/PushTokenContext";
+import React, { createContext, useContext, useEffect } from 'react';
+import { useAppDispatch, useAppSelector } from '@/services/redux/hooks';
+import { checkAuthStatus, login, logout } from '@/services/redux/slices/authSlice';
 
 interface User {
     username: string;
@@ -19,47 +19,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-    const [user, setUser] = useState<User | null>(null);
+    const dispatch = useAppDispatch();
+    const { isAuthenticated, isLoading, user } = useAppSelector(state => state.auth);
 
     useEffect(() => {
-        checkAuthStatus();
+        dispatch(checkAuthStatus());
     }, []);
 
-    const checkAuthStatus = async () => {
-        try {
-            const hasToken = await secureStorage.hasToken();
-            setIsAuthenticated(hasToken);
-        } catch (error) {
-            console.error('Error checking auth status:', error);
-            setIsAuthenticated(false);
-        } finally {
-            setIsLoading(false);
-        }
+    const handleLogin = async (token: string, userData: User) => {
+        await dispatch(login({ token, userData })).unwrap();
     };
 
-    const login = async (token: string, userData: User) => {
-        try {
-            await secureStorage.setToken(token);
-            console.log(userData);
-            setUser(userData);
-            setIsAuthenticated(true);
-        } catch (error) {
-            console.error('Error during login:', error);
-            throw error;
-        }
-    };
-
-    const logout = async () => {
-        try {
-            await secureStorage.removeToken();
-            setUser(null);
-            setIsAuthenticated(false);
-        } catch (error) {
-            console.error('Error during logout:', error);
-            throw error;
-        }
+    const handleLogout = async () => {
+        await dispatch(logout()).unwrap();
     };
 
     return (
@@ -68,8 +40,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isAuthenticated,
                 isLoading,
                 user,
-                login,
-                logout,
+                login: handleLogin,
+                logout: handleLogout,
             }}
         >
             {children}

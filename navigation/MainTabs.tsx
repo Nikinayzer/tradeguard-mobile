@@ -22,6 +22,7 @@ import CoinSelectorScreen from "../screens/auto/CoinSelectorScreen";
 import PersonalInfoScreen from '../screens/settings/PersonalInfoScreen';
 import ExchangeAccountScreen from '../screens/profile/ExchangeAccountScreen';
 import AddExchangeScreen from '../screens/profile/AddExchangeScreen';
+import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -40,6 +41,14 @@ function HomeStack() {
             }}
         >
             <Stack.Screen name="HomeMain" component={HomeScreen}/>
+            <Stack.Screen 
+                name="Notifications" 
+                component={NotificationsScreen}
+                options={{
+                    animation: 'slide_from_right',
+                    presentation: 'card',
+                }}
+            />
         </Stack.Navigator>
     );
 }

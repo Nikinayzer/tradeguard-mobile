@@ -1,5 +1,5 @@
 import {useAuthRequest, Prompt, ResponseType} from 'expo-auth-session';
-import {setDiscordCodeVerifier} from '@/utils/OAuthTempStore';
+import {setDiscordCodeVerifier, getDiscordCodeVerifier} from '@/utils/OAuthTempStore';
 import * as WebBrowser from 'expo-web-browser';
 
 const DISCORD_CLIENT_ID = process.env.EXPO_PUBLIC_DISCORD_CLIENT_ID || '';
@@ -31,9 +31,15 @@ export function useDiscordAuth() {
             throw new Error('Discord code verifier is missing in request');
         }
         setDiscordCodeVerifier(request.codeVerifier);
+        console.log('Stored code verifier:', request.codeVerifier);
+        
         const result = await promptAsync({showInRecents: true});
         if (result.type === 'success') {
-            console.log("Successfully authorized via Discord")
+            console.log("Successfully authorized via Discord");
+            const storedVerifier = getDiscordCodeVerifier();
+            if (!storedVerifier) {
+                throw new Error('Code verifier was lost during auth flow');
+            }
         } else if (result.type === 'error') {
             throw new Error(result.error?.message || 'Unknown Discord auth error');
         } else {

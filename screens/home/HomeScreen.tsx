@@ -20,6 +20,11 @@ import {useTheme} from '@/contexts/ThemeContext';
 import {ThemedView} from "@/components/ui/ThemedView";
 import {ThemedText} from "@/components/ui/ThemedText";
 import {useAuth} from "@/contexts/AuthContext";
+import {useNavigation} from "@react-navigation/native";
+import {NativeStackNavigationProp} from "@react-navigation/native-stack";
+import {HomeStackParamList} from "@/navigation/navigation";
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList>;
 
 const marketOverview = {
     btc: {price: "65432", change: "+2.45%", direction: "up"},
@@ -68,15 +73,21 @@ const news = [
 export default function HomeScreen() {
     const {colors} = useTheme();
     const {user} = useAuth();
+    const navigation = useNavigation<HomeScreenNavigationProp>();
 
     const headerActions = [
         {
             icon: <Bell size={20} color={colors.primary}/>,
-            onPress: () => console.log('Notifications pressed')
+            onPress: () => navigation.navigate('Notifications')
         },
         {
             icon: <Settings size={20} color={colors.primary}/>,
-            onPress: () => console.log('Settings pressed')
+            onPress: () => navigation.navigate('Profile', {
+                screen: 'SettingsStack',
+                params: {
+                    screen: 'Settings'
+                }
+            })
         }
     ];
 

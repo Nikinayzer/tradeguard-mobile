@@ -10,6 +10,12 @@ export const oauthService = {
      * @param pushToken Push notification token
      */
     exchangeDiscordCode: async (code: string, codeVerifier: string | undefined, pushToken: string): Promise<AuthResponse> => {
+        if (!codeVerifier) {
+            throw new Error('Code verifier is required for Discord OAuth');
+        }
+        
+        console.log('Exchanging Discord code with verifier:', { code, codeVerifier });
+        
         const response = await apiClient.post<AuthResponse>(
             API_ENDPOINTS.auth.discord,
             {

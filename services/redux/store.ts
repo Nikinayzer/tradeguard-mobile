@@ -3,6 +3,7 @@ import jobReducer from './slices/jobStateSlice';
 import marketDataReducer from './slices/marketDataSlice';
 import positionsReducer from './slices/positionsSlice';
 import equityReducer from './slices/equitySlice';
+import authReducer from './slices/authSlice';
 
 export const store = configureStore({
     reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
         marketData: marketDataReducer,
         positions: positionsReducer,
         equity: equityReducer,
+        auth: authReducer,
     },
 });
 

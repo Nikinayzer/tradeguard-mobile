@@ -30,6 +30,11 @@ export type HealthStackParamList = {
     HealthMain: undefined;
 };
 
+export type HomeStackParamList = {
+    HomeMain: undefined;
+    Notifications: undefined;
+    Profile: NavigatorScreenParams<ProfileStackParamList>;
+};
 
 export type ProfileStackParamList = {
     ProfileMain: undefined;
