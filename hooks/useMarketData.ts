@@ -1,49 +1,48 @@
-import { useState, useEffect } from 'react';
-import MarketDataManager, { CategoryData, Categories } from '@/services/MarketDataManager';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/services/redux/store';
+import {
+  selectMarketData,
+  selectIsLoading,
+  selectError,
+  selectCategory,
+  selectInstrument,
+  selectFormattedInstrument,
+  selectIsInitialized,
+  CategoryData,
+  MarketData
+} from '@/services/redux/slices/marketDataSlice';
 
 interface UseMarketDataResult {
-    marketData: CategoryData;
-    categories: Categories;
-    isLoading: boolean;
-    isLoadingInitialData: boolean;
-    error: Error | null;
+  marketData: CategoryData;
+  isLoading: boolean;
+  error: string | null;
+  isInitialized: boolean;
+  getCategory: (category: string) => MarketData[];
+  getInstrument: (instrument: string) => MarketData | null;
+  getFormattedInstrument: (instrument: string) => (MarketData & {
+    priceUSD: string;
+    change24hFormatted: string;
+    isPositive: boolean;
+  }) | null;
 }
 
 export function useMarketData(): UseMarketDataResult {
-    const [marketData, setMarketData] = useState<CategoryData>({});
-    const [categories, setCategories] = useState<Categories>({});
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
+  const marketData = useSelector(selectMarketData);
+  const isLoading = useSelector(selectIsLoading);
+  const error = useSelector(selectError);
+  const isInitialized = useSelector(selectIsInitialized);
 
-    useEffect(() => {
-        const marketManager = MarketDataManager.getInstance();
-        
-        const unsubscribeMarket = marketManager.subscribeToMarketData((data) => {
-            setMarketData(data);
-            setIsLoading(false);
-        });
+  const getCategory = (category: string) => useSelector(selectCategory(category));
+  const getInstrument = (instrument: string) => useSelector(selectInstrument(instrument));
+  const getFormattedInstrument = (instrument: string) => useSelector(selectFormattedInstrument(instrument));
 
-        const unsubscribeCategories = marketManager.subscribeToCategories((cats) => {
-            setCategories(cats);
-        });
-
-        if (marketManager.isLoaded()) {
-            setMarketData(marketManager.getMarketData());
-            setCategories(marketManager.getCategories());
-            setIsLoading(false);
-        }
-
-        return () => {
-            unsubscribeMarket();
-            unsubscribeCategories();
-        };
-    }, []);
-
-    return {
-        marketData,
-        categories,
-        isLoading,
-        isLoadingInitialData: MarketDataManager.getInstance().isLoadingInitialData(),
-        error
-    };
+  return {
+    marketData,
+    isLoading,
+    error,
+    isInitialized,
+    getCategory,
+    getInstrument,
+    getFormattedInstrument
+  };
 } 

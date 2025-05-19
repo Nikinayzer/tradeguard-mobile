@@ -1,37 +1,197 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowUpRight, ArrowDownRight, DollarSign, Clock, BarChart2, ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownRight, Clock, BarChart2, TrendingUp, TrendingDown, ArrowLeft, ArrowRight, DollarSign, Percent, Timer, History, Target } from 'lucide-react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useMarketData } from '@/hooks/useMarketData';
-import MarketDataManager, { type Coin } from '@/services/MarketDataManager';
+import { MarketData } from '@/services/redux/slices/marketDataSlice';
+import { NewsSection } from '@/components/screens/news/NewsSection';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { HomeStackParamList, RootStackParamList, MarketStackParamList } from '@/navigation/navigation';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { useTheme } from '@/contexts/ThemeContext';
+import { CryptoIcon } from '@/components/common/CryptoIcon';
+import { formatCompactNumber, formatCurrency } from '@/utils/formatNumber';
+
+type CoinDetailScreenNavigationProp = CompositeNavigationProp<
+    NativeStackNavigationProp<MarketStackParamList>,
+    NativeStackNavigationProp<RootStackParamList>
+>;
+
+function CoinDetailHeader({ 
+    baseSymbol, 
+    currentPrice, 
+    priceChange, 
+    onBack 
+}: { 
+    baseSymbol: string;
+    currentPrice: number;
+    priceChange: { value: string; isPositive: boolean };
+    onBack: () => void;
+}) {
+    const { colors } = useTheme();
+
+    return (
+        <ThemedView variant="transparent" style={styles.header}>
+            <View style={styles.headerContent}>
+                <TouchableOpacity 
+                    style={[styles.backButton, { backgroundColor: colors.backgroundSecondary }]}
+                    onPress={onBack}
+                >
+                    <ArrowLeft size={24} color={colors.text} />
+                </TouchableOpacity>
+
+                <View style={styles.headerMain}>
+                    <View style={styles.coinInfo}>
+                        <View style={styles.coinText}>
+                            <ThemedText variant="heading2" size={24}>{baseSymbol}</ThemedText>
+                            <ThemedText variant="body" secondary>/USDT</ThemedText>
+                        </View>
+                    </View>
+
+                    <ThemedText variant="heading1" size={32}>
+                        {formatCompactNumber(currentPrice)}
+                    </ThemedText>
+                </View>
+            </View>
+        </ThemedView>
+    );
+}
+
+function PriceSection({ coin }: { coin: MarketData }) {
+    const { colors } = useTheme();
+    const price24hAgo = coin.currentPrice / (1 + coin.change24h);
+    const isPositive = coin.change24h >= 0;
+
+    return (
+        <ThemedView variant="card" style={styles.priceSection}>
+            <View style={styles.priceSectionHeader}>
+                <View style={styles.priceSectionTitle}>
+                    <DollarSign size={20} color={colors.textSecondary} />
+                    <ThemedText variant="heading3">Price Information</ThemedText>
+                </View>
+                <ThemedView 
+                    variant="transparent" 
+                    style={{
+                        ...styles.priceChange,
+                        backgroundColor: isPositive ? `${colors.success}15` : `${colors.error}15`
+                    }}
+                >
+                    {isPositive ? (
+                        <ArrowUpRight size={16} color={colors.success} strokeWidth={2.5} />
+                    ) : (
+                        <ArrowDownRight size={16} color={colors.error} strokeWidth={2.5} />
+                    )}
+                    <ThemedText 
+                        variant="bodyBold"
+                        color={isPositive ? colors.success : colors.error}
+                        style={styles.priceChangeText}
+                    >
+                        {`${isPositive ? '+' : ''}${(coin.change24h * 100).toFixed(2)}%`}
+                    </ThemedText>
+                </ThemedView>
+            </View>
+
+            <View style={styles.priceContent}>
+                {/* Current Price */}
+                <View style={styles.currentPriceContainer}>
+                    <ThemedText variant="label" secondary>Current Price</ThemedText>
+                    <ThemedText variant="heading1" size={32}>
+                        ${coin.currentPrice.toFixed(coin.instrumentInfo.priceScale)}
+                    </ThemedText>
+                </View>
+
+                {/* 24h Range */}
+                <View style={styles.priceRangeContainer}>
+                    <View style={styles.priceRangeHeader}>
+                        <TrendingUp size={16} color={colors.textSecondary} />
+                        <ThemedText variant="label" secondary>24h Range</ThemedText>
+                    </View>
+                    <View style={styles.priceRangeValues}>
+                        <View style={styles.priceRangeItem}>
+                            <View style={styles.priceLabelContainer}>
+                                <ArrowUpRight size={14} color={colors.success} strokeWidth={2.5} />
+                                <ThemedText variant="body" secondary>High</ThemedText>
+                            </View>
+                            <ThemedText 
+                                variant="heading2"
+                                color={colors.success}
+                                size={24}
+                            >
+                                ${coin.high24h.toFixed(coin.instrumentInfo.priceScale)}
+                            </ThemedText>
+                        </View>
+                        <View style={[styles.priceRangeItem, { marginLeft: 24 }]}>
+                            <View style={styles.priceLabelContainer}>
+                                <ArrowDownRight size={14} color={colors.error} strokeWidth={2.5} />
+                                <ThemedText variant="body" secondary>Low</ThemedText>
+                            </View>
+                            <ThemedText 
+                                variant="heading2"
+                                color={colors.error}
+                                size={24}
+                            >
+                                ${coin.low24h.toFixed(coin.instrumentInfo.priceScale)}
+                            </ThemedText>
+                        </View>
+                    </View>
+                </View>
+
+                {/* 24h Change */}
+                <View style={styles.priceChangeContainer}>
+                    <View style={styles.priceChangeHeader}>
+                        <Clock size={16} color={colors.textSecondary} />
+                        <ThemedText variant="label" secondary>24h Change</ThemedText>
+                    </View>
+                    <View style={styles.priceChangeValues}>
+                        <View style={styles.priceChangeItem}>
+                            <View style={styles.priceLabelContainer}>
+                                <History size={14} color={colors.textSecondary} strokeWidth={2.5} />
+                                <ThemedText variant="body" secondary>From</ThemedText>
+                            </View>
+                            <ThemedText 
+                                variant="heading2"
+                                size={24}
+                            >
+                                ${price24hAgo.toFixed(coin.instrumentInfo.priceScale)}
+                            </ThemedText>
+                        </View>
+                        <View style={[styles.priceChangeItem, { marginLeft: 24 }]}>
+                            <View style={styles.priceLabelContainer}>
+                                <Target size={14} color={colors.textSecondary} strokeWidth={2.5} />
+                                <ThemedText variant="body" secondary>To</ThemedText>
+                            </View>
+                            <ThemedText 
+                                variant="heading2"
+                                size={24}
+                            >
+                                ${coin.currentPrice.toFixed(coin.instrumentInfo.priceScale)}
+                            </ThemedText>
+                        </View>
+                    </View>
+                </View>
+            </View>
+        </ThemedView>
+    );
+}
 
 export default function CoinDetailScreen() {
     const route = useRoute();
-    const navigation = useNavigation();
+    const navigation = useNavigation<CoinDetailScreenNavigationProp>();
     const { symbol } = route.params as { symbol: string };
-    const { isLoading, error } = useMarketData();
-    const [coin, setCoin] = useState<Coin | null>(null);
+    const { getInstrument, isLoading, error } = useMarketData();
     const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+    const { colors } = useTheme();
+
+    const coin = getInstrument(symbol);
 
     useEffect(() => {
-        // Get initial coin data
-        const marketManager = MarketDataManager.getInstance();
-        const initialCoin = marketManager.getCoin(symbol);
-        if (initialCoin) {
-            setCoin(initialCoin);
-            setLastUpdate(new Date(initialCoin.lastUpdate));
+        if (coin) {
+            setLastUpdate(new Date());
         }
-
-        const unsubscribe = marketManager.subscribeToCoin(symbol, (updatedCoin) => {
-            setCoin(updatedCoin);
-            setLastUpdate(new Date(updatedCoin.lastUpdate));
-        });
-
-        return () => {
-            unsubscribe();
-        };
-    }, [symbol]);
+    }, [coin]);
     
     const formatVolume = (volume: number) => {
         if (volume >= 1000000) {
@@ -43,10 +203,10 @@ export default function CoinDetailScreen() {
     if (isLoading || !coin) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6" />
-                    <Text style={styles.loadingText}>Loading coin data...</Text>
-                </View>
+                <ThemedView variant="screen" style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ThemedText variant="body" secondary style={styles.loadingText}>Loading coin data...</ThemedText>
+                </ThemedView>
             </SafeAreaView>
         );
     }
@@ -54,115 +214,118 @@ export default function CoinDetailScreen() {
     if (error || !coin) {
         return (
             <SafeAreaView style={styles.safeArea}>
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Failed to load coin data</Text>
+                <ThemedView variant="screen" style={styles.errorContainer}>
+                    <ThemedText variant="body" color={colors.error} style={styles.errorText}>Failed to load coin data</ThemedText>
                     <TouchableOpacity 
-                        style={styles.retryButton}
+                        style={[styles.retryButton, { backgroundColor: colors.primary }]}
                         onPress={() => navigation.goBack()}
                     >
-                        <Text style={styles.retryText}>Go Back</Text>
+                        <ThemedText variant="button" color={colors.buttonPrimaryText}>Go Back</ThemedText>
                     </TouchableOpacity>
-                </View>
+                </ThemedView>
             </SafeAreaView>
         );
     }
 
     const price24hAgo = coin.currentPrice / (1 + coin.change24h);
+    const baseSymbol = coin.instrument.split('/')[0];
+    const isPositive = coin.change24h >= 0;
+    const formattedPrice = `$${coin.currentPrice.toLocaleString('en-US', { 
+        minimumFractionDigits: coin.instrumentInfo?.priceScale || 2, 
+        maximumFractionDigits: coin.instrumentInfo?.priceScale || 2 
+    })}`;
+    const formattedChange = `${isPositive ? '+' : ''}${(coin.change24h * 100).toFixed(2)}%`;
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <View style={styles.container}>
-                {/* Back Button */}
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                >
-                    <ArrowLeft size={24} color="white" />
-                </TouchableOpacity>
+            <ThemedView variant="screen" style={styles.container}>
+                <CoinDetailHeader 
+                    baseSymbol={baseSymbol}
+                    currentPrice={coin.currentPrice}
+                    priceChange={{
+                        value: formattedChange,
+                        isPositive
+                    }}
+                    onBack={() => navigation.goBack()}
+                />
 
                 <ScrollView showsVerticalScrollIndicator={false}>
-                    {/* Header Section */}
-                    <View style={styles.header}>
-                        <View style={styles.titleContainer}>
-                            <Text style={styles.symbol}>{coin.symbol}</Text>
-                            <Text style={styles.pair}>/USDT</Text>
-                        </View>
-                        <View style={[
-                            styles.change,
-                            coin.isPositive ? styles.positiveChange : styles.negativeChange
-                        ]}>
-                            {coin.isPositive ? (
-                                <ArrowUpRight size={16} color="#22C55E" strokeWidth={2.5} />
-                            ) : (
-                                <ArrowDownRight size={16} color="#EF4444" strokeWidth={2.5} />
-                            )}
-                            <Text style={[
-                                styles.changeText,
-                                coin.isPositive ? styles.positiveText : styles.negativeText
-                            ]}>
-                                {coin.change24hFormatted}
-                            </Text>
-                        </View>
-                    </View>
-
                     {/* Price Section */}
-                    <View style={styles.priceSection}>
-                        <Text style={styles.price}>{coin.priceUSD}</Text>
-                        <Text style={styles.priceLabel}>Current Price</Text>
+                    <View style={styles.section}>
+                        <PriceSection coin={coin} />
                     </View>
 
                     {/* Stats Grid */}
                     <View style={styles.statsGrid}>
-                        <View style={styles.statItem}>
+                        <ThemedView variant="card" style={styles.statItem}>
                             <View style={styles.statHeader}>
-                                <BarChart2 size={16} color="#748CAB" />
-                                <Text style={styles.statLabel}>24h Volume</Text>
+                                <BarChart2 size={16} color={colors.textSecondary} />
+                                <ThemedText variant="label" secondary>24h Volume</ThemedText>
                             </View>
-                            <Text style={styles.statValue}>{formatVolume(coin.volume24h)}</Text>
-                        </View>
+                            <ThemedText variant="heading2">{formatVolume(coin.volume24h)}</ThemedText>
+                        </ThemedView>
 
-                        <View style={styles.statItem}>
+                        <ThemedView variant="card" style={styles.statItem}>
                             <View style={styles.statHeader}>
-                                <Clock size={16} color="#748CAB" />
-                                <Text style={styles.statLabel}>24h Price</Text>
+                                <Clock size={16} color={colors.textSecondary} />
+                                <ThemedText variant="label" secondary>1h Price</ThemedText>
                             </View>
-                            <Text style={styles.statValue}>
-                                ${price24hAgo.toFixed(coin.instrumentInfo.priceScale)}
-                            </Text>
-                        </View>
+                            <ThemedText variant="heading2">
+                                ${coin.price1hAgo.toFixed(coin.instrumentInfo.priceScale)}
+                            </ThemedText>
+                        </ThemedView>
 
-                        <View style={styles.statItem}>
+                        <ThemedView variant="card" style={styles.statItem}>
                             <View style={styles.statHeader}>
-                                <TrendingUp size={16} color="#748CAB" />
-                                <Text style={styles.statLabel}>24h High</Text>
+                                <BarChart2 size={16} color={colors.textSecondary} />
+                                <ThemedText variant="label" secondary>Open Interest</ThemedText>
                             </View>
-                            <Text style={styles.statValue}>
-                                ${coin.high24h.toFixed(coin.instrumentInfo.priceScale)}
-                            </Text>
-                        </View>
+                            <ThemedText variant="heading2">
+                                {formatVolume(coin.openInterestValue)}
+                            </ThemedText>
+                        </ThemedView>
 
-                        <View style={styles.statItem}>
+                        <ThemedView variant="card" style={styles.statItem}>
                             <View style={styles.statHeader}>
-                                <TrendingDown size={16} color="#748CAB" />
-                                <Text style={styles.statLabel}>24h Low</Text>
+                                <Percent size={16} color={colors.textSecondary} />
+                                <ThemedText variant="label" secondary>Funding Rate</ThemedText>
                             </View>
-                            <Text style={styles.statValue}>
-                                ${coin.low24h.toFixed(coin.instrumentInfo.priceScale)}
-                            </Text>
-                        </View>
+                            <ThemedText variant="heading2">
+                                {(coin.fundingRate * 100).toFixed(4)}%
+                            </ThemedText>
+                        </ThemedView>
 
-                        <View style={styles.statItem}>
+                        <ThemedView variant="card" style={styles.statItem}>
                             <View style={styles.statHeader}>
-                                <Clock size={16} color="#748CAB" />
-                                <Text style={styles.statLabel}>Last Updated</Text>
+                                <Timer size={16} color={colors.textSecondary} />
+                                <ThemedText variant="label" secondary>Next Funding</ThemedText>
                             </View>
-                            <Text style={styles.statValue}>
+                            <ThemedText variant="heading2">
+                                {new Date(coin.nextFundingTime).toLocaleTimeString()}
+                            </ThemedText>
+                        </ThemedView>
+
+                        <ThemedView variant="card" style={styles.statItem}>
+                            <View style={styles.statHeader}>
+                                <Clock size={16} color={colors.textSecondary} />
+                                <ThemedText variant="label" secondary>Last Updated</ThemedText>
+                            </View>
+                            <ThemedText variant="heading2">
                                 {lastUpdate.toLocaleTimeString()}
-                            </Text>
-                        </View>
+                            </ThemedText>
+                        </ThemedView>
+                    </View>
+
+                    {/* News Section */}
+                    <View style={styles.newsSection}>
+                        <NewsSection 
+                            navigation={navigation} 
+                            coin={baseSymbol} 
+                            itemsPerPage={3} 
+                        />
                     </View>
                 </ScrollView>
-            </View>
+            </ThemedView>
         </SafeAreaView>
     );
 }
@@ -170,11 +333,52 @@ export default function CoinDetailScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: '#0D1B2A',
     },
     container: {
         flex: 1,
+    },
+    header: {
         padding: 16,
+        paddingBottom: 24,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        paddingLeft: 8,
+        paddingRight: 16,
+    },
+    headerMain: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    coinInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    coinText: {
+        gap: 2,
+    },
+    priceChange: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    priceChangeText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     loadingContainer: {
         flex: 1,
@@ -182,8 +386,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     loadingText: {
-        color: '#748CAB',
-        fontSize: 16,
         marginTop: 12,
     },
     errorContainer: {
@@ -192,96 +394,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     errorText: {
-        color: '#EF4444',
-        fontSize: 16,
         marginBottom: 16,
     },
     retryButton: {
-        backgroundColor: '#3B82F6',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 8,
     },
-    retryText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    backButton: {
-        marginBottom: 16,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#1B263B',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    titleContainer: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-    },
-    symbol: {
-        fontSize: 28,
-        fontWeight: '700',
-        color: 'white',
-    },
-    pair: {
-        fontSize: 16,
-        color: '#748CAB',
-        marginLeft: 4,
-    },
-    change: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 8,
-    },
-    positiveChange: {
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    },
-    negativeChange: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    },
-    changeText: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    positiveText: {
-        color: '#22C55E',
-    },
-    negativeText: {
-        color: '#EF4444',
-    },
-    priceSection: {
-        marginBottom: 32,
-    },
-    price: {
-        fontSize: 42,
-        fontWeight: '700',
-        color: 'white',
-        marginBottom: 4,
-    },
-    priceLabel: {
-        fontSize: 16,
-        color: '#748CAB',
-    },
     statsGrid: {
         gap: 16,
+        padding: 16,
+        marginBottom: 24,
     },
     statItem: {
-        backgroundColor: '#1B263B',
-        borderRadius: 12,
         padding: 16,
-        borderWidth: 1,
-        borderColor: '#22314A',
+        borderRadius: 12,
     },
     statHeader: {
         flexDirection: 'row',
@@ -289,13 +416,75 @@ const styles = StyleSheet.create({
         gap: 8,
         marginBottom: 8,
     },
-    statLabel: {
-        fontSize: 14,
-        color: '#748CAB',
+    newsSection: {
+        padding: 16,
     },
-    statValue: {
-        fontSize: 20,
-        fontWeight: '600',
-        color: 'white',
+    section: {
+        padding: 16,
+    },
+    priceSection: {
+        padding: 16,
+        borderRadius: 12,
+    },
+    priceSectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    priceSectionTitle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    priceContent: {
+        gap: 24,
+    },
+    currentPriceContainer: {
+        gap: 4,
+    },
+    priceRangeContainer: {
+        gap: 8,
+    },
+    priceRangeHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 4,
+    },
+    priceRangeValues: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: 12,
+    },
+    priceRangeItem: {
+        flex: 1,
+        gap: 4,
+    },
+    priceChangeContainer: {
+        gap: 8,
+    },
+    priceChangeHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 4,
+    },
+    priceChangeValues: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: 12,
+    },
+    priceChangeItem: {
+        flex: 1,
+        gap: 4,
+    },
+    priceLabelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    priceValue: {
+        marginTop: 2,
     },
 }); 

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { PositionsEvent, Position } from '@/services/api/events';
+import { PositionsEvent, Position } from '@/types/events';
 
 export interface PositionsState {
   totalPositionValue: number;

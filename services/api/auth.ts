@@ -45,4 +45,7 @@ export const authService = {
             },
         });
     },
+    validate: async (): Promise<void> => {
+        await apiClient.get(API_ENDPOINTS.auth.validate);
+    }
 }; 

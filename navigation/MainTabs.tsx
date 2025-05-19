@@ -3,7 +3,18 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {Home, BarChart2, User, Bot, TrendingUp, HeartPulse} from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { 
+    MainTabParamList, 
+    HomeStackParamList, 
+    MarketStackParamList,
+    AutoStackParamList,
+    PortfolioStackParamList,
+    HealthStackParamList,
+    ProfileStackParamList,
+    SettingsStackParamList
+} from './navigation';
 
+// Screens
 import HomeScreen from '../screens/home/HomeScreen';
 import MarketScreen from '../screens/market/MarketScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -23,9 +34,11 @@ import PersonalInfoScreen from '../screens/settings/PersonalInfoScreen';
 import ExchangeAccountScreen from '../screens/profile/ExchangeAccountScreen';
 import AddExchangeScreen from '../screens/profile/AddExchangeScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
+import NewsScreen from '../screens/news/NewsScreen';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator();
+
 const commonAnimationConfig = {
     animation: 'slide_from_right' as const,
     animationDuration: 150,
@@ -41,14 +54,8 @@ function HomeStack() {
             }}
         >
             <Stack.Screen name="HomeMain" component={HomeScreen}/>
-            <Stack.Screen 
-                name="Notifications" 
-                component={NotificationsScreen}
-                options={{
-                    animation: 'slide_from_right',
-                    presentation: 'card',
-                }}
-            />
+            <Stack.Screen name="Notifications" component={NotificationsScreen}/>
+            <Stack.Screen name="News" component={NewsScreen}/>
         </Stack.Navigator>
     );
 }
@@ -62,14 +69,8 @@ function MarketStack() {
             }}
         >
             <Stack.Screen name="MarketMain" component={MarketScreen}/>
-            <Stack.Screen
-                name="CoinDetail"
-                component={CoinDetailScreen}
-                options={{
-                    animation: 'slide_from_right',
-                    presentation: 'card',
-                }}
-            />
+            <Stack.Screen name="CoinDetail" component={CoinDetailScreen}/>
+            <Stack.Screen name="News" component={NewsScreen}/>
         </Stack.Navigator>
     );
 }
@@ -83,30 +84,9 @@ function AutoStack() {
             }}
         >
             <Stack.Screen name="AutoMain" component={AutomatedTradeScreen}/>
-            <Stack.Screen
-                name="JobDetail"
-                component={JobDetailScreen}
-                options={{
-                    animation: 'slide_from_right',
-                    presentation: 'card',
-                }}
-            />
-            <Stack.Screen
-                name="JobList"
-                component={JobListScreen}
-                options={{
-                    animation: 'slide_from_right',
-                    presentation: 'card',
-                }}
-            />
-            <Stack.Screen
-                name="CoinSelector"
-                component={CoinSelectorScreen}
-                options={{
-                    animation: 'slide_from_right',
-                    presentation: 'card',
-                }}
-            />
+            <Stack.Screen name="JobDetail" component={JobDetailScreen}/>
+            <Stack.Screen name="JobList" component={JobListScreen}/>
+            <Stack.Screen name="CoinSelector" component={CoinSelectorScreen}/>
         </Stack.Navigator>
     );
 }
@@ -153,6 +133,7 @@ function SettingsStack() {
         <Stack.Navigator
             screenOptions={{
                 headerShown: false,
+                ...commonAnimationConfig,
             }}
         >
             <Stack.Screen name="Settings" component={SettingsScreen}/>
@@ -162,9 +143,8 @@ function SettingsStack() {
             <Stack.Screen name="APISettings" component={APISettingsScreen}/>
             <Stack.Screen name="Notifications" component={NotificationsSettingsScreen}/>
         </Stack.Navigator>
-    )
+    );
 }
-
 
 function PortfolioStack() {
     return (
@@ -185,6 +165,7 @@ export default function MainTabs() {
     return (
         <Tab.Navigator
             screenOptions={{
+                lazy: false, // Initialize all tabs at startup, fixes navigation to unmount stack
                 headerShown: false,
                 tabBarStyle: {
                     backgroundColor: colors.backgroundSecondary,
@@ -207,60 +188,47 @@ export default function MainTabs() {
                 name="Home"
                 component={HomeStack}
                 options={{
-                    tabBarIcon: ({color, size}) => (
-                        <Home size={size} color={color}/>
-                    ),
+                    tabBarIcon: ({color, size}) => <Home size={size} color={color}/>,
                 }}
             />
             <Tab.Screen
                 name="Market"
                 component={MarketStack}
                 options={{
-                    tabBarIcon: ({color, size}) => (
-                        <BarChart2 size={size} color={color}/>
-                    ),
+                    tabBarIcon: ({color, size}) => <BarChart2 size={size} color={color}/>,
                 }}
             />
-
             <Tab.Screen
                 name="Auto"
                 component={AutoStack}
                 options={{
-                    tabBarIcon: ({color, size}) => (
-                        <Bot size={size} color={color}/>
-                    ),
+                    tabBarIcon: ({color, size}) => <Bot size={size} color={color}/>,
                 }}
             />
             <Tab.Screen
                 name="Portfolio"
                 component={PortfolioStack}
                 options={{
-                    tabBarIcon: ({color, size}) => (
-                        <TrendingUp size={size} color={color}/>
-                    ),
+                    tabBarIcon: ({color, size}) => <TrendingUp size={size} color={color}/>,
                 }}
             />
             <Tab.Screen
                 name="Health"
                 component={HealthStack}
                 options={{
-                    tabBarIcon: ({color, size}) => (
-                        <HeartPulse size={size} color={color}/>
-                    ),
+                    tabBarIcon: ({color, size}) => <HeartPulse size={size} color={color}/>,
                 }}
             />
             <Tab.Screen
                 name="Profile"
                 component={ProfileStack}
-                options={({route, navigation}) => ({
-                    tabBarIcon: ({color, size}) => (
-                        <User size={size} color={color}/>
-                    ),
+                options={({navigation}) => ({
+                    tabBarIcon: ({color, size}) => <User size={size} color={color}/>,
                     tabBarListeners: {
-                        tabBlur: () => {
+                        tabPress: () => {
                             navigation.reset({
                                 index: 0,
-                                routes: [{name: 'ProfileMain'}],
+                                routes: [{name: 'Profile'}],
                             });
                         },
                     },

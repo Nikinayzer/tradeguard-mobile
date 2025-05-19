@@ -14,6 +14,12 @@ interface JobCardProps {
 export function JobCard({ job, onViewDetails = undefined}: JobCardProps) {
     const { colors } = useTheme();
     
+    // todo handle with dto, ids are not numbers
+    if (!job || (typeof job.id !== 'string' && typeof job.id !== 'number')) {
+        console.warn('Invalid job object passed to JobCard:', job);
+        return null;
+    }
+    
     const handleCardPress = () => {
         if (onViewDetails) {
             onViewDetails(job.id);
@@ -26,7 +32,10 @@ export function JobCard({ job, onViewDetails = undefined}: JobCardProps) {
     const isPaused = job.status === 'PAUSED';
     const statusColor = getStatusColor(job.status);
     const strategyColor = job.strategy === 'DCA' ? colors.primary : colors.secondary;
-    const sideColor = job.side === 'BUY' ? colors.success : job.side === 'SELL' ? colors.error : colors.primary;
+    const sideColor = job.side === 'BUY' ? colors.success : 
+                     job.side === 'SELL' ? colors.error : 
+                     job.side === 'BOTH' ? colors.warning : 
+                     colors.primary;
 
     return (
         <TouchableOpacity 
@@ -46,12 +55,12 @@ export function JobCard({ job, onViewDetails = undefined}: JobCardProps) {
                             style={[styles.strategyBadge, { backgroundColor: strategyColor }]}>
                             <Text style={[styles.strategyText, { color: colors.buttonPrimaryText }]}>{job.strategy}</Text>
                         </View>
-                        <Text style={[styles.jobIdText, { color: colors.textTertiary }]}>#{job.id.substring(0, 8)}</Text>
+                        <Text style={[styles.jobIdText, { color: colors.textTertiary }]}>#{String(job.id).substring(0, 8)}</Text>
 
                         <View
                             style={[styles.sideBadge, { backgroundColor: `${sideColor}20` }]}>
                             <Text style={[styles.sideText, { color: sideColor }]}>
-                                {job.side}
+                                {job.side.toUpperCase()}
                             </Text>
                         </View>
                     </View>

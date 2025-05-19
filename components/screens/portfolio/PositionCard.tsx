@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { Position } from '@/services/api/events';
+import { Position } from '@/types/events';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { ThemedView } from '@/components/ui/ThemedView';
@@ -18,25 +18,25 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
     
     const isLong = position.side.toLowerCase() === "long" || position.side.toLowerCase() === "buy";
     
-    // For closed positions, use cumRealizedPnl if available
-    const pnl = isClosed && (position as any).cumRealizedPnl !== undefined 
-        ? (position as any).cumRealizedPnl 
-        : position.unrealizedPnl;
+    // For closed positions, use cum_realized_pnl if available
+    const pnl = isClosed && position.cum_realized_pnl !== null 
+        ? position.cum_realized_pnl 
+        : position.unrealized_pnl;
     
     const isProfit = pnl >= 0;
 
     const pnlPercentage = useMemo(() => {
-        if (position.entryPrice && position.markPrice && position.entryPrice > 0) {
-            const percentChange = ((position.markPrice - position.entryPrice) / position.entryPrice) * 100;
+        if (position.entry_price && position.mark_price && position.entry_price > 0) {
+            const percentChange = ((position.mark_price - position.entry_price) / position.entry_price) * 100;
             return isLong ? percentChange : -percentChange;
         }
         return 0;
-    }, [position.entryPrice, position.markPrice, isLong]);
+    }, [position.entry_price, position.mark_price, isLong]);
 
     const getPriceDiffColor = () => {
-        if (position.markPrice > position.entryPrice) {
+        if (position.mark_price > position.entry_price) {
             return isLong ? colors.success : colors.error;
-        } else if (position.markPrice < position.entryPrice) {
+        } else if (position.mark_price < position.entry_price) {
             return isLong ? colors.error : colors.success;
         }
         return colors.text;
@@ -103,7 +103,7 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                     <View style={styles.mainRow}>
                         <View style={styles.amountAndPricesContainer}>
                             <ThemedText variant="bodyBold" style={styles.amountValue}>
-                                {formatCurrency(position.usdtAmt)}
+                                {formatCurrency(position.usdt_amt)}
                             </ThemedText>
                             
                             <View style={styles.priceContainer}>
@@ -112,7 +112,7 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                                         Entry
                                     </ThemedText>
                                     <ThemedText variant="caption" style={styles.priceAmount}>
-                                        {formatNumber(position.entryPrice, 2)}
+                                        {formatNumber(position.entry_price, 2)}
                                     </ThemedText>
                                 </View>
                                 
@@ -134,7 +134,7 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                                         style={styles.priceAmount}
                                         color={getPriceDiffColor()}
                                     >
-                                        {formatNumber(position.markPrice, 2)}
+                                        {formatNumber(position.mark_price, 2)}
                                     </ThemedText>
                                 </View>
                             </View>

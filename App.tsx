@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList, AuthStackParamList} from '@/navigation/navigation';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -8,7 +8,6 @@ import {registerRootComponent} from "expo";
 import * as SplashScreen from 'expo-splash-screen';
 import MainTabs from '@/navigation/MainTabs';
 import {SplashScreen as CustomSplashScreen} from './components/SplashScreen';
-import MarketDataManager from '@/services/MarketDataManager';
 import * as Linking from 'expo-linking';
 import {LinkingOptions} from '@react-navigation/native';
 import { useEventConnection } from '@/hooks/useEventConnection';
@@ -20,6 +19,8 @@ import {ThemeProvider} from "@/contexts/ThemeContext";
 import {ThemedView} from "@/components/ui/ThemedView";
 import {StatusBarManager} from "@/components/StatusBarManager";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
+import { loadPersistedFavorites } from '@/services/redux/slices/favoritesSlice';
+import { ConnectionStatusBar } from '@/components/common/ConnectionStatusBar';
 
 // Screens
 import LoadingScreen from '@/screens/LoadingScreen';
@@ -48,10 +49,25 @@ function AuthNavigator() {
 
 function Navigation() {
     const {isAuthenticated, isLoading} = useAuth();
+    const [isInitializing, setIsInitializing] = useState(true);
 
     useEventConnection(isAuthenticated);
 
-    if (isLoading) {
+    useEffect(() => {
+        async function initialize() {
+            try {
+                await loadPersistedFavorites(store.dispatch);
+            } catch (e) {
+                console.warn('Failed to load persisted favorites:', e);
+            } finally {
+                setIsInitializing(false);
+            }
+        }
+
+        initialize();
+    }, []);
+
+    if (isLoading || isInitializing) {
         return <LoadingScreen/>;
     }
 
@@ -120,14 +136,10 @@ Notifications.setNotificationHandler({
 
 export default function App() {
     const [isReady, setIsReady] = useState(false);
-    const [showSplash, setShowSplash] = useState(true);
-
-//    const [expoPushToken, setExpoPushToken] = useState('');
     const [notification, setNotification] = useState<Notifications.Notification | undefined>(
         undefined
     );
-    // const notificationListener = useRef<Notifications.EventSubscription>();
-    // const responseListener = useRef<Notifications.EventSubscription>();
+
     useEffect(() => {
         const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
             setNotification(notification);
@@ -145,15 +157,11 @@ export default function App() {
     useEffect(() => {
         async function prepare() {
             try {
-                const marketManager = MarketDataManager.getInstance();
-                while (marketManager.isLoadingInitialData()) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-                //mb something better than just a delay
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Any other initialization logic can go here
+                await SplashScreen.hideAsync();
+                setIsReady(true);
             } catch (e) {
                 console.warn(e);
-            } finally {
                 setIsReady(true);
             }
         }
@@ -161,37 +169,28 @@ export default function App() {
         prepare();
     }, []);
 
-    const onLayoutRootView = useCallback(async () => {
-        if (isReady) {
-            await SplashScreen.hideAsync();
-            setTimeout(() => setShowSplash(false), 500);
-        }
-    }, [isReady]);
-
     if (!isReady) {
         return null;
     }
+
     return (
         <GestureHandlerRootView style={{flex: 1}}>
-            <SafeAreaProvider onLayout={onLayoutRootView}>
-                {showSplash ? (
-                    <CustomSplashScreen/>
-                ) : (
-                    <Provider store={store}>
+            <SafeAreaProvider>
+                <Provider store={store}>
+                    <AuthProvider>
                         <PushTokenProvider>
-                            <AuthProvider>
-                                <ThemeProvider>
-                                    <StatusBarManager/>
-                                    <ThemedView variant="screen" style={{flex: 1}}>
-                                        <NavigationContainer linking={linking}>
-                                            <Navigation/>
-                                        </NavigationContainer>
-                                    </ThemedView>
-                                </ThemeProvider>
-                            </AuthProvider>
+                            <ThemeProvider>
+                                <StatusBarManager/>
+                                <ThemedView variant="screen" style={{flex: 1}}>
+                                    <NavigationContainer linking={linking}>
+                                        <ConnectionStatusBar />
+                                        <Navigation/>
+                                    </NavigationContainer>
+                                </ThemedView>
+                            </ThemeProvider>
                         </PushTokenProvider>
-                    </Provider>
-                )}
+                    </AuthProvider>
+                </Provider>
             </SafeAreaProvider>
         </GestureHandlerRootView>
     );

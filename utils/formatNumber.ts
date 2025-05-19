@@ -64,19 +64,24 @@ export function formatPercentage(value: number, decimals = 2): string {
 }
 
 /**
- * Format a number as a compact representation (e.g., 1.2K, 3.5M)
+ * Format a number as a compact representation with K/M suffixes
  * @param value Number to format
- * @returns Formatted compact string
+ * @returns Formatted compact string with K/M suffixes
  */
 export function formatCompactNumber(value: number): string {
   if (value === null || value === undefined || isNaN(value)) {
-    return '0';
+    return '$0';
   }
 
-  const formatter = new Intl.NumberFormat('en-US', {
-    notation: 'compact',
-    compactDisplay: 'short',
-  });
-
-  return formatter.format(value);
+  const absValue = Math.abs(value);
+  
+  if (absValue >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
+  }
+  
+  if (absValue >= 1000) {
+    return `$${(value / 1000).toFixed(1)}K`;
+  }
+  
+  return `$${value.toFixed(2)}`;
 } 

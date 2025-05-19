@@ -1,22 +1,24 @@
 import React from 'react';
-import {View, TouchableOpacity, StyleSheet, Image} from 'react-native';
-import {Plus, X, ChevronRight} from 'lucide-react-native';
+import {View, TouchableOpacity, StyleSheet} from 'react-native';
+import {Plus, ChevronRight} from 'lucide-react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {RootState} from '@/services/redux/store';
-import {setSelectedCoins} from '@/services/redux/slices/jobStateSlice';
-import {Coin} from "@/services/MarketDataManager";
+import {removeCoin} from '@/services/redux/slices/jobStateSlice';
 import {useNavigation} from "@react-navigation/native";
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useTheme} from '@/contexts/ThemeContext';
-import {ThemedTitle} from '@/components/ui/ThemedTitle';
 import {ThemedText} from '@/components/ui/ThemedText';
 import {ThemedView} from '@/components/ui/ThemedView';
+import {useMarketData} from '@/hooks/useMarketData';
+import {MarketItem} from '@/components/screens/market/MarketItem';
+import { selectMarketData } from '@/services/redux/slices/marketDataSlice';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export function CoinSelector() {
     const dispatch = useDispatch();
     const selectedCoins = useSelector((state: RootState) => state.job.selectedCoins);
+    const marketData = useSelector(selectMarketData);
     const navigation = useNavigation<NavigationProp>();
     const { colors } = useTheme();
 
@@ -24,42 +26,9 @@ export function CoinSelector() {
         navigation.navigate('CoinSelector');
     };
     
-    const handleRemoveCoin = (coin: Coin) => {
-        const updatedSelectedCoins = selectedCoins.filter(c => c.symbol !== coin.symbol);
-        dispatch(setSelectedCoins(updatedSelectedCoins));
+    const handleRemoveCoin = (symbol: string) => {
+        dispatch(removeCoin(symbol));
     };
-
-    const renderCoinItem = (item: Coin) => (
-        <TouchableOpacity
-            key={item.symbol}
-            style={styles.selectedCoinItem}
-            onPress={() => handleRemoveCoin(item)}
-            activeOpacity={0.7}
-        >
-            <ThemedView 
-                variant="card" 
-                style={styles.selectedCoinItemContent}
-                border
-                rounded="medium"
-                padding="medium"
-            >
-                <View style={styles.coinInfo}>
-                    <Image source={{uri: item.icon}} style={styles.coinIcon}/>
-                    <View style={styles.coinTexts}>
-                        <ThemedText variant="bodyBold" style={styles.coinName}>{item.name}</ThemedText>
-                        <ThemedText variant="caption" color={colors.textTertiary}>{item.symbol}</ThemedText>
-                    </View>
-                </View>
-                <ThemedView 
-                    style={styles.removeIconContainer} 
-                    variant="section" 
-                    rounded="full"
-                >
-                    <X size={16} color={colors.textTertiary}/>
-                </ThemedView>
-            </ThemedView>
-        </TouchableOpacity>
-    );
 
     return (
         <ThemedView style={styles.selectedCoinsSection} variant="transparent">
@@ -87,7 +56,23 @@ export function CoinSelector() {
 
             {selectedCoins.length > 0 ? (
                 <ThemedView style={styles.selectedCoinsContainer} variant="transparent">
-                    {selectedCoins.map(coin => renderCoinItem(coin))}
+                    {selectedCoins.map((symbol) => {
+                        const data = Object.values(marketData)
+                            .flat()
+                            .find(item => item.instrument === `${symbol}/USDT`);
+                        
+                        if (!data) return null;
+
+                        return (
+                            <MarketItem
+                                key={symbol}
+                                data={data}
+                                onPress={() => handleRemoveCoin(symbol)}
+                                canFavorite={false}
+                                backgroundVariant="card"
+                            />
+                        );
+                    })}
                 </ThemedView>
             ) : (
                 <ThemedView style={styles.emptyState} variant="transparent">
@@ -145,37 +130,6 @@ const styles = StyleSheet.create({
     },
     selectedCoinsContainer: {
         overflow: 'hidden',
-    },
-    selectedCoinItem: {
-        marginBottom: 5,
-    },
-    selectedCoinItemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    coinInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    coinIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        marginRight: 14,
-    },
-    coinTexts: {
-        flex: 1,
-    },
-    coinName: {
-        marginBottom: 4,
-    },
-    removeIconContainer: {
-        width: 32,
-        height: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     emptyState: {
         marginBottom: 0,

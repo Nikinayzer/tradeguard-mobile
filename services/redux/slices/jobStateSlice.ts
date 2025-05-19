@@ -1,11 +1,10 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
-import {Coin} from '@/services/MarketDataManager';
 import {JobStrategy, JobParams} from '@/services/api/auto';
 
 interface JobState {
     jobType: JobStrategy;
     jobParams: JobParams;
-    selectedCoins: Coin[]; //todo refactor to string[]
+    selectedCoins: string[];
 }
 
 const initialState: JobState = {
@@ -35,7 +34,6 @@ const jobSlice = createSlice({
                     totalSteps: 10,
                     discountPct: 0.5,
                     durationMinutes: 60,
-
                 };
             } else if (action.payload === 'LIQ') {
                 state.jobParams = {
@@ -51,12 +49,30 @@ const jobSlice = createSlice({
         setJobParams: (state, action: PayloadAction<JobParams>) => {
             state.jobParams = action.payload;
         },
-        setSelectedCoins: (state, action: PayloadAction<Coin[]>) => {
+        setSelectedCoins: (state, action: PayloadAction<string[]>) => {
             state.selectedCoins = action.payload;
+        },
+        addCoin: (state, action: PayloadAction<string>) => {
+            if (!state.selectedCoins.includes(action.payload)) {
+                state.selectedCoins.push(action.payload);
+            }
+        },
+        removeCoin: (state, action: PayloadAction<string>) => {
+            state.selectedCoins = state.selectedCoins.filter(coin => coin !== action.payload);
+        },
+        clearSelectedCoins: (state) => {
+            state.selectedCoins = [];
         },
     },
 });
 
-export const {setJobType, setJobParams, setSelectedCoins} = jobSlice.actions;
+export const {
+    setJobType,
+    setJobParams,
+    setSelectedCoins,
+    addCoin,
+    removeCoin,
+    clearSelectedCoins,
+} = jobSlice.actions;
 
 export default jobSlice.reducer;

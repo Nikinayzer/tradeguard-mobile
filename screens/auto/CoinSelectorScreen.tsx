@@ -1,147 +1,85 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
-    View,
     StyleSheet,
-    FlatList,
     TouchableOpacity,
-    Image,
-    ActivityIndicator,
-    Platform
+    FlatList,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Check, ChevronLeft, AlertCircle } from 'lucide-react-native';
-import { SearchBar } from '@/components/common/SearchBar';
+import { ChevronLeft } from 'lucide-react-native';
 import { useMarketData } from '@/hooks/useMarketData';
-import { setSelectedCoins } from '@/services/redux/slices/jobStateSlice';
+import { addCoin, removeCoin } from '@/services/redux/slices/jobStateSlice';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemedView } from '@/components/ui/ThemedView';
 import { ThemedText } from '@/components/ui/ThemedText';
-
-interface SimpleCoin {
-    symbol: string;
-    name: string;
-    icon: string;
-    price: string;
-    change24h: string;
-    isPositive: boolean;
-}
-
-const CoinItem = React.memo(({ coin, isSelected, onPress }: { coin: SimpleCoin; isSelected: boolean; onPress: () => void; }) => {
-    const { colors } = useTheme();
-    
-    return (
-        <TouchableOpacity
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <ThemedView 
-                variant="card" 
-                style={{
-                    ...styles.coinItem,
-                    ...(isSelected ? {
-                        backgroundColor: `${colors.primary}19`,
-                        borderColor: colors.primary
-                    } : {})
-                }}
-
-                rounded="medium"
-            >
-                <View style={styles.coinInfo}>
-                    <Image source={{ uri: coin.icon }} style={styles.icon} />
-                    <View style={styles.coinTexts}>
-                        <ThemedText variant="bodyBold" style={styles.coinName}>{coin.name}</ThemedText>
-                        <ThemedText variant="caption" color={colors.textTertiary}>{coin.symbol}</ThemedText>
-                    </View>
-                </View>
-                <View style={styles.priceInfo}>
-                    <ThemedText variant="body">{coin.price}</ThemedText>
-                    <ThemedText 
-                        variant="caption" 
-                        color={coin.isPositive ? colors.profit : colors.loss}
-                    >
-                        {coin.change24h}
-                    </ThemedText>
-                </View>
-                {isSelected && (
-                    <ThemedView 
-                        style={styles.checkmark}
-                        variant="transparent"
-                        rounded="full"
-                    >
-                        <Check size={16} color={colors.primary} />
-                    </ThemedView>
-                )}
-            </ThemedView>
-        </TouchableOpacity>
-    );
-});
+import { MarketItem } from '@/components/screens/market/MarketItem';
+import { MarketData } from '@/services/redux/slices/marketDataSlice';
+import { SearchBar } from '@/components/common/SearchBar';
 
 export default function CoinSelectorScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
-    const route = useRoute();
     const insets = useSafeAreaInsets();
     const dispatch = useDispatch();
-    const { marketData, isLoading, error } = useMarketData();
-    const selectedCoins = useSelector((state: any) => state.job.selectedCoins);
-    const [searchQuery, setSearchQuery] = useState('');
+    const { marketData, isLoading } = useMarketData();
+    const initialSelectedCoins = useSelector((state: any) => state.job.selectedCoins);
     const { colors } = useTheme();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCoins, setSelectedCoins] = useState<string[]>([]);
+    const [sortedCoins, setSortedCoins] = useState<MarketData[]>([]);
 
-    const convertToSimpleCoin = useCallback((coin: any) => ({
-        symbol: coin.symbol,
-        name: coin.name,
-        icon: coin.icon,
-        price: coin.priceUSD,
-        change24h: coin.change24hFormatted,
-        isPositive: coin.isPositive,
-    }), []);
+    useEffect(() => {
+        setSelectedCoins(initialSelectedCoins);
 
-    const availableCoins = useMemo(() => {
-        const allCoins = Object.values(marketData)
-            .flat()
-            .filter(data => data.fullSymbol.endsWith('USDT'))
-            .map(convertToSimpleCoin);
+        const coins = Object.values(marketData).flat();
+        const sorted = [...coins].sort((a, b) => {
+            //todo logic below should be at server in initial data.
+            const symbol = a.instrument.split('/')[0];
+            const base = b.instrument.split('/')[0];
+            const symbolSelected = initialSelectedCoins.includes(symbol);
+            const baseSelected = initialSelectedCoins.includes(base);
+            
+            if (symbolSelected && !baseSelected) return -1;
+            if (!symbolSelected && baseSelected) return 1;
+            return 0;
+        });
+        
+        setSortedCoins(sorted);
+    }, [initialSelectedCoins, marketData]);
 
+    // Filter coins based on search
+    const filteredCoins = useMemo(() => {
+        if (!searchQuery) return sortedCoins;
+        
         const query = searchQuery.toLowerCase();
-        return allCoins.filter(coin =>
-            coin.symbol.toLowerCase().includes(query) ||
-            coin.name.toLowerCase().includes(query)
-        );
-    }, [marketData, searchQuery, convertToSimpleCoin]);
+        return sortedCoins.filter(coin => {
+            const symbol = coin.instrument.split('/')[0].toLowerCase();
+            return symbol.includes(query);
+        });
+    }, [sortedCoins, searchQuery]);
 
-    const handleCoinPress = useCallback((coin: SimpleCoin) => {
-        const newSelectedCoins = selectedCoins.some((c: any) => c.symbol === coin.symbol)
-            ? selectedCoins.filter((c: any) => c.symbol !== coin.symbol)
-            : [...selectedCoins, coin];
+    const handleCoinPress = (coin: MarketData) => {
+        const baseSymbol = coin.instrument.split('/')[0];
+        setSelectedCoins(prev => {
+            if (prev.includes(baseSymbol)) {
+                return prev.filter(symbol => symbol !== baseSymbol);
+            } else {
+                return [...prev, baseSymbol];
+            }
+        });
+    };
 
-        dispatch(setSelectedCoins(newSelectedCoins));
-    }, [selectedCoins, dispatch]);
+    const handleConfirm = () => {
+        const coinsToAdd = selectedCoins.filter((coin: string) => !initialSelectedCoins.includes(coin));
+        const coinsToRemove = initialSelectedCoins.filter((coin: string) => !selectedCoins.includes(coin));
 
-    const handleConfirm = useCallback(() => {
+        // Dispatch actions for each change
+        coinsToAdd.forEach((coin:string) => dispatch(addCoin(coin)));
+        coinsToRemove.forEach((coin: string) => dispatch(removeCoin(coin)));
+
         navigation.goBack();
-    }, [navigation]);
-
-    const renderItem = useCallback(({ item }: { item: SimpleCoin }) => (
-        <CoinItem
-            coin={item}
-            isSelected={selectedCoins.some((c: any) => c.symbol === item.symbol)}
-            onPress={() => handleCoinPress(item)}
-        />
-    ), [selectedCoins, handleCoinPress]);
-
-    const ListEmptyComponent = useCallback(() => (
-        <ThemedView style={styles.emptyState} variant="transparent">
-            <AlertCircle size={24} color={colors.textTertiary} />
-            <ThemedText variant="bodyBold" mt={12} mb={8}>No Coins Found</ThemedText>
-            <ThemedText variant="body" color={colors.textSecondary} centered>
-                {searchQuery
-                    ? 'Try adjusting your search'
-                    : 'No coins available for selection'}
-            </ThemedText>
-        </ThemedView>
-    ), [searchQuery, colors]);
+    };
 
     return (
         <ThemedView style={{ ...styles.container, paddingTop: insets.top }} variant="screen">
@@ -159,39 +97,37 @@ export default function CoinSelectorScreen() {
                 </ThemedText>
             </ThemedView>
 
-            {/* Search */}
-            <SearchBar
-                placeholder="Search coins..."
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                containerStyle={styles.searchBar}
-            />
-
-            {/* Coins List */}
-            {isLoading ? (
-                <ThemedView style={styles.loadingContainer} variant="transparent">
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <ThemedText variant="body" mt={16}>Loading coins...</ThemedText>
-                </ThemedView>
-            ) : error ? (
-                <ThemedView style={styles.errorContainer} variant="transparent">
-                    <AlertCircle size={24} color={colors.error} />
-                    <ThemedText variant="bodyBold" color={colors.error} mt={12} mb={8}>Failed to load coins</ThemedText>
-                    <ThemedText variant="body" color={colors.textSecondary}>Please try again later</ThemedText>
-                </ThemedView>
-            ) : (
-                <FlatList
-                    data={availableCoins}
-                    renderItem={renderItem}
-                    keyExtractor={item => item.symbol}
-                    contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={ListEmptyComponent}
-                    initialNumToRender={10}
-                    maxToRenderPerBatch={10}
-                    windowSize={5}
-                    removeClippedSubviews={Platform.OS === 'android'}
+            {/* Search Bar */}
+            <ThemedView style={styles.searchContainer} variant="transparent">
+                <SearchBar
+                    placeholder="Search coins..."
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoCapitalize="none"
+                    autoCorrect={false}
                 />
-            )}
+            </ThemedView>
+
+            {/* Market List */}
+            <FlatList
+                data={filteredCoins}
+                renderItem={({ item }) => {
+                    const baseSymbol = item.instrument.split('/')[0];
+                    const isSelected = selectedCoins.includes(baseSymbol);
+                    return (
+                        <MarketItem
+                            data={item}
+                            onPress={() => handleCoinPress(item)}
+                            canFavorite={false}
+                            isSelectable={true}
+                            isSelected={isSelected}
+                            backgroundVariant={isSelected ? "card" : "transparent"}
+                        />
+                    );
+                }}
+                keyExtractor={item => item.instrument}
+                contentContainerStyle={styles.listContent}
+            />
 
             {/* Floating Action Button */}
             {selectedCoins.length > 0 && (
@@ -232,61 +168,12 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 8,
     },
-    searchBar: {
-        margin: 16,
+    searchContainer: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
     },
     listContent: {
-        padding: 16,
-    },
-    coinItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-        padding: 10,
-    },
-    coinInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    icon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        marginRight: 12,
-    },
-    coinTexts: {
-        flex: 1,
-    },
-    coinName: {
-        marginBottom: 4,
-    },
-    priceInfo: {
-        alignItems: 'flex-end',
-        marginRight: 8,
-    },
-    checkmark: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyState: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-    },
-    loadingContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    errorContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingBottom: 20,
     },
     confirmButton: {
         position: 'absolute',

@@ -287,13 +287,19 @@ export default function AutomatedTradeScreen() {
                                         </ThemedView>
                                     </TouchableOpacity>
 
-                                    {activeJobs.map(job => (
-                                        <JobCard
-                                            key={job.id}
-                                            job={job}
-                                            onViewDetails={() => handleViewJobDetails(job.id)}
-                                        />
-                                    ))}
+                                    {activeJobs.map(job => {
+                                        if (!job || typeof job.id !== 'string') {
+                                            console.warn('Invalid job object in activeJobs:', job);
+                                            return null;
+                                        }
+                                        return (
+                                            <JobCard
+                                                key={job.id}
+                                                job={job}
+                                                onViewDetails={() => handleViewJobDetails(job.id)}
+                                            />
+                                        );
+                                    })}
                                 </ThemedView>
                             ) : !isLoading && (
                                 <ThemedView

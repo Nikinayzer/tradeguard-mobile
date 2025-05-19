@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { EquityEvent, VenueEquity } from '@/services/api/events';
+import { EquityEvent, VenueEquity } from '@/types/events';
 
 export interface EquityState {
   totalWalletBalance: number;

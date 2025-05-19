@@ -14,16 +14,26 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-    Portfolio: undefined;
-    Trade: undefined;
-    Automated: undefined;
-    Settings: undefined;
+    Home: NavigatorScreenParams<HomeStackParamList>;
+    Market: NavigatorScreenParams<MarketStackParamList>;
+    Auto: NavigatorScreenParams<AutoStackParamList>;
+    Portfolio: NavigatorScreenParams<PortfolioStackParamList>;
+    Health: NavigatorScreenParams<HealthStackParamList>;
+    Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
 export type MarketStackParamList = {
     MarketMain: undefined;
     CoinDetail: { symbol: string };
     AllTokens: { category: string };
+    News: { initialPage: number; coin?: string };
+};
+
+export type AutoStackParamList = {
+    AutoMain: undefined;
+    JobDetail: { id: string };
+    JobList: undefined;
+    CoinSelector: undefined;
 };
 
 export type HealthStackParamList = {
@@ -33,15 +43,17 @@ export type HealthStackParamList = {
 export type HomeStackParamList = {
     HomeMain: undefined;
     Notifications: undefined;
-    Profile: NavigatorScreenParams<ProfileStackParamList>;
+    News: { initialPage: number; coin?: string };
+};
+
+export type PortfolioStackParamList = {
+    PortfolioMain: undefined;
 };
 
 export type ProfileStackParamList = {
     ProfileMain: undefined;
     AccountLimits: undefined;
-    ExchangeAccount: {
-        accountId: string;
-    };
+    ExchangeAccount: { accountId: string };
     AddExchange: undefined;
     SettingsStack: NavigatorScreenParams<SettingsStackParamList>;
 };

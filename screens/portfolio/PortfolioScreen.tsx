@@ -11,11 +11,10 @@ import { ThemedView } from '@/components/ui/ThemedView';
 import { ThemedHeader } from "@/components/ui/ThemedHeader";
 import { ThemedButton } from "@/components/ui/ThemedButton";
 import { usePositions, useEquity } from '@/services/redux/hooks';
-import { Position } from '@/services/api/events';
+import { Position } from '@/types/events'
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/navigation';
-import { disconnectEventListeners, initializeEventListeners } from '@/services/redux/eventMiddleware';
 import { formatCurrency, formatNumber } from '@/utils/formatNumber';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -33,10 +32,6 @@ export default function PortfolioScreen() {
     const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
-            // Reconnect to event stream to refresh data
-            disconnectEventListeners();
-            await initializeEventListeners();
-            setLastUpdated(new Date());
         } catch (error) {
             console.error('Error refreshing portfolio data:', error);
         } finally {

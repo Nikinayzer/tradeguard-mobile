@@ -1,5 +1,6 @@
 import { secureStorage } from '@/services/storage/secureStorage';
 import { profileService } from '@/services/api/profile';
+import { authService as apiAuthService } from '@/services/api/auth';
 
 export interface User {
     username: string;

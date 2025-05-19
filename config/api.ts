@@ -16,7 +16,12 @@ export const API_ENDPOINTS = {
         login: '/auth/login',
         register: '/auth/register',
         logout: '/auth/logout',
+        validate: '/auth/validate',
         discord: '/auth/discord/exchange',
+    },
+    news:{
+        getNews: (page: number) =>  `/news?page=${page}`,
+        getNewsForCoin: (coin: string, page: number) => `/news/${coin}?page=${page}`,
     },
     profile: {
         getMe: '/users/me',
@@ -30,6 +35,7 @@ export const API_ENDPOINTS = {
         getNotifications: '/users/me/notifications',
         markAsReadNotification: (id: string) => `/users/me/notifications/${id}/read`,
     },
+    //@deprecated
     market: {
         getCategories: '/market/categories',
         getAll: '/market/all',

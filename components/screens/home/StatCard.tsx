@@ -1,55 +1,77 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 import { LucideIcon } from 'lucide-react-native';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface StatCardProps {
     icon: LucideIcon;
     title: string;
     value: string;
-    change?: string;
+    subtitle?: string;
+    subtitleColor?: string;
+    style?: ViewStyle;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ icon: Icon, title, value, change }) => {
+export function StatCard({ 
+    icon: Icon, 
+    title, 
+    value, 
+    subtitle, 
+    subtitleColor,
+    style 
+}: StatCardProps) {
+    const { colors } = useTheme();
+    const cardStyle = style ? { ...styles.statCard, ...style } : styles.statCard;
+
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Icon size={20} color="#748CAB" />
-                <Text style={styles.title}>{title}</Text>
+        <ThemedView 
+            variant="card" 
+            style={cardStyle} 
+            border 
+            rounded="medium"
+        >
+            <View style={styles.statHeader}>
+                <Icon size={20} color={colors.textSecondary}/>
+                <ThemedText variant="caption" secondary style={styles.statTitle}>
+                    {title}
+                </ThemedText>
             </View>
-            <Text style={styles.value}>{value}</Text>
-            {change && <Text style={styles.change}>{change}</Text>}
-        </View>
+            <ThemedText variant="heading3" style={styles.statValue}>
+                {value}
+            </ThemedText>
+            {subtitle && (
+                <ThemedText 
+                    variant="caption" 
+                    color={subtitleColor || colors.textSecondary} 
+                    style={styles.statChange}
+                >
+                    {subtitle}
+                </ThemedText>
+            )}
+        </ThemedView>
     );
-};
+}
 
 const styles = StyleSheet.create({
-    container: {
+    statCard: {
         flex: 1,
-        backgroundColor: "#1B263B",
         padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#22314A",
     },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
+    statHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 8,
         marginBottom: 8,
     },
-    title: {
-        fontSize: 14,
-        color: "#748CAB",
-        fontWeight: "500",
+    statTitle: {
+        fontWeight: '500',
     },
-    value: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "white",
+    statValue: {
         marginBottom: 4,
     },
-    change: {
+    statChange: {
         fontSize: 12,
-        color: "#748CAB",
     },
 }); 
