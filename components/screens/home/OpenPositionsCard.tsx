@@ -9,7 +9,7 @@ export function OpenPositionsCard() {
     const { colors } = useTheme();
     const positions = useSelector((state: RootState) => state.positions);
     const activePositions = positions.activePositionsCount || 0;
-    const profitablePositions = positions.activePositions?.filter(pos => pos.unrealized_pnl > 0).length || 0;
+    const profitablePositions = positions.activePositions?.filter(pos => pos.pnl.unrealized > 0).length || 0;
 
     return (
         <StatCard

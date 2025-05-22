@@ -68,7 +68,7 @@ export function MarketFavoritesSection({ navigation }: FavoriteMarketsProps) {
         <ThemedView variant="transparent" style={styles.section}>
             <View style={styles.sectionHeader}>
                 <ThemedText variant="heading3" style={styles.sectionTitle}>
-                    Favorite Markets
+                    Favorite Coins
                 </ThemedText>
                 <TouchableOpacity 
                     style={styles.seeAllButton}

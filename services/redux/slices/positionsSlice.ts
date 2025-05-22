@@ -27,22 +27,18 @@ const positionsSlice = createSlice({
   reducers: {
     updatePositions: (state, action: PayloadAction<PositionsEvent>) => {
       const {
-        totalPositionValue,
-        totalUnrealizedPnl,
-        timestamp,
+        summary,
         activePositions,
         inactivePositions,
-        totalPositionsCount,
-        activePositionsCount,
       } = action.payload;
 
-      state.totalPositionValue = totalPositionValue;
-      state.totalUnrealizedPnl = totalUnrealizedPnl;
-      state.lastUpdated = timestamp;
+      state.totalPositionValue = summary.totalPositionValue;
+      state.totalUnrealizedPnl = summary.totalUnrealizedPnl;
+      state.lastUpdated = summary.lastUpdate;
       state.activePositions = activePositions;
       state.inactivePositions = inactivePositions;
-      state.totalPositionsCount = totalPositionsCount;
-      state.activePositionsCount = activePositionsCount;
+      state.totalPositionsCount = summary.totalPositionsCount;
+      state.activePositionsCount = summary.activePositionsCount;
     },
     clearPositions: (state) => {
       return initialState;

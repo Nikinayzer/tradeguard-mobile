@@ -5,7 +5,7 @@ export interface EquityState {
   totalWalletBalance: number;
   totalAvailableBalance: number;
   totalUnrealizedPnl: number;
-  totalBnbBalanceUsdt: number;
+  totalBnbBalance: number;
   lastUpdated: string;
   venueEquities: VenueEquity[];
 }
@@ -14,7 +14,7 @@ const initialState: EquityState = {
   totalWalletBalance: 0,
   totalAvailableBalance: 0,
   totalUnrealizedPnl: 0,
-  totalBnbBalanceUsdt: 0,
+  totalBnbBalance: 0,
   lastUpdated: '',
   venueEquities: [],
 };
@@ -25,19 +25,15 @@ const equitySlice = createSlice({
   reducers: {
     updateEquity: (state, action: PayloadAction<EquityEvent>) => {
       const {
-        totalWalletBalance,
-        totalAvailableBalance,
-        totalUnrealizedPnl,
-        totalBnbBalanceUsdt,
-        timestamp,
+        summary,
         venueEquities,
       } = action.payload;
 
-      state.totalWalletBalance = totalWalletBalance;
-      state.totalAvailableBalance = totalAvailableBalance;
-      state.totalUnrealizedPnl = totalUnrealizedPnl;
-      state.totalBnbBalanceUsdt = totalBnbBalanceUsdt;
-      state.lastUpdated = timestamp;
+      state.totalWalletBalance = summary.totalWalletBalance;
+      state.totalAvailableBalance = summary.totalAvailableBalance;
+      state.totalUnrealizedPnl = summary.totalUnrealizedPnl;
+      state.totalBnbBalance = summary.totalBnbBalance;
+      state.lastUpdated = summary.lastUpdate;
       state.venueEquities = venueEquities;
     },
     clearEquity: (state) => {

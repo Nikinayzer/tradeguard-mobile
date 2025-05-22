@@ -25,7 +25,6 @@ export default function PortfolioScreen() {
     const { colors } = useTheme();
     const navigation = useNavigation<NavigationProp>();
 
-    // Get positions and equity data from Redux
     const positionsData = usePositions();
     const equityData = useEquity();
 
@@ -39,14 +38,12 @@ export default function PortfolioScreen() {
         }
     }, []);
 
-    // Initial load
     useEffect(() => {
         if (!positionsData.lastUpdated && !equityData.lastUpdated) {
             loadData();
         }
     }, []);
 
-    // Update lastUpdated when we get new data
     useEffect(() => {
         if (positionsData.lastUpdated || equityData.lastUpdated) {
             const lastUpdateTime = positionsData.lastUpdated && equityData.lastUpdated 
@@ -66,22 +63,22 @@ export default function PortfolioScreen() {
     });
 
     const handlePositionPress = (position: Position) => {
-        // Navigate to position details
         console.log('Position pressed:', position);
     };
 
     const navigateToAllPositions = (type: 'active' | 'closed') => {
-        // Navigate to all positions
-        console.log(`Navigate to all ${type} positions`);
+        // @ts-ignore //todo fix
+        navigation.navigate('Portfolio', {
+            screen: 'AllPositions',
+            params: { type }
+        });
     };
     
     const navigateToAddExchange = () => {
-        // Navigate to the Profile tab
-        // @ts-ignore - Navigation typing is complex with nested navigators
+        // @ts-ignore //todo fix
         navigation.navigate('Profile');
     };
 
-    // Show loading indicator during initial load
     if (isLoading && !isRefreshing && !positionsData.activePositions.length) {
         return (
             <ThemedView variant="screen" style={styles.loadingContainer}>
@@ -90,10 +87,9 @@ export default function PortfolioScreen() {
         );
     }
     
-    // Check if the user has any exchange accounts
+
     const hasNoAccounts = !equityData.venueEquities || equityData.venueEquities.length === 0;
 
-    // Render empty state when there are no venue equities
     if (hasNoAccounts && !isRefreshing) {
         return (
             <SafeAreaView style={{ ...styles.safeArea, backgroundColor: colors.background }}>
@@ -161,8 +157,7 @@ export default function PortfolioScreen() {
                 <PortfolioSummary 
                     totalWalletBalance={equityData.totalWalletBalance}
                     totalAvailableBalance={equityData.totalAvailableBalance}
-                    totalUnrealizedPnl={equityData.totalUnrealizedPnl}
-                    totalBnbBalanceUsdt={equityData.totalBnbBalanceUsdt}
+                    totalBnbBalance={equityData.totalBnbBalance}
                     venueEquities={equityData.venueEquities}
                 />
 

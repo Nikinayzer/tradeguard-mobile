@@ -106,7 +106,7 @@ function PriceSection({ coin }: { coin: MarketData }) {
                 {/* 24h Range */}
                 <View style={styles.priceRangeContainer}>
                     <View style={styles.priceRangeHeader}>
-                        <TrendingUp size={16} color={colors.textSecondary} />
+                        <Clock size={16} color={colors.textSecondary} />
                         <ThemedText variant="label" secondary>24h Range</ThemedText>
                     </View>
                     <View style={styles.priceRangeValues}>
@@ -134,40 +134,6 @@ function PriceSection({ coin }: { coin: MarketData }) {
                                 size={24}
                             >
                                 ${coin.low24h.toFixed(coin.instrumentInfo.priceScale)}
-                            </ThemedText>
-                        </View>
-                    </View>
-                </View>
-
-                {/* 24h Change */}
-                <View style={styles.priceChangeContainer}>
-                    <View style={styles.priceChangeHeader}>
-                        <Clock size={16} color={colors.textSecondary} />
-                        <ThemedText variant="label" secondary>24h Change</ThemedText>
-                    </View>
-                    <View style={styles.priceChangeValues}>
-                        <View style={styles.priceChangeItem}>
-                            <View style={styles.priceLabelContainer}>
-                                <History size={14} color={colors.textSecondary} strokeWidth={2.5} />
-                                <ThemedText variant="body" secondary>From</ThemedText>
-                            </View>
-                            <ThemedText 
-                                variant="heading2"
-                                size={24}
-                            >
-                                ${price24hAgo.toFixed(coin.instrumentInfo.priceScale)}
-                            </ThemedText>
-                        </View>
-                        <View style={[styles.priceChangeItem, { marginLeft: 24 }]}>
-                            <View style={styles.priceLabelContainer}>
-                                <Target size={14} color={colors.textSecondary} strokeWidth={2.5} />
-                                <ThemedText variant="body" secondary>To</ThemedText>
-                            </View>
-                            <ThemedText 
-                                variant="heading2"
-                                size={24}
-                            >
-                                ${coin.currentPrice.toFixed(coin.instrumentInfo.priceScale)}
                             </ThemedText>
                         </View>
                     </View>
@@ -458,24 +424,6 @@ const styles = StyleSheet.create({
         padding: 12,
     },
     priceRangeItem: {
-        flex: 1,
-        gap: 4,
-    },
-    priceChangeContainer: {
-        gap: 8,
-    },
-    priceChangeHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 4,
-    },
-    priceChangeValues: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        padding: 12,
-    },
-    priceChangeItem: {
         flex: 1,
         gap: 4,
     },

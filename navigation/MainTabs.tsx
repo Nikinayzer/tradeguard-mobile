@@ -35,6 +35,7 @@ import ExchangeAccountScreen from '../screens/profile/ExchangeAccountScreen';
 import AddExchangeScreen from '../screens/profile/AddExchangeScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import NewsScreen from '../screens/news/NewsScreen';
+import AllPositionsScreen from '../screens/portfolio/AllPositionsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator();
@@ -155,6 +156,7 @@ function PortfolioStack() {
             }}
         >
             <Stack.Screen name="PortfolioMain" component={PortfolioScreen}/>
+            <Stack.Screen name="AllPositions" component={AllPositionsScreen}/>
         </Stack.Navigator>
     );
 }

@@ -48,6 +48,7 @@ export type HomeStackParamList = {
 
 export type PortfolioStackParamList = {
     PortfolioMain: undefined;
+    AllPositions: { type: 'active' | 'closed' };
 };
 
 export type ProfileStackParamList = {

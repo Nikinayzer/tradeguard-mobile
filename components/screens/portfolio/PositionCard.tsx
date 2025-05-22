@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { ThemedView } from '@/components/ui/ThemedView';
 import { ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Check } from 'lucide-react-native';
 import { formatCurrency, formatNumber } from '@/utils/formatNumber';
+import { CryptoIcon } from '@/components/common/CryptoIcon';
 
 interface PositionCardProps {
     position: Position;
@@ -15,35 +16,38 @@ interface PositionCardProps {
 
 export function PositionCard({ position, onPress, isClosed = false }: PositionCardProps) {
     const { colors } = useTheme();
+
+    if (!position || !position.side) {
+        console.warn('Invalid position data:', position);
+        return null;
+    }
     
     const isLong = position.side.toLowerCase() === "long" || position.side.toLowerCase() === "buy";
-    
-    // For closed positions, use cum_realized_pnl if available
-    const pnl = isClosed && position.cum_realized_pnl !== null 
-        ? position.cum_realized_pnl 
-        : position.unrealized_pnl;
+
+    const pnl = isClosed && position.pnl.cumulative !== null 
+        ? position.pnl.cumulative 
+        : position.pnl.unrealized;
     
     const isProfit = pnl >= 0;
 
     const pnlPercentage = useMemo(() => {
-        if (position.entry_price && position.mark_price && position.entry_price > 0) {
-            const percentChange = ((position.mark_price - position.entry_price) / position.entry_price) * 100;
+        if (position.prices.entry && position.prices.mark && position.prices.entry > 0) {
+            const percentChange = ((position.prices.mark - position.prices.entry) / position.prices.entry) * 100;
             return isLong ? percentChange : -percentChange;
         }
         return 0;
-    }, [position.entry_price, position.mark_price, isLong]);
+    }, [position.prices.entry, position.prices.mark, isLong]);
 
     const getPriceDiffColor = () => {
-        if (position.mark_price > position.entry_price) {
+        if (position.prices.mark > position.prices.entry) {
             return isLong ? colors.success : colors.error;
-        } else if (position.mark_price < position.entry_price) {
+        } else if (position.prices.mark < position.prices.entry) {
             return isLong ? colors.error : colors.success;
         }
         return colors.text;
     };
-    
-    // Format quantity for display
-    const formattedQty = formatNumber(position.qty, position.qty < 1 ? 4 : 2);
+
+    const formattedQty = formatNumber(position.size.quantity, position.size.quantity < 1 ? 4 : 2);
     
     return (
         <ThemedView 
@@ -56,12 +60,15 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                 {/* Top section: Symbol, side, venue */}
                 <View style={styles.topSection}>
                     <View style={styles.symbolRow}>
-                        <ThemedText variant="bodyBold" style={styles.symbol}>
-                            {formattedQty} {position.symbol}
-                        </ThemedText>
+                        <View style={styles.symbolContainer}>
+                            <CryptoIcon symbol={position.symbol} size={20} style={styles.cryptoIcon} />
+                            <ThemedText variant="bodyBold" style={styles.symbol}>
+                                {position.symbol}
+                            </ThemedText>
+                        </View>
                         
                         <ThemedText variant="caption" secondary style={styles.venueText}>
-                            {position.venue.toUpperCase()}
+                            {position.venue?.toUpperCase() || 'UNKNOWN'}
                         </ThemedText>
                         
                         <View style={{
@@ -102,9 +109,22 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                     {/* Main row: Amount & PnL */}
                     <View style={styles.mainRow}>
                         <View style={styles.amountAndPricesContainer}>
-                            <ThemedText variant="bodyBold" style={styles.amountValue}>
-                                {formatCurrency(position.usdt_amt)}
-                            </ThemedText>
+                            <View style={styles.amountAndPnlContainer}>
+                                <ThemedText variant="body" style={styles.quantityText}>
+                                    {formattedQty}
+                                </ThemedText>
+                                <ThemedText variant="body" style={styles.separator}>~</ThemedText>
+                                <ThemedText variant="bodyBold" style={styles.amountValue}>
+                                    {formatCurrency(position.size.value)}
+                                </ThemedText>
+                                <ThemedText 
+                                    variant="body" 
+                                    color={isProfit ? colors.success : colors.error}
+                                    style={styles.pnlText}
+                                >
+                                    {isProfit ? '+' : ''}{formatCurrency(pnl)}
+                                </ThemedText>
+                            </View>
                             
                             <View style={styles.priceContainer}>
                                 <View style={styles.priceValue}>
@@ -112,7 +132,7 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                                         Entry
                                     </ThemedText>
                                     <ThemedText variant="caption" style={styles.priceAmount}>
-                                        {formatNumber(position.entry_price, 2)}
+                                        {formatNumber(position.prices.entry, 2)}
                                     </ThemedText>
                                 </View>
                                 
@@ -134,43 +154,22 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                                         style={styles.priceAmount}
                                         color={getPriceDiffColor()}
                                     >
-                                        {formatNumber(position.mark_price, 2)}
+                                        {formatNumber(position.prices.mark, 2)}
                                     </ThemedText>
                                 </View>
                             </View>
                         </View>
                         
-                        <View style={styles.pnlContainer}>
+                        <View style={styles.percentageContainer}>
                             <ThemedText 
-                                variant="bodyBold" 
-                                color={isProfit ? colors.success : colors.error}
+                                variant="caption" 
+                                color={pnlPercentage >= 0 ? colors.success : colors.error}
                             >
-                                {isProfit ? '+' : ''}{formatCurrency(pnl)}
+                                {pnlPercentage >= 0 ? '+' : ''}{formatNumber(pnlPercentage, 2)}%
                             </ThemedText>
-                            
-                            <View style={styles.percentageContainer}>
-                                {isProfit ? (
-                                    <TrendingUp size={10} color={colors.success} />
-                                ) : (
-                                    <TrendingDown size={10} color={colors.error} />
-                                )}
-                                <ThemedText 
-                                    variant="caption" 
-                                    color={pnlPercentage >= 0 ? colors.success : colors.error}
-                                    ml={4}
-                                >
-                                    {pnlPercentage >= 0 ? '+' : ''}{formatNumber(pnlPercentage, 2)}%
-                                </ThemedText>
-                            </View>
                         </View>
                     </View>
                 </View>
-
-                {isClosed && (
-                    <ThemedText variant="caption" secondary style={styles.timestamp}>
-                        {new Date(position.timestamp).toLocaleDateString()}
-                    </ThemedText>
-                )}
             </TouchableOpacity>
         </ThemedView>
     );
@@ -192,6 +191,14 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         marginBottom: 6,
         gap: 6,
+    },
+    symbolContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    cryptoIcon: {
+        marginRight: 2,
     },
     symbol: {
         fontSize: 16,
@@ -228,9 +235,27 @@ const styles = StyleSheet.create({
     amountAndPricesContainer: {
         flex: 1,
     },
+    amountAndPnlContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 4,
+    },
+    quantityText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    separator: {
+        fontSize: 14,
+        marginHorizontal: 2,
+        opacity: 0.5,
+    },
     amountValue: {
         fontSize: 16,
-        marginBottom: 4,
+    },
+    pnlText: {
+        fontSize: 14,
+        fontWeight: '500',
     },
     priceContainer: {
         flexDirection: 'row',
@@ -250,18 +275,9 @@ const styles = StyleSheet.create({
     priceSeparator: {
         marginHorizontal: 4,
     },
-    pnlContainer: {
-        alignItems: 'flex-end',
-    },
     percentageContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 2,
-    },
-    timestamp: {
-        fontSize: 10,
-        textAlign: 'right',
-        marginTop: 4,
-        opacity: 0.7,
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        paddingTop: 4,
     },
 }); 

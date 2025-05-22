@@ -113,12 +113,12 @@ export default function AutomatedTradeScreen() {
             if (jobType === 'DCA') {
                 await autoService.createDCAJob({
                     ...jobParams as DCAJobParams,
-                    coins: selectedCoins.map(coin => coin.symbol),
+                    coins: selectedCoins,
                 });
             } else {
                 await autoService.createLIQJob({
                     ...jobParams as LIQJobParams,
-                    coins: selectedCoins.map(coin => coin.symbol),
+                    coins: selectedCoins,
                 });
             }
 

@@ -8,54 +8,35 @@ import { createNormalizer } from '@/utils/normalizeData';
 import { setConnected, setError } from './slices/connectionSlice';
 
 const normalizePosition = createNormalizer<Position>({
-  user_id: 0,
   venue: '',
   symbol: '',
   side: '',
-  qty: 0,
-  usdt_amt: 0,
-  entry_price: 0,
-  mark_price: 0,
-  liquidation_price: null,
-  unrealized_pnl: 0,
-  cur_realized_pnl: null,
-  cum_realized_pnl: null,
-  leverage: 0,
-  account_name: null,
-  update_type: null,
-  timestamp: ''
-}, 'camel');
+  size: {
+    quantity: 0,
+    value: 0
+  },
+  prices: {
+    entry: 0,
+    mark: 0,
+    liquidation: 0
+  },
+  pnl: {
+    unrealized: 0,
+    current: 0,
+    cumulative: 0
+  },
+  leverage: 0
+}, 'snake');
 
 const normalizeVenueEquity = createNormalizer<VenueEquity>({
-  userId: 0,
   venue: '',
-  timestamp: '',
-  walletBalance: 0,
-  availableBalance: 0,
-  totalUnrealizedPnl: 0,
-  bnbBalanceUsdt: 0
-}, 'camel');
-
-const normalizePositionsEvent = createNormalizer<PositionsEvent>({
-  userId: 0,
-  totalPositionValue: 0,
-  totalUnrealizedPnl: 0,
-  timestamp: '',
-  activePositions: [],
-  inactivePositions: [],
-  totalPositionsCount: 0,
-  activePositionsCount: 0
-}, 'camel');
-
-const normalizeEquityEvent = createNormalizer<EquityEvent>({
-  userId: 0,
-  totalWalletBalance: 0,
-  totalAvailableBalance: 0,
-  totalUnrealizedPnl: 0,
-  totalBnbBalanceUsdt: 0,
-  timestamp: '',
-  venueEquities: []
-}, 'camel');
+  balances: {
+    wallet: 0,
+    available: 0,
+    bnb: 0
+  },
+  totalUnrealizedPnl: 0
+}, 'snake');
 
 export const EVENT_ACTIONS = {
   CONNECT: 'events/connect',
@@ -84,14 +65,30 @@ export const eventMiddleware: Middleware = ({ dispatch }) => {
                     }
                     break;
                 case 'positions':
-                    const positionsData = normalizePositionsEvent(event.data);
-                    positionsData.activePositions = positionsData.activePositions.map(normalizePosition);
-                    positionsData.inactivePositions = positionsData.inactivePositions.map(normalizePosition);
+                    const positionsData: PositionsEvent = {
+                        summary: {
+                            totalPositionValue: event.data.summary?.totalPositionValue || 0,
+                            totalUnrealizedPnl: event.data.summary?.totalUnrealizedPnl || 0,
+                            totalPositionsCount: event.data.summary?.totalPositionsCount || 0,
+                            activePositionsCount: event.data.summary?.activePositionsCount || 0,
+                            lastUpdate: event.data.summary?.lastUpdate || new Date().toISOString()
+                        },
+                        activePositions: (event.data.activePositions || []).map((pos: any) => normalizePosition(pos)),
+                        inactivePositions: (event.data.inactivePositions || []).map((pos: any) => normalizePosition(pos))
+                    };
                     dispatch(updatePositions(positionsData));
                     break;
                 case 'equity':
-                    const equityData = normalizeEquityEvent(event.data);
-                    equityData.venueEquities = equityData.venueEquities.map(normalizeVenueEquity);
+                    const equityData: EquityEvent = {
+                        summary: {
+                            totalWalletBalance: event.data.summary?.totalWalletBalance || 0,
+                            totalAvailableBalance: event.data.summary?.totalAvailableBalance || 0,
+                            totalUnrealizedPnl: event.data.summary?.totalUnrealizedPnl || 0,
+                            totalBnbBalance: event.data.summary?.totalBnbBalance || 0,
+                            lastUpdate: event.data.summary?.lastUpdate || new Date().toISOString()
+                        },
+                        venueEquities: (event.data.venueEquities || []).map((venue: any) => normalizeVenueEquity(venue))
+                    };
                     dispatch(updateEquity(equityData));
                     break;
                 case 'market_data':
@@ -124,9 +121,8 @@ export const eventMiddleware: Middleware = ({ dispatch }) => {
                     eventService.disconnect();
                     eventService.connect();
                     break;
-    }
-  }
-  
-  return next(action);
-};
+            }
+        }
+        return next(action);
+    };
 };

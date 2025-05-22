@@ -9,8 +9,10 @@ import { StatCard } from './StatCard';
 export function PortfolioValueCard() {
     const { colors } = useTheme();
     const equity = useSelector((state: RootState) => state.equity);
+    const positions = useSelector((state: RootState) => state.positions);
+    
     const totalValue = equity.totalWalletBalance || 0;
-    const totalPnl = equity.totalUnrealizedPnl || 0;
+    const totalPnl = positions.totalUnrealizedPnl || 0;
     const pnlPercentage = totalValue > 0 ? (totalPnl / totalValue) * 100 : 0;
     const isPositive = pnlPercentage >= 0;
 
