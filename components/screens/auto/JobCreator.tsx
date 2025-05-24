@@ -203,13 +203,32 @@ export function JobCreator() {
         dispatch(setJobType(type));
     };
     
-    const handleUpdateParams = (key: keyof JobParams, value: any) => {
+    const handleUpdateParams = (key: keyof JobParams, value: JobParams[keyof JobParams]) => {
         const updatedJobParams = {...jobParams, [key]: value};
+        
+        // Floor numeric values to 3 decimal places
+        if (key === 'amount' || key === 'discountPct') {
+            const numericValue = Number(value);
+            if (!isNaN(numericValue)) {
+                (updatedJobParams[key] as number) = Math.floor(numericValue * 1000) / 1000;
+            }
+        }
+        
+        if (key === 'discountPct' && isForce) {
+            updatedJobParams.discountPct = 0;
+        }
         dispatch(setJobParams(updatedJobParams));
     };
 
     const handleSideChange = (side: JobSide) => {
         handleUpdateParams('side', side);
+    };
+
+    const handleForceChange = (value: boolean) => {
+        setForce(value);
+        if (value) {
+            handleUpdateParams('discountPct', 0);
+        }
     };
 
     return (
@@ -373,7 +392,7 @@ export function JobCreator() {
                         />
                         <Toggle
                             value={isForce}
-                            onChange={(value:boolean) => setForce(value)}
+                            onChange={handleForceChange}
                         />
                     </View>
                 </View>
@@ -381,7 +400,7 @@ export function JobCreator() {
                 <SliderInput
                     label="Discount Percentage"
                     icon={<Percent size={20} color={isDCA ? colors.primary : colors.secondary}/>}
-                    value={jobParams.discountPct}
+                    value={isForce ? 0 : jobParams.discountPct}
                     onChange={(value) => handleUpdateParams('discountPct', value)}
                     min={0}
                     max={10}

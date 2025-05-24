@@ -47,7 +47,7 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
         return colors.text;
     };
 
-    const formattedQty = formatNumber(position.size.quantity, position.size.quantity < 1 ? 4 : 2);
+    const formattedQty = formatNumber(Math.abs(position.size.quantity), position.size.quantity < 1 ? 4 : 2);
     
     return (
         <ThemedView 
@@ -115,14 +115,14 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
                                 </ThemedText>
                                 <ThemedText variant="body" style={styles.separator}>~</ThemedText>
                                 <ThemedText variant="bodyBold" style={styles.amountValue}>
-                                    {formatCurrency(position.size.value)}
+                                    {formatCurrency(Math.abs(position.size.value))}
                                 </ThemedText>
                                 <ThemedText 
                                     variant="body" 
-                                    color={isProfit ? colors.success : colors.error}
+                                    color={pnl >= 0 ? colors.success : colors.error}
                                     style={styles.pnlText}
                                 >
-                                    {isProfit ? '+' : ''}{formatCurrency(pnl)}
+                                    {pnl >= 0 ? '+' : ''}{formatCurrency(pnl)}
                                 </ThemedText>
                             </View>
                             

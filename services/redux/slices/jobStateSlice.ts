@@ -28,21 +28,17 @@ const jobSlice = createSlice({
             state.jobType = action.payload;
             if (action.payload === 'DCA') {
                 state.jobParams = {
+                    ...state.jobParams,
                     amount: 100,
                     side: 'BUY',
                     coins: [],
-                    totalSteps: 10,
-                    discountPct: 0.5,
-                    durationMinutes: 60,
                 };
             } else if (action.payload === 'LIQ') {
                 state.jobParams = {
+                    ...state.jobParams,
                     amount: 10.0,
                     side: 'SELL',
                     coins: [],
-                    totalSteps: 10,
-                    discountPct: 0.5,
-                    durationMinutes: 60,
                 };
             }
         },

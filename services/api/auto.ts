@@ -28,7 +28,6 @@ export interface Job {
     strategy: JobStrategy;
     status: JobStatus;
     stepsDone: number;
-    coins: string[];
     side: JobSide;
     discountPct: number;
     amount: number;
