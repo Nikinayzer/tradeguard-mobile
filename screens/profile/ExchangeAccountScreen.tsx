@@ -193,7 +193,6 @@ export default function ExchangeAccountScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 <ThemedView variant="transparent" style={styles.section}>
-                    <ThemedText variant="heading3" style={styles.sectionTitle}>Account Details</ThemedText>
                     <ThemedView variant="transparent" style={styles.infoField}>
                         <ThemedText variant="label" secondary style={styles.infoLabel}>Name</ThemedText>
                         <ThemedText variant="body">{account.name}</ThemedText>
@@ -221,44 +220,6 @@ export default function ExchangeAccountScreen() {
                             {''}
                         </ThemedButton>
                     </View>
-
-                    <ThemedView variant="transparent" style={styles.formField}>
-                        <ThemedText variant="label" secondary style={styles.label}>Read-Only API Key</ThemedText>
-                        <ThemedView variant="input" style={styles.inputContainer} rounded="medium">
-                            <View style={styles.inputRow}>
-                                <Key size={18} color={colors.textTertiary}/>
-                                <TextInput
-                                    style={{
-                                        ...styles.input,
-                                        color: colors.text
-                                    }}
-                                    value={account.readOnlyApiKey}
-                                    secureTextEntry={!showKeys}
-                                    editable={false}
-                                    placeholderTextColor={colors.textTertiary}
-                                />
-                            </View>
-                        </ThemedView>
-                    </ThemedView>
-
-                    <ThemedView variant="transparent" style={styles.formField}>
-                        <ThemedText variant="label" secondary style={styles.label}>Read-Only API Secret</ThemedText>
-                        <ThemedView variant="input" style={styles.inputContainer} rounded="medium">
-                            <View style={styles.inputRow}>
-                                <Key size={18} color={colors.textTertiary}/>
-                                <TextInput
-                                    style={{
-                                        ...styles.input,
-                                        color: colors.text
-                                    }}
-                                    value={account.readOnlyApiSecret}
-                                    secureTextEntry={!showKeys}
-                                    editable={false}
-                                    placeholderTextColor={colors.textTertiary}
-                                />
-                            </View>
-                        </ThemedView>
-                    </ThemedView>
 
                     <ThemedView variant="transparent" style={styles.formField}>
                         <ThemedText variant="label" secondary style={styles.label}>Read-Write API Key</ThemedText>

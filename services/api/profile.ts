@@ -32,8 +32,6 @@ export interface ExchangeAccount {
     provider?: string;
     demo?: boolean;
     name: string;
-    readOnlyApiKey: string;
-    readOnlyApiSecret: string;
     readWriteApiKey: string;
     readWriteApiSecret: string;
 }

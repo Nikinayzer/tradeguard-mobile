@@ -23,7 +23,7 @@ const CircularScore: React.FC<CircularScoreProps> = ({
     score,
     label,
     color,
-    size = 85,
+    size = 65,
     isHighlighted = false
 }) => {
     const { colors } = useTheme();
@@ -49,46 +49,34 @@ const CircularScore: React.FC<CircularScoreProps> = ({
     
     return (
         <ThemedView style={containerStyle} variant="transparent">
-            <CircularProgress
-                value={roundedScore}
-                valueSuffix={'%'}
-                radius={50}
-                duration={500}
-                maxValue={100}
-                progressValueColor={colors.text}
-                activeStrokeColor={color}
-                activeStrokeSecondaryColor={tinycolor(color).spin(-25).saturate(40).toString()}
-                inActiveStrokeColor={color}
-                inActiveStrokeOpacity={0.1}
-                inActiveStrokeWidth={8}
-                activeStrokeWidth={10}
-                progressValueStyle={{
-                    fontWeight: '800',
-                    fontSize: 26,
-                }}
-                clockwise={false}
-            />
-
-            <ThemedText 
-                style={isHighlighted ? {...labelStyle, ...styles.highlightedCategoryLabel} : labelStyle}
-                secondary={!isHighlighted}
-            >
-                {formattedLabel}
-            </ThemedText>
-
-            {isHighlighted && (
-                <ThemedView 
-                    style={{
-                        ...styles.topRiskIndicator,
-                        backgroundColor: colors.error
+            <View style={styles.scoreRow}>
+                <CircularProgress
+                    value={roundedScore}
+                    valueSuffix={'%'}
+                    radius={40}
+                    duration={500}
+                    maxValue={100}
+                    progressValueColor={colors.text}
+                    activeStrokeColor={color}
+                    activeStrokeSecondaryColor={tinycolor(color).spin(-25).saturate(40).toString()}
+                    inActiveStrokeColor={color}
+                    inActiveStrokeOpacity={0.1}
+                    inActiveStrokeWidth={8}
+                    activeStrokeWidth={10}
+                    progressValueStyle={{
+                        fontWeight: '800',
+                        fontSize: 20,
                     }}
-                    variant="transparent"
+                    clockwise={false}
+                />
+
+                <ThemedText 
+                    style={isHighlighted ? {...labelStyle, ...styles.highlightedCategoryLabel} : labelStyle}
+                    secondary={!isHighlighted}
                 >
-                    <ThemedText style={styles.topRiskIndicatorText} color={colors.buttonPrimaryText}>
-                        Highest Risk
-                    </ThemedText>
-                </ThemedView>
-            )}
+                    {formattedLabel}
+                </ThemedText>
+            </View>
         </ThemedView>
     );
 };
@@ -454,14 +442,13 @@ export default function HealthScreen() {
 
     return (
         <SafeAreaView style={{ ...styles.container, backgroundColor: colors.background }}>
-            <ThemedView style={{ ...styles.safeAreaContainer }} variant="transparent">
+            <ThemedView style={styles.safeAreaContainer} variant="transparent">
+                <ThemedHeader
+                    title="Health Monitor"
+                    subtitle="Analysis of your trading patterns and risk profile"
+                    titleVariant="heading1"
+                />
                 <ScrollView style={styles.scrollContainer}>
-                    <ThemedHeader
-                        title="Health Monitor"
-                        subtitle="Analysis of your trading patterns and risk profile"
-                        titleVariant="heading1"
-                    />
-
                     <ThemedView style={styles.scoreGrid} variant="transparent">
                         {Object.entries(riskData.categoryScores).map(([category, score]) => (
                             <CircularScore
@@ -477,36 +464,50 @@ export default function HealthScreen() {
                     {/* Composite Patterns Section */}
                     <ThemedView style={styles.patternsSection} variant="transparent">
                         <SectionHeader
-                            title={`We've found critical pattern${riskData.compositePatternsCount > 1 ? 's' : ''}`}
+                            title="Critical Patterns"
                             icon={<ShieldAlert size={22} color={colors.error}/>}
                         />
 
-                        {riskData.patterns.filter(p => p.is_composite).map((compositePattern) => (
-                            <PatternItem
-                                key={compositePattern.internal_id}
-                                pattern={compositePattern}
-                                isComposite={true}
-                                findPatternById={findPatternById}
-                            />
-                        ))}
+                        {riskData.patterns.filter(p => p.is_composite).length > 0 ? (
+                            riskData.patterns.filter(p => p.is_composite).map((compositePattern) => (
+                                <PatternItem
+                                    key={compositePattern.internal_id}
+                                    pattern={compositePattern}
+                                    isComposite={true}
+                                    findPatternById={findPatternById}
+                                />
+                            ))
+                        ) : (
+                            <ThemedView style={styles.emptyStateContainer} variant="transparent">
+                                <ThemedText style={styles.emptyStateText} secondary>
+                                    No critical patterns detected. Keep it up!
+                                </ThemedText>
+                            </ThemedView>
+                        )}
                     </ThemedView>
 
                     {/* Rising Awareness Patterns Section */}
-                    {risingAwarenessPatterns.length > 0 && (
-                        <ThemedView style={styles.patternsSection} variant="transparent">
-                            <SectionHeader
-                                title={`Keep an eye on early trend${risingAwarenessPatterns.length > 1 ? 's' : ''}`}
-                                icon={<AlertCircle size={22} color={colors.warning}/>}
-                            />
+                    <ThemedView style={styles.patternsSection} variant="transparent">
+                        <SectionHeader
+                            title="Early Trends"
+                            icon={<AlertCircle size={22} color={colors.warning}/>}
+                        />
 
-                            {risingAwarenessPatterns.map((pattern) => (
+                        {risingAwarenessPatterns.length > 0 ? (
+                            risingAwarenessPatterns.map((pattern) => (
                                 <PatternItem
                                     key={pattern.internal_id}
                                     pattern={pattern}
                                 />
-                            ))}
-                        </ThemedView>
-                    )}
+                            ))
+                        ) : (
+                            <ThemedView style={styles.emptyStateContainer} variant="transparent">
+                                <ThemedText style={styles.emptyStateText} secondary>
+                                    No early trends detected. You're doing great!
+                                </ThemedText>
+                            </ThemedView>
+                        )}
+                    </ThemedView>
                 </ScrollView>
             </ThemedView>
         </SafeAreaView>
@@ -522,29 +523,27 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flex: 1,
-        padding: 16,
+        paddingHorizontal: 16,
     },
     scoreGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-around",
         marginBottom: 32,
     },
     scoreContainer: {
-        alignItems: "center",
-        width: "33%",
-        marginBottom: 24,
+        marginBottom: 16,
         position: "relative",
-        height: 140,
     },
-    highlightedScoreContainer: {
-        marginBottom: 30,
+    scoreRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
     },
     categoryLabel: {
         fontSize: 16,
         fontWeight: "400",
-        marginTop: 8,
-        textAlign: "center",
+        marginLeft: 16,
+    },
+    highlightedScoreContainer: {
+        marginBottom: 16,
     },
     highlightedCategoryLabel: {
         fontWeight: "800",
@@ -791,5 +790,16 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingHorizontal: 16,
         paddingVertical: 12,
+    },
+    emptyStateContainer: {
+        padding: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent',
+    },
+    emptyStateText: {
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 22,
     },
 });

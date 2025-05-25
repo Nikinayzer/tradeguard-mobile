@@ -1,13 +1,13 @@
 import React, {useState, useEffect} from 'react';
 import {View, StyleSheet, TouchableOpacity,Animated } from 'react-native';
 import {
-    DollarSign, 
-    Percent, 
-    ArrowDown, 
-    ArrowUp, 
-    Clock, 
-    Info, 
-    ArrowLeftRight, 
+    DollarSign,
+    Percent,
+    ArrowDown,
+    ArrowUp,
+    Clock,
+    Info,
+    ArrowLeftRight,
     AlertOctagon
 } from 'lucide-react-native';
 import {useDispatch, useSelector} from 'react-redux';
@@ -19,6 +19,7 @@ import {SliderInput} from '@/components/common/SliderInput';
 import {useTheme} from '@/contexts/ThemeContext';
 import {ThemedText} from '@/components/ui/ThemedText';
 import {ThemedView} from '@/components/ui/ThemedView';
+import {TimerPickerModal} from "react-native-timer-picker";
 
 interface InputLabelProps {
     label: string;
@@ -131,8 +132,15 @@ interface DurationInputProps {
     primaryColor: string;
 }
 
+interface PickedDuration {
+    hours: number;
+    minutes: number;
+    seconds: number;
+}
+
 function DurationInput({value, onChange, primaryColor}: DurationInputProps) {
     const { colors } = useTheme();
+    const [showTimePicker, setShowTimePicker] = useState(false);
     
     const formatTimeFromMinutes = (minutes: number) => {
         const hours = Math.floor(minutes / 60);
@@ -156,7 +164,7 @@ function DurationInput({value, onChange, primaryColor}: DurationInputProps) {
                             borderColor: colors.primary + '33'
                         }
                     ]}
-                    onPress={() => {}}
+                    onPress={() => setShowTimePicker(true)}
                     activeOpacity={0.7}
                 >
                     <ThemedText style={styles.valueText}>
@@ -164,6 +172,40 @@ function DurationInput({value, onChange, primaryColor}: DurationInputProps) {
                     </ThemedText>
                 </TouchableOpacity>
             </View>
+
+            <TimerPickerModal
+                visible={showTimePicker}
+                setIsVisible={setShowTimePicker}
+                onConfirm={(pickedDuration: PickedDuration) => {
+                    const newValue = pickedDuration.hours * 60 + pickedDuration.minutes;
+                    onChange(newValue);
+                    setShowTimePicker(false);
+                }}
+                modalTitle="Strategy Duration"
+                onCancel={() => setShowTimePicker(false)}
+                closeOnOverlayPress
+                hourLabel="h"
+                minuteLabel="m"
+                hideSeconds={true}
+                maximumHours={24}
+                styles={{
+                    theme: "dark",
+                    backgroundColor: colors.background,
+                    pickerItem: {
+                        color: colors.text,
+                        fontSize: 24,
+                    },
+                    pickerLabel: {
+                        color: colors.textTertiary,
+                        fontSize: 16,
+                    },
+                    modalTitle: {
+                        color: colors.text,
+                        fontSize: 20,
+                        fontWeight: '600',
+                    },
+                }}
+            />
         </View>
     );
 }
@@ -557,6 +599,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        minWidth: 100,
     },
     valueText: {
         fontSize: 16,
@@ -583,5 +626,14 @@ const styles = StyleSheet.create({
     },
     toggleHandleInactive: {
         transform: [{translateX: 0}],
+    },
+    modalHeader: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '600',
     },
 }); 

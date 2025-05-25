@@ -197,7 +197,7 @@ export default function AutomatedTradeScreen() {
                                     }
                                 />
                             </View>
-                            {activeJobs.length > 0 ? (
+                            {(
                                 <ThemedView style={styles.recentJobsSection} variant="transparent">
                                     <TouchableOpacity
                                         style={styles.sectionHeader}
@@ -225,28 +225,7 @@ export default function AutomatedTradeScreen() {
                                         />
                                     ))}
                                 </ThemedView>
-                            ) : (
-                                <ThemedView
-                                    variant="card"
-                                    style={styles.emptyStateContainer}
-                                    border
-                                    rounded="large"
-                                >
-                                    <ThemedView
-                                        style={{
-                                            ...styles.emptyStateIconContainer,
-                                            backgroundColor: `${colors.primary}19`
-                                        }}
-                                        rounded="full"
-                                    >
-                                        <Plus size={32} color={colors.primary}/>
-                                    </ThemedView>
-                                    <ThemedTitle variant="small" mb={8} centered>No Active Jobs</ThemedTitle>
-                                    <ThemedText variant="bodySmall" secondary centered>
-                                        Create a job to start automated trading
-                                    </ThemedText>
-                                </ThemedView>
-                            )}
+                            ) }
                         </ThemedView>
                     </ScrollView>
 

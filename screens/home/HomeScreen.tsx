@@ -32,17 +32,6 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
     NativeStackNavigationProp<RootStackParamList>
 >;
 
-const recentActivity = [
-    {id: "1", type: "trade", symbol: "BTC", action: "Long", price: "65432", time: "2m ago"},
-    {id: "2", type: "deposit", amount: "1000 USDT", time: "15m ago"},
-    {id: "3", type: "withdrawal", amount: "500 USDT", time: "1h ago"},
-];
-
-const alerts = [
-    {id: "1", type: "price", symbol: "BTC", condition: "Above 66000", status: "active"},
-    {id: "2", type: "price", symbol: "ETH", condition: "Below 3400", status: "active"},
-];
-
 export default function HomeScreen() {
     const {colors} = useTheme();
     const {user} = useAuth();
@@ -85,105 +74,8 @@ export default function HomeScreen() {
                 </View>
 
                 <MarketFavoritesSection navigation={navigation} />
-
-                {/* Recent Activity */}
-                <ThemedView variant="transparent" style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <ThemedText variant="heading3" style={styles.sectionTitle}>Recent Activity</ThemedText>
-                        <TouchableOpacity style={styles.seeAllButton}>
-                            <ThemedText variant="bodySmall" color={colors.primary} style={styles.seeAllText}>See
-                                All</ThemedText>
-                            <ChevronRight size={16} color={colors.primary}/>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.activityList}>
-                        {recentActivity.map((item) => (
-                            <TouchableOpacity key={item.id}>
-                                <ThemedView
-                                    variant="card"
-                                    style={styles.activityItem}
-                                    border
-                                    rounded="medium"
-                                >
-                                    <ThemedView variant="section" style={styles.activityIcon} rounded="full">
-                                        {item.type === "trade" ? (
-                                            <BarChart2 size={20} color={colors.primary}/>
-                                        ) : item.type === "deposit" ? (
-                                            <Wallet size={20} color={colors.success}/>
-                                        ) : (
-                                            <Wallet size={20} color={colors.error}/>
-                                        )}
-                                    </ThemedView>
-                                    <View style={styles.activityContent}>
-                                        <ThemedText variant="bodyBold" style={styles.activityTitle}>
-                                            {item.type === "trade"
-                                                ? `${item.symbol} ${item.action} @ $${item.price}`
-                                                : `${item.type.charAt(0).toUpperCase() + item.type.slice(1)} ${item.amount}`
-                                            }
-                                        </ThemedText>
-                                        <ThemedText variant="caption" secondary
-                                                    style={styles.activityTime}>{item.time}</ThemedText>
-                                    </View>
-                                </ThemedView>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </ThemedView>
-
                 <NewsSection navigation={navigation} />
 
-                {/* Active Alerts */}
-                <ThemedView variant="transparent" style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <ThemedText variant="heading3" style={styles.sectionTitle}>Active Alerts</ThemedText>
-                        <TouchableOpacity style={styles.seeAllButton}>
-                            <ThemedText variant="bodySmall" color={colors.primary} style={styles.seeAllText}>See
-                                All</ThemedText>
-                            <ChevronRight size={16} color={colors.primary}/>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={styles.alertsList}>
-                        {alerts.map((alert) => (
-                            <TouchableOpacity key={alert.id}>
-                                <ThemedView
-                                    variant="card"
-                                    style={styles.alertItem}
-                                    border
-                                    rounded="medium"
-                                >
-                                    <ThemedView
-                                        variant="section"
-                                        style={styles.alertIcon}
-                                        rounded="full"
-                                    >
-                                        <AlertCircle size={20} color={colors.warning}/>
-                                    </ThemedView>
-                                    <View style={styles.alertContent}>
-                                        <ThemedText variant="bodyBold" style={styles.alertTitle}>
-                                            {alert.symbol} Price Alert
-                                        </ThemedText>
-                                        <ThemedText variant="body" secondary style={styles.alertCondition}>
-                                            {alert.condition}
-                                        </ThemedText>
-                                    </View>
-                                    <ThemedView
-                                        variant="transparent"
-                                        style={{
-                                            ...styles.alertStatus,
-                                            backgroundColor: `${colors.success}15`
-                                        }}
-                                        rounded="small"
-                                    >
-                                        <ThemedText variant="caption" color={colors.success}
-                                                    style={styles.alertStatusText}>
-                                            Active
-                                        </ThemedText>
-                                    </ThemedView>
-                                </ThemedView>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </ThemedView>
             </ScrollView>
         </SafeAreaView>
     );

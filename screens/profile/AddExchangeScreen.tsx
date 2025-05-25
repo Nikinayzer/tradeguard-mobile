@@ -26,8 +26,6 @@ type AddExchangeScreenNavigationProp = NativeStackNavigationProp<ProfileStackPar
 interface ExchangeAccountForm {
     name: string;
     provider: string;
-    readOnlyApiKey: string;
-    readOnlyApiSecret: string;
     readWriteApiKey: string;
     readWriteApiSecret: string;
     demo: boolean;
@@ -53,16 +51,6 @@ export default function AddExchangeScreen() {
         demo: {
             skipValidation: true
         },
-        readOnlyApiKey: {
-            required: true,
-            minLength: 6,
-            message: 'API key must be at least 10 characters'
-        },
-        readOnlyApiSecret: {
-            required: true,
-            minLength: 6,
-            message: 'API secret must be at least 10 characters'
-        },
         readWriteApiKey: {
             required: true,
             minLength: 6,
@@ -87,8 +75,6 @@ export default function AddExchangeScreen() {
         {
             name: '',
             provider: 'BYBIT',
-            readOnlyApiKey: '',
-            readOnlyApiSecret: '',
             readWriteApiKey: '',
             readWriteApiSecret: '',
             demo: false,
@@ -112,8 +98,6 @@ export default function AddExchangeScreen() {
                 provider: formData.provider,
                 name: formData.name,
                 demo: formData.demo,
-                readOnlyApiKey: formData.readOnlyApiKey,
-                readOnlyApiSecret: formData.readOnlyApiSecret,
                 readWriteApiKey: formData.readWriteApiKey,
                 readWriteApiSecret: formData.readWriteApiSecret,
             };
@@ -285,64 +269,6 @@ export default function AddExchangeScreen() {
                             >
                                 {''}
                             </ThemedButton>
-                        </ThemedView>
-                        <ThemedView variant="transparent" style={styles.inputContainer}>
-                            <ThemedText variant="label" secondary style={styles.inputLabel}>Read-Only API
-                                Key</ThemedText>
-                            <ThemedView
-                                variant="input"
-                                style={{
-                                    ...styles.input,
-                                    ...(touchedFields.readOnlyApiKey && errors.readOnlyApiKey ? {borderColor: colors.error} : {})
-                                }}
-                                rounded="medium"
-                            >
-                                <TextInput
-                                    style={{
-                                        ...styles.textInput,
-                                        color: colors.text
-                                    }}
-                                    value={formData.readOnlyApiKey}
-                                    onChangeText={(text) => handleChange('readOnlyApiKey', text)}
-                                    onBlur={() => handleBlur('readOnlyApiKey')}
-                                    placeholder="Enter read-only API key"
-                                    placeholderTextColor={colors.textTertiary}
-                                    secureTextEntry={!showKeys}
-                                />
-                            </ThemedView>
-                            {touchedFields.readOnlyApiKey && errors.readOnlyApiKey && (
-                                <ThemedText variant="caption" color={colors.error}
-                                            style={styles.errorText}>{errors.readOnlyApiKey}</ThemedText>
-                            )}
-                        </ThemedView>
-                        <ThemedView variant="transparent" style={styles.inputContainer}>
-                            <ThemedText variant="label" secondary style={styles.inputLabel}>Read-Only API
-                                Secret</ThemedText>
-                            <ThemedView
-                                variant="input"
-                                style={{
-                                    ...styles.input,
-                                    ...(touchedFields.readOnlyApiSecret && errors.readOnlyApiSecret ? {borderColor: colors.error} : {})
-                                }}
-                                rounded="medium"
-                            >
-                                <TextInput
-                                    style={{
-                                        ...styles.textInput,
-                                        color: colors.text
-                                    }}
-                                    value={formData.readOnlyApiSecret}
-                                    onChangeText={(text) => handleChange('readOnlyApiSecret', text)}
-                                    onBlur={() => handleBlur('readOnlyApiSecret')}
-                                    placeholder="Enter read-only API secret"
-                                    placeholderTextColor={colors.textTertiary}
-                                    secureTextEntry={!showKeys}
-                                />
-                            </ThemedView>
-                            {touchedFields.readOnlyApiSecret && errors.readOnlyApiSecret && (
-                                <ThemedText variant="caption" color={colors.error}
-                                            style={styles.errorText}>{errors.readOnlyApiSecret}</ThemedText>
-                            )}
                         </ThemedView>
                         <ThemedView variant="transparent" style={styles.inputContainer}>
                             <ThemedText variant="label" secondary style={styles.inputLabel}>Read-Write API
