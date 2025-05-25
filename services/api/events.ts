@@ -106,7 +106,7 @@ export class EventService {
     });
 
     // Add listeners for specific event types
-    ['ping', 'heartbeat', 'positions', 'equity', 'market_data'].forEach(type => {
+    ['ping', 'heartbeat', 'positions', 'equity', 'market_data', 'risk_report', 'jobs'].forEach(type => {
       this.eventSource?.addEventListener(type as EventType, (event) => {
           if ('data' in event && event.data) {
           try {

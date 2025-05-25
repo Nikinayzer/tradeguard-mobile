@@ -5,6 +5,8 @@ import positionsReducer from './slices/positionsSlice';
 import equityReducer from './slices/equitySlice';
 import authReducer from './slices/authSlice';
 import favoritesReducer from './slices/favoritesSlice';
+import riskReducer from './slices/riskSlice';
+import activeJobsReducer from './slices/activeJobsSlice';
 import { persistFavorites } from './slices/favoritesSlice';
 import { eventMiddleware } from './eventMiddleware';
 import connectionReducer from './slices/connectionSlice';
@@ -18,6 +20,8 @@ export const store = configureStore({
         auth: authReducer,
         favorites: favoritesReducer,
         connection: connectionReducer,
+        risk: riskReducer,
+        activeJobs: activeJobsReducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(eventMiddleware, persistFavorites),

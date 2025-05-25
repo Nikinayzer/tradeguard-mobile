@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
         createLIQ: '/jobs/liq',
         getAll: '/users/jobs',
         getAllActive: 'users/jobs/active',
+        getCompleted: 'users/jobs/completed',
         getById: (id: string) => `/jobs/${id}`,
         getJobEventsById: (id: string) => `/jobs/${id}/events`,
         pause: (id: string) => `/jobs/${id}/pause`,

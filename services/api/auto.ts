@@ -31,6 +31,7 @@ export interface Job {
     side: JobSide;
     discountPct: number;
     amount: number;
+    coins: String[];
     stepsTotal: number;
     durationMinutes: number;
     params: JobParams;
@@ -75,6 +76,12 @@ export const autoService = {
     getAllActiveJobs: async (): Promise<Job[]> => {
         const response = await apiClient.get(
             `${API_ENDPOINTS.auto.getAllActive}`
+        );
+        return response.data;
+    },
+    getCompletedjobs: async (): Promise<Job[]> => {
+        const response = await apiClient.get(
+            `${API_ENDPOINTS.auto.getCompleted}`
         );
         return response.data;
     },

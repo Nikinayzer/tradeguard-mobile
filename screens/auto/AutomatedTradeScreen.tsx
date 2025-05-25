@@ -5,7 +5,7 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {JobCreator} from '@/components/screens/auto/JobCreator';
 import {JobCard} from '@/components/screens/auto/JobCard';
-import {autoService, Job, DCAJobParams, LIQJobParams,} from '@/services/api/auto';
+import {autoService, DCAJobParams, LIQJobParams} from '@/services/api/auto';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
 import {Bot, History, Plus, ArrowRight, ChevronRight} from 'lucide-react-native';
 import {useNavigation} from '@react-navigation/native';
@@ -20,6 +20,8 @@ import {ThemedTitle} from '@/components/ui/ThemedTitle';
 import {ThemedHeader} from '@/components/ui/ThemedHeader';
 import {ThemedView} from '@/components/ui/ThemedView';
 import SwipeButton from "rn-swipe-button/src/components/SwipeButton";
+import {useActiveJobs, useJob} from '@/services/redux/hooks';
+import {updateActiveJobs} from '@/services/redux/slices/activeJobsSlice';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -33,23 +35,23 @@ export const TooltipContext = createContext<{
 
 export default function AutomatedTradeScreen() {
     const navigation = useNavigation<NavigationProp>();
-    const [jobs, setJobs] = useState<Job[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitButtonScale] = useState(new Animated.Value(1));
     const {colors} = useTheme();
 
     const dispatch = useDispatch();
     const {jobType, jobParams, selectedCoins} = useSelector((state: RootState) => state.job);
+    const {jobs, lastUpdated} = useActiveJobs();
 
     const {alert, showAlert, hideAlert} = useAlert();
 
-    const activeJobs = useMemo(() =>
-            jobs.filter(job => job.status === 'IN_PROGRESS' || job.status === 'PAUSED'),
-        [jobs]
-    );
+    const activeJobs = jobs;
+
     const {isRefreshing, handleRefresh} = usePullToRefresh({
-        onRefresh: fetchJobs,
+        onRefresh: () => {
+            // maybe reset params
+            return Promise.resolve();
+        },
         onError: (error) => {
             showAlert({
                 type: 'error',
@@ -61,23 +63,6 @@ export default function AutomatedTradeScreen() {
     });
 
     const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
-
-    async function fetchJobs() {
-        try {
-            setIsLoading(true);
-            const apiJobs = await autoService.getAllActiveJobs();
-            setJobs(apiJobs || []);
-        } catch (err) {
-            console.error('Error fetching jobs:', err);
-            setJobs([]);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    useEffect(() => {
-        fetchJobs();
-    }, []);
 
     const handleButtonPressIn = () => {
         Animated.spring(submitButtonScale, {
@@ -127,9 +112,6 @@ export default function AutomatedTradeScreen() {
                 title: 'Job Created',
                 message: `Your ${jobType} job was successfully created`
             });
-
-
-            await fetchJobs();
         } catch (err) {
             console.error('Error creating job:', err);
             showAlert({
@@ -159,6 +141,7 @@ export default function AutomatedTradeScreen() {
                         subtitle="Choose a strategy below to get started"
                         onRefresh={handleRefresh}
                         canRefresh={true}
+                        lastUpdated={lastUpdated ? new Date(lastUpdated) : undefined}
                     />
 
                     <ScrollView
@@ -209,64 +192,11 @@ export default function AutomatedTradeScreen() {
                                     railFillBorderColor="transparent"
                                     thumbIconComponent={() =>
                                         isSubmitting ?
-                                            <ActivityIndicator size="small" color={colors.primary} /> :
-                                            <ArrowRight size={20} color={colors.primary} />
+                                            <ActivityIndicator size="small" color={colors.primary}/> :
+                                            <ArrowRight size={20} color={colors.primary}/>
                                     }
                                 />
                             </View>
-
-                            <ThemedView
-                                variant="card"
-                                style={{
-                                    ...styles.tabContainer,
-                                    borderColor: colors.cardBorder
-                                }}
-                                border
-                                rounded="medium"
-                            >
-                                <ThemedView
-                                    style={{
-                                        ...styles.tab,
-                                        backgroundColor: `${colors.primary}19`
-                                    }}
-                                    rounded="medium"
-                                >
-                                    <Bot size={16} color={colors.primary}/>
-                                    <ThemedText
-                                        variant="label"
-                                        color={colors.primary}
-                                        ml={8}
-                                        weight="600"
-                                    >
-                                        Active ({activeJobs.length})
-                                    </ThemedText>
-                                </ThemedView>
-
-                                <TouchableOpacity
-                                    style={styles.tab}
-                                    onPress={() => navigateToJobList('finished')}
-                                >
-                                    <ThemedView
-                                        style={styles.tab}
-                                        variant="transparent"
-                                        rounded="medium"
-                                    >
-                                        <History size={16} color={colors.textTertiary}/>
-                                        <ThemedText variant="label" tertiary ml={8}>
-                                            History
-                                        </ThemedText>
-                                    </ThemedView>
-                                </TouchableOpacity>
-                            </ThemedView>
-
-                            <ThemedText
-                                variant="caption"
-                                secondary
-                                style={styles.jobsCaption}
-                            >
-                                View and manage your active trading strategies
-                            </ThemedText>
-
                             {activeJobs.length > 0 ? (
                                 <ThemedView style={styles.recentJobsSection} variant="transparent">
                                     <TouchableOpacity
@@ -287,21 +217,15 @@ export default function AutomatedTradeScreen() {
                                         </ThemedView>
                                     </TouchableOpacity>
 
-                                    {activeJobs.map(job => {
-                                        if (!job || typeof job.id !== 'string') {
-                                            console.warn('Invalid job object in activeJobs:', job);
-                                            return null;
-                                        }
-                                        return (
-                                            <JobCard
-                                                key={job.id}
-                                                job={job}
-                                                onViewDetails={() => handleViewJobDetails(job.id)}
-                                            />
-                                        );
-                                    })}
+                                    {activeJobs.map(job => (
+                                        <JobCard
+                                            key={job.id}
+                                            job={job}
+                                            onViewDetails={() => handleViewJobDetails(job.id)}
+                                        />
+                                    ))}
                                 </ThemedView>
-                            ) : !isLoading && (
+                            ) : (
                                 <ThemedView
                                     variant="card"
                                     style={styles.emptyStateContainer}
@@ -321,12 +245,6 @@ export default function AutomatedTradeScreen() {
                                     <ThemedText variant="bodySmall" secondary centered>
                                         Create a job to start automated trading
                                     </ThemedText>
-                                </ThemedView>
-                            )}
-
-                            {isLoading && jobs.length === 0 && (
-                                <ThemedView style={styles.loadingOverlay} variant="transparent">
-                                    <ActivityIndicator size="large" color={colors.primary}/>
                                 </ThemedView>
                             )}
                         </ThemedView>

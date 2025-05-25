@@ -1,4 +1,4 @@
-export type EventType = 'ping' | 'heartbeat' | 'positions' | 'equity' | 'market_data';
+export type EventType = 'ping' | 'heartbeat' | 'positions' | 'equity' | 'market_data' | 'risk_report' | 'jobs';
 
 export interface EventData {
   type: EventType;

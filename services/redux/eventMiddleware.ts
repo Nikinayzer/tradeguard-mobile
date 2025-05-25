@@ -1,11 +1,14 @@
 import { Middleware } from 'redux';
 import eventService from '@/services/api/events';
 import { EventData, Position, PositionsEvent, EquityEvent, VenueEquity } from '@/types/events';
+import { RiskReport } from '@/types/risk';
 import { updatePositions } from './slices/positionsSlice';
 import { updateEquity } from './slices/equitySlice';
 import { setMarketData } from './slices/marketDataSlice';
+import { updateRiskReport } from './slices/riskSlice';
 import { createNormalizer } from '@/utils/normalizeData';
 import { setConnected, setError } from './slices/connectionSlice';
+import { updateActiveJobs } from './slices/activeJobsSlice';
 
 const normalizePosition = createNormalizer<Position>({
   venue: '',
@@ -93,6 +96,35 @@ export const eventMiddleware: Middleware = ({ dispatch }) => {
                     break;
                 case 'market_data':
                     dispatch(setMarketData(event.data));
+                    break;
+                case 'risk_report':
+                    const riskData: RiskReport = {
+                        patterns: event.data.patterns || [],
+                        timestamp: event.data.timestamp || new Date().toISOString(),
+                        event_type: 'RiskReport',
+                        user_id: event.data.user_id || 0,
+                        top_risk_level: event.data.top_risk_level || 'low',
+                        top_risk_confidence: event.data.top_risk_confidence || 0,
+                        top_risk_type: event.data.top_risk_type || 'overconfidence',
+                        category_scores: event.data.category_scores || {
+                            overconfidence: 0,
+                            fomo: 0,
+                            loss_behavior: 0,
+                            sunk_cost: 0
+                        },
+                        composite_patterns: event.data.composite_patterns || [],
+                        atomic_patterns_number: event.data.atomic_patterns_number || 0,
+                        composite_patterns_number: event.data.composite_patterns_number || 0,
+                        consumed_patterns_number: event.data.consumed_patterns_number || 0
+                    };
+                    dispatch(updateRiskReport(riskData));
+                    break;
+                case 'jobs':
+                    console.log('[SSE] Received jobs event:', {
+                        jobsCount: event.data.activeJobs?.length || 0,
+                        jobs: event.data.activeJobs
+                    });
+                    dispatch(updateActiveJobs(event.data.activeJobs || []));
                     break;
             }
         } catch (error) {

@@ -8,197 +8,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { ThemedHeader } from '@/components/ui/ThemedHeader';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { ThemedView } from '@/components/ui/ThemedView';
-
-const exampleJSON = {
-    "event_type": "RiskReport",
-    "user_id": 493077349684740097,
-    "job_id": null,
-    "top_risk_level": "high",
-    "top_risk_confidence": 0.8049999999999999,
-    "top_risk_type": "overtrading",
-    "category_scores": {
-        "overtrading": 0.8049999999999999,
-        "sunk_cost": 0.15000000000000002,
-        "fomo": 0.2775000000000001
-    },
-    "patterns": [
-        {
-            "pattern_id": "single_job_amount_limit",
-            "job_id": [
-                107
-            ],
-            "message": "Single job amount exceeded",
-            "confidence": 0.78,
-            "category_weights": {
-                "fomo": 0.6,
-                "sunk_cost": 0.2
-            },
-            "details": {
-                "actual": 10.0,
-                "limit": 5.0,
-                "ratio": 2.0
-            },
-            "start_time": "2025-04-07T02:18:38.364173",
-            "end_time": null,
-            "consumed": true,
-            "is_composite": false,
-            "internal_id": "single:66a96d7a"
-        },
-        {
-            "pattern_id": "daily_volume_exceeded",
-            "job_id": [
-                107
-            ],
-            "message": "Daily volume limit exceeded",
-            "confidence": 1.0,
-            "category_weights": {
-                "overtrading": 0.6,
-                "fomo": 0.2,
-                "sunk_cost": 0.2
-            },
-            "details": {
-                "actual": 80.0,
-                "limit": 10.0,
-                "ratio": 8.0
-            },
-            "start_time": "2025-04-07T02:18:38.364173",
-            "end_time": null,
-            "consumed": true,
-            "is_composite": false,
-            "internal_id": "daily:f3cb5274"
-        },
-        {
-            "pattern_id": "concurrent_jobs_limit",
-            "job_id": [
-                100,
-                101,
-                104,
-                102,
-                103,
-                105,
-                106,
-                107
-            ],
-            "message": "Concurrent jobs limit exceeded",
-            "confidence": 1.0,
-            "category_weights": {
-                "overtrading": 0.7,
-                "fomo": 0.3
-            },
-            "details": {
-                "actual": 8,
-                "limit": 3,
-                "ratio": 2.6666666666666665
-            },
-            "start_time": "2025-04-07T02:18:38.364173",
-            "end_time": null,
-            "consumed": false,
-            "is_composite": false,
-            "internal_id": "concurrent:d23bffbc"
-        }
-    ],
-    "composite_patterns": [
-        {
-            "pattern_id": "composite_volume_burst",
-            "job_id": [
-                107
-            ],
-            "message": "Trading volume burst",
-            "confidence": 1.0,
-            "category_weights": {
-                "overtrading": 0.7,
-                "sunk_cost": 0.15,
-                "fomo": 0.15
-            },
-            "details": {
-                "components": [
-                    {
-                        "id": "daily:f3cb5274",
-                        "pattern_type": "daily_volume_exceeded",
-                        "confidence": 1.0
-                    },
-                    {
-                        "id": "single:66a96d7a",
-                        "pattern_type": "single_job_amount_limit",
-                        "confidence": 0.78
-                    }
-                ],
-                "time_span": {
-                    "duration_minutes": 0.0
-                }
-            },
-            "start_time": "2025-04-07T02:18:38.364173",
-            "end_time": "2025-04-07T02:18:38.364173",
-            "consumed": false,
-            "is_composite": true,
-            "internal_id": "composite:e7ca676e"
-        }
-    ],
-    "decay_params": {
-        "initial_priority": 100,
-        "half_life_minutes": 60,
-        "min_priority": 10
-    },
-    "metadata": {
-        "pattern_stats": {
-            "total_patterns": 3,
-            "composite_patterns": 1,
-            "consumed_patterns": 2,
-            "awareness_patterns": 1
-        },
-        "signal_source": "composite",
-        "primary_categories": [
-            "overtrading",
-            "sunk_cost",
-            "fomo"
-        ],
-        "awareness_signals": [
-            {
-                "type": "concurrent_jobs_limit",
-                "id": "concurrent:d23bffbc",
-                "confidence": 1.0,
-                "category": "overtrading"
-            }
-        ]
-    },
-    "timestamp": "2025-04-07T02:18:38.365165"
-}
-
-interface PatternDetails {
-    actual?: number;
-    limit?: number;
-    ratio?: number;
-    components?: Array<{
-        id: string;
-        pattern_type: string;
-        confidence: number;
-    }>;
-    time_span?: {
-        duration_minutes: number;
-    };
-}
-
-interface CategoryWeights {
-    fomo?: number;
-    sunk_cost?: number;
-    overtrading?: number;
-
-    [key: string]: number | undefined;
-}
-
-interface Pattern {
-    pattern_id: string;
-    job_id: number[];
-    message: string;
-    confidence: number;
-    category_weights: CategoryWeights;
-    details: PatternDetails;
-    start_time: string;
-    end_time: string | null;
-    consumed: boolean;
-    is_composite: boolean;
-    internal_id: string;
-}
+import { useRisk } from '@/services/redux/hooks';
+import { RiskPattern, RiskCategory, RiskPatternDetails, CategoryWeights } from '@/types/risk';
 
 interface CircularScoreProps {
     score: number;
@@ -209,22 +20,21 @@ interface CircularScoreProps {
 }
 
 const CircularScore: React.FC<CircularScoreProps> = ({
-                                                         score,
-                                                         label,
-                                                         color,
-                                                         size = 85,
-                                                         isHighlighted = false
-                                                     }) => {
+    score,
+    label,
+    color,
+    size = 85,
+    isHighlighted = false
+}) => {
     const { colors } = useTheme();
     const percentage = Math.min(Math.floor(score * 100), 100);
     const roundedScore = Math.round(percentage);
 
     const formattedLabel = (
         label === "overtrading" ? "Overtrading" :
-            label === "sunk_cost" ? "Sunk Cost" :
-                label === "fomo" ? "FOMO" :
-                    label.charAt(0).toUpperCase() + label.slice(1)
-
+        label === "sunk_cost" ? "Sunk Cost" :
+        label === "fomo" ? "FOMO" :
+        label.charAt(0).toUpperCase() + label.slice(1)
     );
 
     let containerStyle: ViewStyle = styles.scoreContainer;
@@ -284,16 +94,16 @@ const CircularScore: React.FC<CircularScoreProps> = ({
 };
 
 interface PatternItemProps {
-    pattern: Pattern;
+    pattern: RiskPattern;
     isComposite?: boolean;
-    findPatternById?: (id: string) => Pattern | undefined;
+    findPatternById?: (id: string) => RiskPattern | undefined;
 }
 
 const PatternItem: React.FC<PatternItemProps> = ({
-                                                     pattern,
-                                                     isComposite = false,
-                                                     findPatternById
-                                                 }) => {
+    pattern,
+    isComposite = false,
+    findPatternById
+}) => {
     const { colors } = useTheme();
     const [isExpanded, setIsExpanded] = useState(false);
     const [animation] = useState(new Animated.Value(0));
@@ -314,14 +124,14 @@ const PatternItem: React.FC<PatternItemProps> = ({
         outputRange: [0, 500],
     });
 
-    const getConfidenceColor = (confidence: number): string => {
-        if (confidence >= 0.8) return colors.error;
-        if (confidence >= 0.5) return colors.warning;
+    const getConfidenceColor = (severity: number): string => {
+        if (severity >= 0.8) return colors.error;
+        if (severity >= 0.5) return colors.warning;
         return colors.success;
     };
 
-    const confidenceColor = getConfidenceColor(pattern.confidence);
-    const confidencePercent = Math.round(pattern.confidence * 100);
+    const confidenceColor = getConfidenceColor(pattern.severity);
+    const confidencePercent = Math.round(pattern.severity * 100);
 
     const hasRatio = pattern.details.ratio !== undefined;
     const ratio = pattern.details.ratio || 0;
@@ -520,8 +330,8 @@ const PatternItem: React.FC<PatternItemProps> = ({
                         const childPattern = findPatternById(component.id);
                         if (!childPattern) return null;
 
-                        const childConfidenceColor = getConfidenceColor(component.confidence);
-                        const childConfidencePercent = Math.round(component.confidence * 100);
+                        const childConfidenceColor = getConfidenceColor(childPattern.severity);
+                        const childConfidencePercent = Math.round(childPattern.severity * 100);
 
                         return (
                             <ThemedView key={childPattern.internal_id} style={styles.relatedPattern} variant="transparent">
@@ -615,10 +425,12 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({title, subtitle, icon}) =>
 
 export default function HealthScreen() {
     const { colors } = useTheme();
+    const riskData = useRisk();
     
     const risingAwarenessPatterns = useMemo(() =>
-            exampleJSON.patterns.filter(pattern => !pattern.consumed),
-        []);
+        riskData.patterns.filter(pattern => !pattern.consumed),
+        [riskData.patterns]
+    );
 
     const getScoreColor = (score: number): string => {
         if (score >= 0.7) return colors.error;
@@ -626,19 +438,19 @@ export default function HealthScreen() {
         return colors.success;
     };
 
-    const findPatternById = (id: string): Pattern | undefined => {
-        return exampleJSON.patterns.find(pattern => pattern.internal_id === id);
+    const findPatternById = (id: string): RiskPattern | undefined => {
+        return riskData.patterns.find(pattern => pattern.internal_id === id);
     };
 
     const highestRiskCategory = useMemo(() => {
         let highest = {category: "", score: 0};
-        Object.entries(exampleJSON.category_scores).forEach(([category, score]) => {
+        Object.entries(riskData.categoryScores).forEach(([category, score]) => {
             if (score > highest.score) {
                 highest = {category, score};
             }
         });
         return highest;
-    }, []);
+    }, [riskData.categoryScores]);
 
     return (
         <SafeAreaView style={{ ...styles.container, backgroundColor: colors.background }}>
@@ -646,12 +458,12 @@ export default function HealthScreen() {
                 <ScrollView style={styles.scrollContainer}>
                     <ThemedHeader
                         title="Health Monitor"
-                        customSubtitle="Analysis of your trading patterns and risk profile"
-                        isLarge={true}
+                        subtitle="Analysis of your trading patterns and risk profile"
+                        titleVariant="heading1"
                     />
 
                     <ThemedView style={styles.scoreGrid} variant="transparent">
-                        {Object.entries(exampleJSON.category_scores).map(([category, score]) => (
+                        {Object.entries(riskData.categoryScores).map(([category, score]) => (
                             <CircularScore
                                 key={category}
                                 score={score}
@@ -665,11 +477,11 @@ export default function HealthScreen() {
                     {/* Composite Patterns Section */}
                     <ThemedView style={styles.patternsSection} variant="transparent">
                         <SectionHeader
-                            title={`We've found critical pattern${exampleJSON.composite_patterns.length > 1 ? 's' : ''}`}
+                            title={`We've found critical pattern${riskData.compositePatternsCount > 1 ? 's' : ''}`}
                             icon={<ShieldAlert size={22} color={colors.error}/>}
                         />
 
-                        {exampleJSON.composite_patterns.map((compositePattern) => (
+                        {riskData.patterns.filter(p => p.is_composite).map((compositePattern) => (
                             <PatternItem
                                 key={compositePattern.internal_id}
                                 pattern={compositePattern}

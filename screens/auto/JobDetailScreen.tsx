@@ -1,7 +1,24 @@
 import React, {useEffect, useState} from 'react';
-import {StyleSheet, View, TouchableOpacity, Text, ActivityIndicator, StatusBar, Platform, ScrollView, FlatList, Animated, LayoutAnimation, Pressable
+import {
+    StyleSheet,
+    View,
+    TouchableOpacity,
+    ActivityIndicator,
+    ScrollView,
+    Animated,
+    LayoutAnimation,
+    SafeAreaView
 } from 'react-native';
-import {ChevronLeft, Play, Pause, StopCircle, X, Clock, DollarSign, Coins, AlertTriangle, ChevronDown, ChevronUp, ListOrdered
+import {
+    ChevronLeft,
+    Play,
+    Pause,
+    StopCircle,
+    X,
+    Clock,
+    DollarSign,
+    Coins,
+    ListOrdered
 } from 'lucide-react-native';
 import {useNavigation, useRoute, RouteProp} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -10,6 +27,10 @@ import {autoService} from '@/services/api/auto';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {formatDateTime, calculateRemainingTime} from '@/utils/formatUtils';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
+import {ThemedView} from '@/components/ui/ThemedView';
+import {ThemedText} from '@/components/ui/ThemedText';
+import {useTheme} from '@/contexts/ThemeContext';
+import {CryptoIcon} from '@/components/common/CryptoIcon';
 
 type JobDetailScreenRouteProp = RouteProp<{
     JobDetail: { id: number }
@@ -18,6 +39,7 @@ type JobDetailScreenRouteProp = RouteProp<{
 type NavigationProp = NativeStackNavigationProp<any>;
 
 export default function JobDetailScreen() {
+    const {colors} = useTheme();
     const insets = useSafeAreaInsets();
     const route = useRoute<JobDetailScreenRouteProp>();
     const navigation = useNavigation<NavigationProp>();
@@ -196,124 +218,148 @@ export default function JobDetailScreen() {
     const renderContent = () => {
         if (loading) {
             return (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#3B82F6"/>
-                    <Text style={styles.loadingText}>Loading job details...</Text>
-                </View>
+                <ThemedView style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={colors.primary}/>
+                    <ThemedText style={styles.loadingText}>Loading job details...</ThemedText>
+                </ThemedView>
             );
         }
 
         if (!job) {
             return (
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>Could not load job details</Text>
-                </View>
+                <ThemedView style={styles.errorContainer}>
+                    <ThemedText style={styles.errorText}>Could not load job details</ThemedText>
+                </ThemedView>
             );
         }
 
         return (
-            <View style={styles.detailsContainer}>
-                <ScrollView style={styles.detailsScroll}>
-                    <View style={styles.mainContent}>
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>Job Details</Text>
-
-                            <View style={styles.progressContainer}>
-                                <View style={styles.progressBackground}>
+            <ThemedView style={styles.detailsContainer}>
+                <ScrollView style={styles.detailsScroll} showsVerticalScrollIndicator={false}>
+                    <ThemedView style={styles.mainContent}>
+                        {/* Progress Section */}
+                        <ThemedView variant="card" style={styles.section}>
+                            <ThemedView style={styles.progressContainer}>
+                                <ThemedView style={styles.progressHeader}>
+                                    <ThemedText variant="heading3">Progress</ThemedText>
+                                    <ThemedText variant="bodyBold" style={styles.progressText}>
+                                        {job.stepsDone} of {job.stepsTotal} steps
+                                    </ThemedText>
+                                </ThemedView>
+                                <ThemedView style={styles.progressBackground}>
                                     <View
-                                        style={[
-                                            styles.progressFill,
-                                            {
-                                                width: `${progressPercentage}%`,
-                                                backgroundColor: getStatusColor(job.status)
-                                            }
-                                        ]}
+                                        style={{
+                                            ...styles.progressFill,
+                                            width: `${progressPercentage}%`,
+                                            backgroundColor: getStatusColor(job.status)
+                                        }}
                                     />
-                                </View>
-                                <Text style={styles.progressText}>
-                                    {job.stepsDone} of {job.stepsTotal} steps completed
-                                </Text>
-                            </View>
+                                </ThemedView>
+                            </ThemedView>
+                        </ThemedView>
 
-                            <View style={styles.detailGrid}>
-                                <View style={styles.detailRow}>
-                                    <View style={styles.iconLabelContainer}>
-                                        <Coins size={16} color="#748CAB"/>
-                                        <Text style={styles.detailLabel}>Coins:</Text>
-                                    </View>
-                                    <View style={styles.valueContainer}>
-                                        <Text style={styles.detailValue}>{job.coins.join(', ')}</Text>
-                                    </View>
-                                </View>
+                        {/* Job Details Section */}
+                        <ThemedView variant="card" style={styles.section}>
+                            <ThemedText variant="heading3" style={styles.sectionTitle}>Job Details</ThemedText>
+                            <ThemedView style={styles.detailGrid}>
+                                <ThemedView style={styles.detailRow}>
+                                    <ThemedView style={styles.iconLabelContainer}>
+                                        <ListOrdered size={16} color={colors.textSecondary}/>
+                                        <ThemedText style={styles.detailLabel}>Strategy:</ThemedText>
+                                    </ThemedView>
+                                    <ThemedView style={styles.valueContainer}>
+                                        <ThemedText style={styles.detailValue}>{job.strategy}</ThemedText>
+                                    </ThemedView>
+                                </ThemedView>
 
-                                <View style={styles.detailRow}>
-                                    <View style={styles.iconLabelContainer}>
-                                        <DollarSign size={16} color="#748CAB"/>
-                                        <Text style={styles.detailLabel}>Amount:</Text>
-                                    </View>
-                                    <View style={styles.valueContainer}>
-                                        <Text style={styles.detailValue}>{job.amount}$</Text>
-                                    </View>
-                                </View>
+                                <ThemedView style={styles.detailRow}>
+                                    <ThemedView style={styles.iconLabelContainer}>
+                                        <Coins size={16} color={colors.textSecondary}/>
+                                        <ThemedText style={styles.detailLabel}>Coins:</ThemedText>
+                                    </ThemedView>
+                                    <ThemedView style={styles.valueContainer}>
+                                        <ThemedView style={styles.coinsContainer}>
+                                            {job.coins?.map((coin) => (
+                                                <ThemedView key={coin.toString()} style={styles.coinItem}>
+                                                    <CryptoIcon symbol={coin.toString()} size={16}/>
+                                                    <ThemedText style={styles.coinText}>{coin.toString()}</ThemedText>
+                                                </ThemedView>
+                                            ))}
+                                        </ThemedView>
+                                    </ThemedView>
+                                </ThemedView>
 
-                                <View style={styles.detailRow}>
-                                    <View style={styles.iconLabelContainer}>
-                                        <Clock size={16} color="#748CAB"/>
-                                        <Text style={styles.detailLabel}>Duration:</Text>
-                                    </View>
-                                    <View style={styles.valueContainer}>
-                                        <Text style={styles.detailValue}>
+                                <ThemedView style={styles.detailRow}>
+                                    <ThemedView style={styles.iconLabelContainer}>
+                                        <DollarSign size={16} color={colors.textSecondary}/>
+                                        <ThemedText style={styles.detailLabel}>Amount:</ThemedText>
+                                    </ThemedView>
+                                    <ThemedView style={styles.valueContainer}>
+                                        <ThemedText style={styles.detailValue}>{job.amount}$</ThemedText>
+                                    </ThemedView>
+                                </ThemedView>
+
+                                <ThemedView style={styles.detailRow}>
+                                    <ThemedView style={styles.iconLabelContainer}>
+                                        <Clock size={16} color={colors.textSecondary}/>
+                                        <ThemedText style={styles.detailLabel}>Duration:</ThemedText>
+                                    </ThemedView>
+                                    <ThemedView style={styles.valueContainer}>
+                                        <ThemedText style={styles.detailValue}>
                                             {job.durationMinutes} minutes
-                                        </Text>
-                                    </View>
-                                </View>
+                                        </ThemedText>
+                                    </ThemedView>
+                                </ThemedView>
 
                                 {job.status === 'IN_PROGRESS' && (
-                                    <View style={styles.detailRow}>
-                                        <View style={styles.iconLabelContainer}>
-                                            <Clock size={16} color="#748CAB"/>
-                                            <Text style={styles.detailLabel}>Estimate:</Text>
-                                        </View>
-                                        <View style={styles.valueContainer}>
-                                            <Text style={styles.detailValue}>
+                                    <ThemedView style={styles.detailRow}>
+                                        <ThemedView style={styles.iconLabelContainer}>
+                                            <Clock size={16} color={colors.textSecondary}/>
+                                            <ThemedText style={styles.detailLabel}>Estimate:</ThemedText>
+                                        </ThemedView>
+                                        <ThemedView style={styles.valueContainer}>
+                                            <ThemedText style={styles.detailValue}>
                                                 {calculateRemainingTime(job)}
-                                            </Text>
-                                        </View>
-                                    </View>
+                                            </ThemedText>
+                                        </ThemedView>
+                                    </ThemedView>
                                 )}
 
-                                <View style={styles.detailRow}>
-                                    <View style={styles.iconLabelContainer}>
-                                        <Clock size={16} color="#748CAB"/>
-                                        <Text style={styles.detailLabel}>Created:</Text>
-                                    </View>
-                                    <View style={styles.valueContainer}>
-                                        <Text style={styles.detailValue}>{formatDateTime(job.createdAt)}</Text>
-                                    </View>
-                                </View>
+                                <ThemedView style={styles.detailRow}>
+                                    <ThemedView style={styles.iconLabelContainer}>
+                                        <Clock size={16} color={colors.textSecondary}/>
+                                        <ThemedText style={styles.detailLabel}>Created:</ThemedText>
+                                    </ThemedView>
+                                    <ThemedView style={styles.valueContainer}>
+                                        <ThemedText
+                                            style={styles.detailValue}>{formatDateTime(job.createdAt)}</ThemedText>
+                                    </ThemedView>
+                                </ThemedView>
 
-                                <View style={styles.detailRow}>
-                                    <View style={styles.iconLabelContainer}>
-                                        <Clock size={16} color="#748CAB"/>
-                                        <Text style={styles.detailLabel}>Last Updated:</Text>
-                                    </View>
-                                    <View style={styles.valueContainer}>
-                                        <Text style={styles.detailValue}>{formatDateTime(job.updatedAt)}</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
+                                <ThemedView style={styles.detailRow}>
+                                    <ThemedView style={styles.iconLabelContainer}>
+                                        <Clock size={16} color={colors.textSecondary}/>
+                                        <ThemedText style={styles.detailLabel}>Last Updated:</ThemedText>
+                                    </ThemedView>
+                                    <ThemedView style={styles.valueContainer}>
+                                        <ThemedText
+                                            style={styles.detailValue}>{formatDateTime(job.updatedAt)}</ThemedText>
+                                    </ThemedView>
+                                </ThemedView>
+                            </ThemedView>
+                        </ThemedView>
 
+                        {/* Action Buttons Section */}
                         {!isFinished && (
-                            <View style={styles.section}>
-                                <View style={styles.actionButtonsContainer}>
+                            <ThemedView variant="card" style={styles.section}>
+                                <ThemedView style={styles.actionButtonsWrapper}>
                                     {isActive && (
                                         <TouchableOpacity
                                             style={[styles.actionButton, styles.stopButton]}
                                             onPress={handleStopJob}
                                         >
                                             <StopCircle size={18} color="white"/>
-                                            <Text style={styles.actionButtonText}>Stop</Text>
+                                            <ThemedText style={styles.actionButtonText}>Stop</ThemedText>
                                         </TouchableOpacity>
                                     )}
 
@@ -327,12 +373,12 @@ export default function JobDetailScreen() {
                                         {isActive ? (
                                             <>
                                                 <Pause size={18} color="white"/>
-                                                <Text style={styles.actionButtonText}>Pause</Text>
+                                                <ThemedText style={styles.actionButtonText}>Pause</ThemedText>
                                             </>
                                         ) : (
                                             <>
                                                 <Play size={18} color="white"/>
-                                                <Text style={styles.actionButtonText}>Resume</Text>
+                                                <ThemedText style={styles.actionButtonText}>Resume</ThemedText>
                                             </>
                                         )}
                                     </TouchableOpacity>
@@ -342,133 +388,78 @@ export default function JobDetailScreen() {
                                         onPress={handleCancelJob}
                                     >
                                         <X size={18} color="white"/>
-                                        <Text style={styles.actionButtonText}>Cancel</Text>
+                                        <ThemedText style={styles.actionButtonText}>Cancel</ThemedText>
                                     </TouchableOpacity>
-                                </View>
-                            </View>
+                                </ThemedView>
+                            </ThemedView>
                         )}
-
-                        {/* todo revert back later */}
-                        {/*<View style={styles.section}>*/}
-                        {/*    <Pressable*/}
-                        {/*        style={styles.eventsSectionHeader}*/}
-                        {/*        onPress={toggleEvents}*/}
-                        {/*    >*/}
-                        {/*        <View style={styles.collapsibleTitleContainer}>*/}
-                        {/*            <ListOrdered size={20} color="#748CAB"/>*/}
-                        {/*            <Text style={styles.collapsibleTitle}>Events History</Text>*/}
-                        {/*        </View>*/}
-                        {/*        {isEventsExpanded ? (*/}
-                        {/*            <ChevronUp size={20} color="#E2E8F0"/>*/}
-                        {/*        ) : (*/}
-                        {/*            <ChevronDown size={20} color="#E2E8F0"/>*/}
-                        {/*        )}*/}
-                        {/*    </Pressable>*/}
-
-                        {/*    <Animated.View style={[*/}
-                        {/*        styles.eventsContent,*/}
-                        {/*        {*/}
-                        {/*            opacity: animation,*/}
-                        {/*            maxHeight: animation.interpolate({*/}
-                        {/*                inputRange: [0, 1],*/}
-                        {/*                outputRange: [0, 1000]*/}
-                        {/*            })*/}
-                        {/*        }*/}
-                        {/*    ]}>*/}
-                        {/*        {isLoadingEvents ? (*/}
-                        {/*            <View style={styles.loadingEventsContainer}>*/}
-                        {/*                <ActivityIndicator size="small" color="#3B82F6"/>*/}
-                        {/*                <Text style={styles.loadingText}>Loading events...</Text>*/}
-                        {/*            </View>*/}
-                        {/*        ) : error ? (*/}
-                        {/*            <View style={styles.eventsErrorContainer}>*/}
-                        {/*                <AlertTriangle size={16} color="#F87171"/>*/}
-                        {/*                <Text style={styles.errorText}>{error}</Text>*/}
-                        {/*            </View>*/}
-                        {/*        ) : (*/}
-                        {/*            <FlatList*/}
-                        {/*                data={jobEvents}*/}
-                        {/*                keyExtractor={(item) => item.id.toString()}*/}
-                        {/*                contentContainerStyle={styles.eventsList}*/}
-                        {/*                scrollEnabled={false}*/}
-                        {/*                ListEmptyComponent={*/}
-                        {/*                    <Text style={styles.emptyEventsText}>No events available</Text>*/}
-                        {/*                }*/}
-                        {/*                renderItem={({item}) => (*/}
-                        {/*                    <View style={styles.eventItem}>*/}
-                        {/*                        <View style={styles.eventHeader}>*/}
-                        {/*                            <View style={styles.eventTitleContainer}>*/}
-                        {/*                                <View*/}
-                        {/*                                    style={[styles.eventStatusDot, {backgroundColor: getEventColor(item.eventType)}]}/>*/}
-                        {/*                                <Text*/}
-                        {/*                                    style={styles.eventTitle}>{getEventText(item.eventType)}</Text>*/}
-                        {/*                            </View>*/}
-                        {/*                            <Text style={styles.eventTimestamp}>*/}
-                        {/*                                {formatDateTime(item.timestamp)}*/}
-                        {/*                            </Text>*/}
-                        {/*                        </View>*/}
-                        {/*                        <Text style={styles.eventDescription}>{getEventDescription(item)}</Text>*/}
-                        {/*                    </View>*/}
-                        {/*                )}*/}
-                        {/*            />*/}
-                        {/*        )}*/}
-                        {/*    </Animated.View>*/}
-                        {/*</View>*/}
-                    </View>
+                    </ThemedView>
                 </ScrollView>
-            </View>
+            </ThemedView>
         );
     };
 
     return (
-        <View style={[styles.container, {paddingTop: insets.top}]}>
-            <StatusBar barStyle="light-content" backgroundColor="#0D1B2A"/>
-
-            <View style={styles.header}>
+        <SafeAreaView style={[styles.safeArea, {backgroundColor: colors.background}]}>
+            <ThemedView variant="transparent" style={{
+                ...styles.header,
+                paddingTop: insets.top
+            }}>
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={handleGoBack}
                 >
-                    <ChevronLeft size={24} color="white"/>
+                    <ChevronLeft size={24} color={colors.text}/>
                 </TouchableOpacity>
 
-                <View style={styles.headerTitleContainer}>
-                    <View style={styles.headerContent}>
-                        <View style={styles.headerLeft}>
-                            <Text style={styles.headerTitle}>
-                                Job #{job?.id|| route.params.id}
-                            </Text>
+                <ThemedView style={styles.headerTitleContainer}>
+                    <ThemedView style={styles.headerContent}>
+                        <ThemedView style={styles.headerLeft}>
+                            <ThemedText variant="heading2" size={24} style={styles.headerTitle}>
+                                Job #{job?.id || route.params.id}
+                            </ThemedText>
                             {job && (
-                                <View
-                                    style={[styles.strategyBadge, {backgroundColor: job.strategy === 'DCA' ? '#3B82F6' : '#8B5CF6'}]}>
-                                    <Text style={styles.strategyText}>{job.strategy}</Text>
-                                </View>
+                                <ThemedView
+                                    variant="transparent"
+                                    style={{
+                                        ...styles.strategyBadge,
+                                        backgroundColor: job.strategy === 'DCA' ? '#3B82F6' : '#8B5CF6'
+                                    }}
+                                >
+                                    <ThemedText style={styles.strategyText}>{job.strategy}</ThemedText>
+                                </ThemedView>
                             )}
-                        </View>
+                        </ThemedView>
                         {job && (
-                            <View style={[styles.statusBadge, {backgroundColor: getStatusColor(job.status)}]}>
-                                <Text style={styles.statusText}>
+                            <ThemedView
+                                variant="transparent"
+                                style={{
+                                    ...styles.statusBadge,
+                                    backgroundColor: getStatusColor(job.status)
+                                }}
+                            >
+                                <ThemedText style={styles.statusText}>
                                     {job.status.replace('_', ' ')}
-                                </Text>
-                            </View>
+                                </ThemedText>
+                            </ThemedView>
                         )}
-                    </View>
-                </View>
-            </View>
+                    </ThemedView>
+                </ThemedView>
+            </ThemedView>
 
-            {alert && <CustomAlert {...alert} onClose={hideAlert} />}
+            {alert && <CustomAlert {...alert} onClose={hideAlert}/>}
 
-            <View style={styles.contentContainer}>
-                {renderContent()}
-            </View>
-        </View>
+            {renderContent()}
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        backgroundColor: '#0D1B2A',
     },
     header: {
         paddingHorizontal: 16,
@@ -477,23 +468,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(116, 140, 171, 0.2)',
-        backgroundColor: '#0D1B2A',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#000',
-                shadowOffset: {width: 0, height: 2},
-                shadowOpacity: 0.1,
-                shadowRadius: 3,
-            },
-            android: {
-                elevation: 4,
-            },
-        }),
     },
     backButton: {
         padding: 8,
         borderRadius: 20,
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
         marginRight: 12,
     },
     headerTitleContainer: {
@@ -511,9 +489,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     headerTitle: {
-        fontSize: 18,
         fontWeight: '700',
-        color: 'white',
     },
     strategyBadge: {
         paddingHorizontal: 8,
@@ -538,56 +514,51 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
     },
-
-    // Main content styles
     detailsContainer: {
         flex: 1,
     },
     detailsScroll: {
         flex: 1,
-        backgroundColor: '#1B263B',
     },
     mainContent: {
         flex: 1,
-        paddingTop: 8,
+        padding: 16,
+        gap: 16,
     },
     section: {
-        paddingVertical: 16,
+        borderRadius: 12,
+        padding: 16,
     },
     sectionTitle: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 12,
-        paddingHorizontal: 16,
+        marginBottom: 16,
     },
     progressContainer: {
-        paddingHorizontal: 16,
-        paddingBottom: 16,
+        gap: 12,
+    },
+    progressHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     progressBackground: {
         height: 8,
-        backgroundColor: '#0D1B2A',
         borderRadius: 4,
         overflow: 'hidden',
-        marginBottom: 6,
+        backgroundColor: 'rgba(116, 140, 171, 0.1)',
     },
     progressFill: {
         height: '100%',
         borderRadius: 4,
     },
     progressText: {
-        color: '#748CAB',
-        fontSize: 12,
-        textAlign: 'right',
+        fontSize: 14,
     },
     detailGrid: {
-        paddingHorizontal: 16,
+        gap: 16,
     },
     detailRow: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 12,
     },
     iconLabelContainer: {
         flexDirection: 'row',
@@ -596,25 +567,21 @@ const styles = StyleSheet.create({
     },
     valueContainer: {
         flex: 1,
-        paddingLeft: 8,
+        paddingLeft: 2,
     },
     detailLabel: {
-        color: '#748CAB',
         fontSize: 14,
         marginLeft: 8,
         fontWeight: '500',
     },
     detailValue: {
-        color: '#E2E8F0',
         fontSize: 14,
         lineHeight: 20,
     },
-
-    // Actions section
-    actionButtonsContainer: {
+    actionButtonsWrapper: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
+        gap: 12,
     },
     actionButton: {
         flexDirection: 'row',
@@ -624,7 +591,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 8,
         flex: 1,
-        marginHorizontal: 4,
     },
     pauseButton: {
         backgroundColor: '#F59E0B',
@@ -643,80 +609,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginLeft: 8,
     },
-
-    eventsSectionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-        marginHorizontal: 16,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    collapsibleTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    collapsibleTitle: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    eventsContent: {
-        overflow: 'hidden',
-    },
-    eventsList: {
-        paddingHorizontal: 16,
-    },
-    eventItem: {
-        backgroundColor: 'rgba(13, 27, 42, 0.5)',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 12,
-    },
-    eventHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    eventTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    eventStatusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 6,
-    },
-    eventTitle: {
-        color: 'white',
-        fontWeight: '600',
-    },
-    eventTimestamp: {
-        color: '#748CAB',
-        fontSize: 12,
-    },
-    eventDescription: {
-        color: '#E2E8F0',
-        fontSize: 14,
-    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    loadingEventsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-    },
     loadingText: {
-        color: '#748CAB',
         marginLeft: 8,
         fontSize: 16,
     },
@@ -726,24 +624,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
     },
-    eventsErrorContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: 16,
-        padding: 16,
-        backgroundColor: 'rgba(248, 113, 113, 0.1)',
-        borderRadius: 8,
-    },
     errorText: {
-        color: '#F87171',
         fontSize: 16,
         textAlign: 'center',
-        marginLeft: 8,
     },
-    emptyEventsText: {
-        color: '#748CAB',
-        textAlign: 'center',
-        padding: 16,
+    coinsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    coinItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    coinText: {
+        fontSize: 14,
+        lineHeight: 20,
     },
 }); 

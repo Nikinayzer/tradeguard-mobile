@@ -1,11 +1,17 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
-import { Star, ChevronRight } from 'lucide-react-native';
+import { Star, ChevronRight, LucideIcon } from 'lucide-react-native';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { useTheme } from '@/contexts/ThemeContext';
 
+interface Category {
+    name: string;
+    icon?: LucideIcon;
+    count?: number;
+}
+
 interface CategorySelectorProps {
-    categories: string[];
+    categories: (string | Category)[];
     selectedCategory: string;
     onSelectCategory: (category: string) => void;
 }
@@ -52,31 +58,38 @@ export function CategorySelector({ categories, selectedCategory, onSelectCategor
         setContainerWidth(width);
     };
 
-    const renderCategoryButton = (category: string) => {
-        const isSelected = category === selectedCategory;
+    const renderCategoryButton = (category: string | Category) => {
+        const categoryName = typeof category === 'string' ? category : category.name;
+        const Icon = typeof category === 'string' ? undefined : category.icon;
+        const count = typeof category === 'string' ? undefined : category.count;
+        const isSelected = categoryName === selectedCategory;
+
         return (
             <TouchableOpacity
-                key={category}
+                key={categoryName}
                 style={[
                     styles.categoryButton,
                     isSelected && { borderColor: colors.primary }
                 ]}
-                onPress={() => onSelectCategory(category)}
+                onPress={() => onSelectCategory(categoryName)}
             >
-                {category === "Favorites" ? (
-                    <Star 
-                        size={16} 
-                        color={isSelected ? colors.primary : colors.textSecondary} 
-                    />
-                ) : (
+                <View style={styles.categoryContent}>
+                    {Icon && (
+                        <Icon 
+                            size={16} 
+                            color={isSelected ? colors.primary : colors.textSecondary} 
+                            style={styles.categoryIcon}
+                        />
+                    )}
                     <ThemedText 
                         variant="bodySmall" 
                         style={styles.categoryText}
                         color={isSelected ? colors.primary : colors.textSecondary}
                     >
-                        {category}
+                        {categoryName}
+                        {count !== undefined && ` (${count})`}
                     </ThemedText>
-                )}
+                </View>
             </TouchableOpacity>
         );
     };
@@ -139,8 +152,14 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         borderColor: 'transparent',
+    },
+    categoryContent: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    categoryIcon: {
+        marginRight: 6,
     },
     categoryText: {
         fontSize: 12,
