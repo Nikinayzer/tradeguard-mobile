@@ -187,7 +187,9 @@ function DurationInput({value, onChange, primaryColor}: DurationInputProps) {
                 hourLabel="h"
                 minuteLabel="m"
                 hideSeconds={true}
-                maximumHours={24}
+                initialValue={{hours: value / 60, minutes: value}}
+                hourLimit={{ min: 1}}
+                minuteInterval={15}
                 styles={{
                     theme: "dark",
                     backgroundColor: colors.background,
