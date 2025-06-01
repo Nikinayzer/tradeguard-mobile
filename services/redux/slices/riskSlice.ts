@@ -1,8 +1,10 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RiskReport, RiskPattern, RiskLevel, RiskCategory } from '@/types/risk';
+import { createSelector } from '@reduxjs/toolkit';
 
 export interface RiskState {
     patterns: RiskPattern[];
+    compositePatterns: RiskPattern[];
     lastUpdated: string;
     topRiskLevel: RiskLevel;
     topRiskConfidence: number;
@@ -15,6 +17,7 @@ export interface RiskState {
 
 const initialState: RiskState = {
     patterns: [],
+    compositePatterns: [],
     lastUpdated: '',
     topRiskLevel: 'low',
     topRiskConfidence: 0,
@@ -37,6 +40,7 @@ const riskSlice = createSlice({
         updateRiskReport: (state, action: PayloadAction<RiskReport>) => {
             const {
                 patterns,
+                composite_patterns,
                 timestamp,
                 top_risk_level,
                 top_risk_confidence,
@@ -48,6 +52,7 @@ const riskSlice = createSlice({
             } = action.payload;
 
             state.patterns = patterns;
+            state.compositePatterns = composite_patterns;
             state.lastUpdated = timestamp;
             state.topRiskLevel = top_risk_level;
             state.topRiskConfidence = top_risk_confidence;
@@ -76,4 +81,45 @@ const riskSlice = createSlice({
 });
 
 export const { updateRiskReport, clearRiskReport, updatePatternConsumed } = riskSlice.actions;
-export default riskSlice.reducer; 
+export default riskSlice.reducer;
+
+// Selectors
+export const selectGroupedPatterns = createSelector(
+    [(state: { risk: RiskState }) => state.risk.patterns],
+    (patterns) => {
+        const grouped = patterns.reduce((acc, pattern) => {
+            const key = pattern.pattern_id;
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(pattern);
+            return acc;
+        }, {} as Record<string, RiskPattern[]>);
+        
+        return Object.entries(grouped).map(([patternId, patterns]) => ({
+            patternId,
+            patterns,
+            count: patterns.length
+        }));
+    }
+);
+
+export const selectGroupedCompositePatterns = createSelector(
+    [(state: { risk: RiskState }) => state.risk.compositePatterns],
+    (patterns) => {
+        const grouped = patterns.reduce((acc, pattern) => {
+            const key = pattern.pattern_id;
+            if (!acc[key]) {
+                acc[key] = [];
+            }
+            acc[key].push(pattern);
+            return acc;
+        }, {} as Record<string, RiskPattern[]>);
+        
+        return Object.entries(grouped).map(([patternId, patterns]) => ({
+            patternId,
+            patterns,
+            count: patterns.length
+        }));
+    }
+); 

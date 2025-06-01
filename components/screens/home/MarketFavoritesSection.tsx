@@ -18,7 +18,7 @@ type FavoriteMarketsNavigationProp = CompositeNavigationProp<
 >;
 
 interface FavoriteMarketsProps {
-    navigation: FavoriteMarketsNavigationProp;
+    navigation: NativeStackNavigationProp<any>;
 }
 
 export function MarketFavoritesSection({ navigation }: FavoriteMarketsProps) {

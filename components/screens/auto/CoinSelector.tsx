@@ -34,7 +34,7 @@ export function CoinSelector() {
         <ThemedView style={styles.selectedCoinsSection} variant="transparent">
             <View style={styles.sectionHeader}>
                 <View style={[styles.sectionHeader, {flexDirection: 'column', justifyContent: 'flex-end' }]}>
-                    <ThemedText size={22} weight={"bold"}>Your Coins</ThemedText>
+                    <ThemedText size={22} weight={"bold"}>With coins:</ThemedText>
                 </View>
                 {selectedCoins.length > 0 && (
                 <TouchableOpacity
@@ -89,7 +89,7 @@ export function CoinSelector() {
                             centered
                             mb={16}
                         >
-                            Tap the button above to select coins
+                            Tap the button below to select coins
                         </ThemedText>
                         <TouchableOpacity 
                             style={{

@@ -76,7 +76,6 @@ export default function JobDetailScreen() {
                 const job = await autoService.getJob(route.params.id.toString());
                 if (job) {
                     setJob(job);
-                    fetchJobEvents(job.id.toString());
                 } else {
                     showAlert({
                         type: 'error',
@@ -121,7 +120,6 @@ export default function JobDetailScreen() {
         }
     };
 
-    //todo in header
     const handleGoBack = () => {
         navigation.goBack();
     };

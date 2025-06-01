@@ -36,6 +36,7 @@ import AddExchangeScreen from '../screens/profile/AddExchangeScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import NewsScreen from '../screens/news/NewsScreen';
 import AllPositionsScreen from '../screens/portfolio/AllPositionsScreen';
+import PatternDetailScreen from '../screens/health/PatternDetailScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator();
@@ -101,6 +102,7 @@ function HealthStack() {
             }}
         >
             <Stack.Screen name="HealthMain" component={HealthScreen}/>
+            <Stack.Screen name="PatternDetail" component={PatternDetailScreen}/>
         </Stack.Navigator>
     );
 }

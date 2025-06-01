@@ -38,6 +38,10 @@ export type AutoStackParamList = {
 
 export type HealthStackParamList = {
     HealthMain: undefined;
+    PatternDetail: { 
+        patternId: string;
+        isComposite: boolean;
+    };
 };
 
 export type HomeStackParamList = {

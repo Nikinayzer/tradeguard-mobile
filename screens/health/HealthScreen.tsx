@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from "react";
+import React, {useState, useMemo, useEffect} from "react";
 import {View,StyleSheet, ScrollView, TouchableOpacity, Animated, TextStyle, ViewStyle} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
 import {ChevronDown, AlertCircle, ShieldAlert} from "lucide-react-native";
@@ -10,6 +10,13 @@ import { ThemedText } from '@/components/ui/ThemedText';
 import { ThemedView } from '@/components/ui/ThemedView';
 import { useRisk } from '@/services/redux/hooks';
 import { RiskPattern, RiskCategory, RiskPatternDetails, CategoryWeights } from '@/types/risk';
+import { selectGroupedPatterns, selectGroupedCompositePatterns } from '@/services/redux/slices/riskSlice';
+import { useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { HealthStackParamList } from '@/navigation/navigation';
+
+type HealthScreenNavigationProp = NativeStackNavigationProp<HealthStackParamList>;
 
 interface CircularScoreProps {
     score: number;
@@ -29,13 +36,21 @@ const CircularScore: React.FC<CircularScoreProps> = ({
     const { colors } = useTheme();
     const percentage = Math.min(Math.floor(score * 100), 100);
     const roundedScore = Math.round(percentage);
+    const [animation] = useState(new Animated.Value(0));
 
-    const formattedLabel = (
-        label === "overtrading" ? "Overtrading" :
-        label === "sunk_cost" ? "Sunk Cost" :
-        label === "fomo" ? "FOMO" :
-        label.charAt(0).toUpperCase() + label.slice(1)
-    );
+    useEffect(() => {
+        Animated.spring(animation, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 20,
+            friction: 7
+        }).start();
+    }, [score]);
+
+    const scale = animation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.8, 1]
+    });
 
     let containerStyle: ViewStyle = styles.scoreContainer;
     if (isHighlighted) {
@@ -44,39 +59,37 @@ const CircularScore: React.FC<CircularScoreProps> = ({
             ...styles.highlightedScoreContainer
         };
     }
-
-    const labelStyle: TextStyle = styles.categoryLabel;
     
     return (
         <ThemedView style={containerStyle} variant="transparent">
-            <View style={styles.scoreRow}>
+            <Animated.View style={[styles.scoreColumn, { transform: [{ scale }] }]}>
                 <CircularProgress
                     value={roundedScore}
                     valueSuffix={'%'}
-                    radius={40}
-                    duration={500}
+                    radius={75}
+                    duration={1000}
                     maxValue={100}
                     progressValueColor={colors.text}
                     activeStrokeColor={color}
                     activeStrokeSecondaryColor={tinycolor(color).spin(-25).saturate(40).toString()}
                     inActiveStrokeColor={color}
                     inActiveStrokeOpacity={0.1}
-                    inActiveStrokeWidth={8}
-                    activeStrokeWidth={10}
+                    inActiveStrokeWidth={14}
+                    activeStrokeWidth={16}
                     progressValueStyle={{
                         fontWeight: '800',
-                        fontSize: 20,
+                        fontSize: 32,
                     }}
                     clockwise={false}
                 />
 
                 <ThemedText 
-                    style={isHighlighted ? {...labelStyle, ...styles.highlightedCategoryLabel} : labelStyle}
+                    style={styles.riskScoreLabel}
                     secondary={!isHighlighted}
                 >
-                    {formattedLabel}
+                    Risk Score
                 </ThemedText>
-            </View>
+            </Animated.View>
         </ThemedView>
     );
 };
@@ -85,32 +98,44 @@ interface PatternItemProps {
     pattern: RiskPattern;
     isComposite?: boolean;
     findPatternById?: (id: string) => RiskPattern | undefined;
+    similarPatterns?: RiskPattern[];
+    similarCount?: number;
 }
 
 const PatternItem: React.FC<PatternItemProps> = ({
     pattern,
     isComposite = false,
-    findPatternById
+    findPatternById,
+    similarPatterns = [],
+    similarCount = 0
 }) => {
     const { colors } = useTheme();
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [animation] = useState(new Animated.Value(0));
+    const navigation = useNavigation<HealthScreenNavigationProp>();
+    const [isSimilarExpanded, setIsSimilarExpanded] = useState(false);
+    const [similarAnimation] = useState(new Animated.Value(0));
 
-    const toggleExpand = () => {
-        if (isComposite) {
-            Animated.timing(animation, {
-                toValue: isExpanded ? 0 : 1,
-                duration: 300,
-                useNativeDriver: false,
-            }).start();
-            setIsExpanded(!isExpanded);
-        }
+    const toggleSimilarExpand = () => {
+        Animated.timing(similarAnimation, {
+            toValue: isSimilarExpanded ? 0 : 1,
+            duration: 300,
+            useNativeDriver: false,
+        }).start();
+        setIsSimilarExpanded(!isSimilarExpanded);
     };
 
-    const maxHeight = animation.interpolate({
+    const similarMaxHeight = similarAnimation.interpolate({
         inputRange: [0, 1],
         outputRange: [0, 500],
     });
+
+    const handlePatternPress = () => {
+        if (isComposite) {
+            navigation.navigate('PatternDetail', {
+                patternId: pattern.internal_id,
+                isComposite: true
+            });
+        }
+    };
 
     const getConfidenceColor = (severity: number): string => {
         if (severity >= 0.8) return colors.error;
@@ -119,11 +144,11 @@ const PatternItem: React.FC<PatternItemProps> = ({
     };
 
     const confidenceColor = getConfidenceColor(pattern.severity);
-    const confidencePercent = Math.round(pattern.severity * 100);
+    const confidencePercent = Math.round((isComposite ? (pattern.confidence || pattern.severity) : pattern.severity) * 100);
 
-    const hasRatio = pattern.details.ratio !== undefined;
-    const ratio = pattern.details.ratio || 0;
-    const isExceeded = hasRatio && (pattern.details.ratio || 0) > 1;
+    const hasRatio = pattern.details?.ratio !== undefined;
+    const ratio = pattern.details?.ratio || 0;
+    const isExceeded = hasRatio && (pattern.details?.ratio || 0) > 1;
 
     const categoryEntries = Object.entries(pattern.category_weights || {});
     const topCategory = categoryEntries.length > 0
@@ -138,9 +163,7 @@ const PatternItem: React.FC<PatternItemProps> = ({
     };
 
     const cardStyle = {
-        backgroundColor: isComposite 
-            ? 'rgba(239,68,68,0.12)'
-            : useTheme().colors.card,
+        backgroundColor: colors.card,
         borderRadius: 16,
         marginBottom: 16,
         overflow: "hidden" as const,
@@ -154,231 +177,171 @@ const PatternItem: React.FC<PatternItemProps> = ({
     return (
         <ThemedView
             style={cardStyle}
-            variant={isComposite ? "transparent" : "card"}
+            variant="card"
             border={false}
             rounded="large"
         >
-            {/* Card header with confidence pill and expand trigger */}
-            <TouchableOpacity
-                style={styles.patternHeader}
-                onPress={toggleExpand}
+            {/* Main Pattern Content */}
+            <TouchableOpacity 
+                style={styles.patternMainContent}
+                onPress={handlePatternPress}
                 activeOpacity={isComposite ? 0.7 : 1}
             >
-                <View style={{
-                    ...styles.confidenceDot,
-                    backgroundColor: confidenceColor
-                }}/>
-
-                <ThemedView style={styles.patternHeaderContent} variant="transparent">
-                    <ThemedView style={styles.titleRow} variant="transparent">
-                        <ThemedText style={styles.patternTitle}>
+                <View style={styles.patternHeader}>
+                    <View style={{
+                        ...styles.confidenceDot,
+                        backgroundColor: confidenceColor,
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                    }}>
+                        {similarCount > 1 && (
+                            <ThemedText style={styles.dotCount} color={colors.background}>
+                                {similarCount}
+                            </ThemedText>
+                        )}
+                    </View>
+                    
+                    <ThemedView style={styles.patternContent} variant="transparent">
+                        <ThemedText style={styles.patternMessage} numberOfLines={2}>
                             {pattern.message}
                         </ThemedText>
                         
-                        <ThemedView style={styles.primaryBadges} variant="transparent">
-                            {isComposite && (
+                        <ThemedView style={styles.patternMetadata} variant="transparent">
+                            <ThemedView style={styles.badgeGroup} variant="transparent">
+                                {isComposite && (
+                                    <ThemedView 
+                                        style={{
+                                            ...styles.badgeBase,
+                                            ...styles.compositeBadge,
+                                            backgroundColor: `${colors.primary}20`
+                                        }}
+                                        variant="transparent"
+                                    >
+                                        <ThemedText style={styles.badgeText} color={colors.primary}>
+                                            Complex Pattern
+                                        </ThemedText>
+                                    </ThemedView>
+                                )}
+
                                 <ThemedView 
                                     style={{
                                         ...styles.badgeBase,
-                                        ...styles.compositeBadge,
-                                        backgroundColor: `${colors.primary}20`
+                                        ...styles.confidencePill,
+                                        backgroundColor: `${confidenceColor}20`
                                     }}
                                     variant="transparent"
                                 >
-                                    <ThemedText style={styles.badgeText} color={colors.primary}>
-                                        Combined
+                                    <ThemedText style={styles.badgeText} color={confidenceColor}>
+                                        {confidencePercent}% {isComposite ? 'confidence' : 'severity'}
                                     </ThemedText>
                                 </ThemedView>
+                            </ThemedView>
+
+                            {/* Progress Bar */}
+                            {pattern.details?.actual !== undefined && pattern.details?.limit !== undefined && (
+                                <ThemedView style={styles.progressContainer} variant="transparent">
+                                    <View 
+                                        style={{
+                                            ...styles.progressBar,
+                                            backgroundColor: colors.backgroundTertiary
+                                        }}
+                                    >
+                                        <View
+                                            style={{
+                                                ...styles.progressFill,
+                                                width: `${Math.min(100, (pattern.details.actual / pattern.details.limit) * 100)}%`,
+                                                backgroundColor: confidenceColor
+                                            }}
+                                        />
+                                    </View>
+                                    <ThemedView style={styles.progressLabels} variant="transparent">
+                                        <ThemedText style={styles.progressLabel} tertiary>
+                                            <ThemedText style={styles.progressEmphasis}>
+                                                {pattern.details.actual}
+                                            </ThemedText> / {pattern.details.limit}
+                                        </ThemedText>
+                                        {pattern.details.ratio !== undefined && (
+                                            <ThemedText 
+                                                style={styles.ratioIndicator} 
+                                                color={pattern.details.ratio > 1 ? confidenceColor : colors.textTertiary}
+                                            >
+                                                {(pattern.details.ratio).toFixed(1)}x
+                                            </ThemedText>
+                                        )}
+                                    </ThemedView>
+                                </ThemedView>
                             )}
-
-                            <ThemedView 
-                                style={{
-                                    ...styles.badgeBase,
-                                    ...styles.confidencePill,
-                                    backgroundColor: `${confidenceColor}20`
-                                }}
-                                variant="transparent"
-                            >
-                                <ThemedText style={styles.badgeText} color={confidenceColor}>
-                                    {confidencePercent}%
-                                </ThemedText>
-                            </ThemedView>
                         </ThemedView>
                     </ThemedView>
+                </View>
 
-                    {/* Category badges in a separate row */}
-                    {topCategory && (
-                        <ThemedView style={styles.categoryRow} variant="transparent">
-                            <ThemedView 
-                                style={{
-                                    ...styles.badgeBase,
-                                    ...styles.categoryTag,
-                                    backgroundColor: colors.backgroundSecondary
-                                }}
-                                variant="transparent"
-                            >
-                                <ThemedText style={styles.badgeText} tertiary>
-                                    {formatCategoryName(topCategory[0])}
-                                </ThemedText>
-                            </ThemedView>
-                        </ThemedView>
-                    )}
-                </ThemedView>
-            </TouchableOpacity>
-
-            {/* Progress visualization */}
-            {pattern.details.actual !== undefined && pattern.details.limit !== undefined && (
-                <ThemedView style={styles.progressContainer} variant="transparent">
-                    <ThemedView style={styles.progressBarContainer} variant="transparent">
-                        <View 
-                            style={{
-                                ...styles.progressBar,
-                                backgroundColor: colors.backgroundTertiary
-                            }}
+                {/* Action Button */}
+                {similarCount > 1 && (
+                    <ThemedView style={styles.actionButtons} variant="transparent">
+                        <TouchableOpacity 
+                            onPress={toggleSimilarExpand}
+                            style={styles.actionButton}
                         >
-                            <View
-                                style={{
-                                    ...styles.progressFill,
-                                    width: `${Math.min(100, (pattern.details.actual / pattern.details.limit) * 100)}%`,
-                                    backgroundColor: confidenceColor
-                                }}
-                            />
-                        </View>
-
-                        {isExceeded && (
-                            <View 
-                                style={{
-                                    ...styles.limitMarker,
-                                    backgroundColor: confidenceColor
-                                }}
-                            />
-                        )}
-                    </ThemedView>
-
-                    <ThemedView style={styles.progressLabels} variant="transparent">
-                        <ThemedText style={styles.progressLabel} tertiary>
-                            <ThemedText
-                                style={styles.progressEmphasis}>{pattern.details.actual}</ThemedText> / {pattern.details.limit}
-                        </ThemedText>
-
-                        {hasRatio && (
-                            <ThemedText style={styles.ratioIndicator} color={isExceeded ? confidenceColor : colors.textTertiary}>
-                                {(pattern.details.ratio || 0).toFixed(1)}x {isExceeded ? 'Exceeded' : 'Within Limit'}
-                            </ThemedText>
-                        )}
-                    </ThemedView>
-                </ThemedView>
-            )}
-
-            {/* Job information with Details toggle for composite patterns */}
-            <ThemedView style={styles.bottomRow} variant="transparent">
-                {pattern.job_id && pattern.job_id.length > 0 && (
-                    <ThemedText style={styles.jobInfoText} tertiary>
-                        Affected job{pattern.job_id.length > 1 ? 's' : ''}: {pattern.job_id.join(', ')}
-                    </ThemedText>
-                )}
-                
-                {isComposite && (
-                    <TouchableOpacity onPress={toggleExpand} activeOpacity={0.7}>
-                        <ThemedView style={styles.detailsTextContainer} variant="transparent">
-                            <ThemedText style={styles.detailsText} color={colors.primary}>
-                                {isExpanded ? 'Hide Details' : 'Show Details'}
+                            <ThemedText style={styles.actionButtonText} color={colors.primary}>
+                                {isSimilarExpanded ? 'Hide Similar' : 'Show Similar'}
                             </ThemedText>
                             <ChevronDown
-                                size={12}
+                                size={16}
                                 color={colors.primary}
                                 style={{
-                                    transform: [{rotate: isExpanded ? '180deg' : '0deg'}],
+                                    transform: [{rotate: isSimilarExpanded ? '180deg' : '0deg'}],
                                     marginLeft: 4
                                 }}
                             />
-                        </ThemedView>
-                    </TouchableOpacity>
-                )}
-            </ThemedView>
-
-            {/* Composite patterns will have collapsible children */}
-            {isComposite && pattern.details.components && findPatternById && (
-                <Animated.View style={[styles.compositeChildren, {maxHeight}]}>
-                    <View 
-                        style={{
-                            ...styles.divider,
-                            backgroundColor: colors.backgroundTertiary
-                        }}
-                    />
-
-                    <ThemedView style={styles.relatedPatternsHeader} variant="transparent">
-                        <ThemedText style={styles.relatedPatternsTitle}>Related Patterns</ThemedText>
-                        <ThemedText style={styles.relatedPatternsSubtitle} tertiary>
-                            These patterns were detected and analyzed together
-                        </ThemedText>
+                        </TouchableOpacity>
                     </ThemedView>
+                )}
+            </TouchableOpacity>
 
-                    {pattern.details.components.map((component) => {
-                        const childPattern = findPatternById(component.id);
-                        if (!childPattern) return null;
-
-                        const childConfidenceColor = getConfidenceColor(childPattern.severity);
-                        const childConfidencePercent = Math.round(childPattern.severity * 100);
-
-                        return (
-                            <ThemedView key={childPattern.internal_id} style={styles.relatedPattern} variant="transparent">
+            {/* Similar Patterns Section */}
+            {similarCount > 1 && (
+                <Animated.View style={[styles.similarPatternsContainer, {maxHeight: similarMaxHeight}]}>
+                    <View style={styles.similarPatternsHeader}>
+                        <ThemedText style={styles.similarPatternsTitle} tertiary>
+                            Similar Patterns
+                        </ThemedText>
+                    </View>
+                    {similarPatterns.map((similarPattern) => (
+                        <TouchableOpacity
+                            key={similarPattern.internal_id}
+                            onPress={() => {
+                                if (isComposite) {
+                                    navigation.navigate('PatternDetail', {
+                                        patternId: similarPattern.internal_id,
+                                        isComposite: true
+                                    });
+                                }
+                            }}
+                            activeOpacity={isComposite ? 0.7 : 1}
+                        >
+                            <ThemedView 
+                                style={styles.similarPattern}
+                                variant="transparent"
+                            >
                                 <View 
                                     style={{
-                                        ...styles.relatedPatternDot,
-                                        backgroundColor: childConfidenceColor
+                                        ...styles.similarPatternDot,
+                                        backgroundColor: getConfidenceColor(isComposite ? (similarPattern.confidence || similarPattern.severity) : similarPattern.severity)
                                     }}
                                 />
-
-                                <ThemedView style={styles.relatedPatternContent} variant="transparent">
-                                    <ThemedView style={styles.relatedPatternHeader} variant="transparent">
-                                        <ThemedText style={styles.relatedPatternTitle}>
-                                            {childPattern.message}
+                                <ThemedView style={styles.similarPatternContent} variant="transparent">
+                                    <ThemedText style={styles.similarPatternMessage} numberOfLines={2}>
+                                        {similarPattern.message}
+                                    </ThemedText>
+                                    <ThemedView style={styles.similarPatternMetadata} variant="transparent">
+                                        <ThemedText style={styles.similarPatternConfidence} tertiary>
+                                            {Math.round((isComposite ? (similarPattern.confidence || similarPattern.severity) : similarPattern.severity) * 100)}% {isComposite ? 'confidence' : 'severity'}
                                         </ThemedText>
-
-                                        <ThemedView 
-                                            style={{
-                                                ...styles.badgeBase,
-                                                ...styles.confidencePill,
-                                                backgroundColor: `${childConfidenceColor}20`
-                                            }}
-                                            variant="transparent"
-                                        >
-                                            <ThemedText style={styles.badgeText} color={childConfidenceColor}>
-                                                {childConfidencePercent}%
-                                            </ThemedText>
-                                        </ThemedView>
                                     </ThemedView>
-
-                                    {childPattern.details.actual !== undefined &&
-                                        childPattern.details.limit !== undefined && (
-                                            <ThemedView style={styles.relatedPatternMetrics} variant="transparent">
-                                                <ThemedView style={styles.relatedPatternProgress} variant="transparent">
-                                                    <View 
-                                                        style={{
-                                                            ...styles.miniProgressBar,
-                                                            backgroundColor: colors.backgroundTertiary
-                                                        }}
-                                                    >
-                                                        <View
-                                                            style={{
-                                                                ...styles.miniProgressFill,
-                                                                width: `${Math.min(100, (childPattern.details.actual / childPattern.details.limit) * 100)}%`,
-                                                                backgroundColor: childConfidenceColor
-                                                            }}
-                                                        />
-                                                    </View>
-                                                </ThemedView>
-
-                                                <ThemedText style={styles.relatedPatternDetail} tertiary>
-                                                    {childPattern.details.actual} / {childPattern.details.limit}
-                                                </ThemedText>
-                                            </ThemedView>
-                                        )}
                                 </ThemedView>
                             </ThemedView>
-                        );
-                    })}
+                        </TouchableOpacity>
+                    ))}
                 </Animated.View>
             )}
         </ThemedView>
@@ -414,6 +377,38 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({title, subtitle, icon}) =>
 export default function HealthScreen() {
     const { colors } = useTheme();
     const riskData = useRisk();
+    const groupedPatterns = useSelector(selectGroupedPatterns);
+    const groupedCompositePatterns = useSelector(selectGroupedCompositePatterns);
+    const [isRiskDetailsExpanded, setIsRiskDetailsExpanded] = useState(false);
+    const [detailsAnimation] = useState(new Animated.Value(0));
+    const [barAnimations] = useState(() => 
+        Object.keys(riskData.categoryScores).reduce((acc, key) => {
+            acc[key] = new Animated.Value(0);
+            return acc;
+        }, {} as Record<string, Animated.Value>)
+    );
+
+    useEffect(() => {
+        console.log("Risk Data Loaded:", riskData)
+    }, []);
+    
+    useEffect(() => {
+        if (isRiskDetailsExpanded) {
+            Object.entries(barAnimations).forEach(([key, animation], index) => {
+                Animated.spring(animation, {
+                    toValue: 1,
+                    useNativeDriver: false,
+                    tension: 20,
+                    friction: 7,
+                    delay: index * 100 // Stagger the animations
+                }).start();
+            });
+        } else {
+            Object.values(barAnimations).forEach(animation => {
+                animation.setValue(0);
+            });
+        }
+    }, [isRiskDetailsExpanded]);
     
     const risingAwarenessPatterns = useMemo(() =>
         riskData.patterns.filter(pattern => !pattern.consumed),
@@ -424,6 +419,13 @@ export default function HealthScreen() {
         if (score >= 0.7) return colors.error;
         if (score >= 0.4) return colors.warning;
         return colors.success;
+    };
+
+    const formatCategoryName = (name: string) => {
+        if (name === "overtrading") return "Overtrading";
+        if (name === "sunk_cost") return "Sunk Cost";
+        if (name === "fomo") return "FOMO";
+        return name.charAt(0).toUpperCase() + name.slice(1);
     };
 
     const findPatternById = (id: string): RiskPattern | undefined => {
@@ -440,6 +442,21 @@ export default function HealthScreen() {
         return highest;
     }, [riskData.categoryScores]);
 
+    const toggleRiskDetails = () => {
+        Animated.spring(detailsAnimation, {
+            toValue: isRiskDetailsExpanded ? 0 : 1,
+            useNativeDriver: false,
+            tension: 20,
+            friction: 7
+        }).start();
+        setIsRiskDetailsExpanded(!isRiskDetailsExpanded);
+    };
+
+    const detailsHeight = detailsAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 300]
+    });
+
     return (
         <SafeAreaView style={{ ...styles.container, backgroundColor: colors.background }}>
             <ThemedView style={styles.safeAreaContainer} variant="transparent">
@@ -449,16 +466,76 @@ export default function HealthScreen() {
                     titleVariant="heading1"
                 />
                 <ScrollView style={styles.scrollContainer}>
-                    <ThemedView style={styles.scoreGrid} variant="transparent">
-                        {Object.entries(riskData.categoryScores).map(([category, score]) => (
-                            <CircularScore
-                                key={category}
-                                score={score}
-                                label={category}
-                                color={getScoreColor(score)}
-                                isHighlighted={category === highestRiskCategory.category}
+                    {/* Overall Risk Score */}
+                    <ThemedView style={styles.scoreSection} variant="transparent">
+                        <CircularScore
+                            score={highestRiskCategory.score}
+                            label="Risk Score"
+                            color={getScoreColor(highestRiskCategory.score)}
+                            size={120}
+                            isHighlighted={true}
+                        />
+
+                        {/* Collapsible Risk Details */}
+                        <TouchableOpacity 
+                            onPress={toggleRiskDetails}
+                            style={styles.riskDetailsToggle}
+                        >
+                            <ThemedText style={styles.riskDetailsToggleText} color={colors.primary}>
+                                {isRiskDetailsExpanded ? 'Hide Categories' : 'Show Categories'}
+                            </ThemedText>
+                            <ChevronDown
+                                size={16}
+                                color={colors.primary}
+                                style={{
+                                    transform: [{rotate: isRiskDetailsExpanded ? '180deg' : '0deg'}],
+                                    marginLeft: 4
+                                }}
                             />
-                        ))}
+                        </TouchableOpacity>
+
+                        <Animated.View style={[styles.riskBarsContainer, { maxHeight: detailsHeight }]}>
+                            {Object.entries(riskData.categoryScores).map(([category, score], index) => {
+                                const barWidth = barAnimations[category].interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: ['0%', `${score * 100}%`]
+                                });
+
+                                return (
+                                    <ThemedView 
+                                        key={category}
+                                        style={styles.riskBarItem}
+                                        variant="transparent"
+                                    >
+                                        <View style={styles.riskBarHeader}>
+                                            <ThemedText style={styles.riskBarLabel}>
+                                                {category === "overtrading" ? "Overtrading" :
+                                                 category === "sunk_cost" ? "Sunk Cost" :
+                                                 category === "fomo" ? "FOMO" :
+                                                 category.charAt(0).toUpperCase() + category.slice(1)}
+                                            </ThemedText>
+                                            <ThemedText style={styles.riskBarValue} tertiary>
+                                                {Math.round(score * 100)}%
+                                            </ThemedText>
+                                        </View>
+                                        <View 
+                                            style={{
+                                                ...styles.riskBar,
+                                                backgroundColor: colors.backgroundTertiary
+                                            }}
+                                        >
+                                            <Animated.View
+                                                style={{
+                                                    ...styles.riskBarFill,
+                                                    width: barWidth,
+                                                    backgroundColor: getScoreColor(score)
+                                                }}
+                                            />
+                                        </View>
+                                    </ThemedView>
+                                );
+                            })}
+                        </Animated.View>
                     </ThemedView>
 
                     {/* Composite Patterns Section */}
@@ -468,13 +545,15 @@ export default function HealthScreen() {
                             icon={<ShieldAlert size={22} color={colors.error}/>}
                         />
 
-                        {riskData.patterns.filter(p => p.is_composite).length > 0 ? (
-                            riskData.patterns.filter(p => p.is_composite).map((compositePattern) => (
+                        {groupedCompositePatterns.length > 0 ? (
+                            groupedCompositePatterns.map(({ patternId, patterns, count }) => (
                                 <PatternItem
-                                    key={compositePattern.internal_id}
-                                    pattern={compositePattern}
+                                    key={patternId}
+                                    pattern={patterns[0]}
                                     isComposite={true}
                                     findPatternById={findPatternById}
+                                    similarPatterns={patterns.slice(1)}
+                                    similarCount={count}
                                 />
                             ))
                         ) : (
@@ -493,11 +572,13 @@ export default function HealthScreen() {
                             icon={<AlertCircle size={22} color={colors.warning}/>}
                         />
 
-                        {risingAwarenessPatterns.length > 0 ? (
-                            risingAwarenessPatterns.map((pattern) => (
+                        {groupedPatterns.length > 0 ? (
+                            groupedPatterns.map(({ patternId, patterns, count }) => (
                                 <PatternItem
-                                    key={pattern.internal_id}
-                                    pattern={pattern}
+                                    key={patternId}
+                                    pattern={patterns[0]}
+                                    similarPatterns={patterns.slice(1)}
+                                    similarCount={count}
                                 />
                             ))
                         ) : (
@@ -524,6 +605,44 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flex: 1,
         paddingHorizontal: 16,
+        paddingTop: 24,
+    },
+    scoreSection: {
+        marginBottom: 32,
+        alignItems: 'center',
+        paddingTop: 16,
+    },
+    riskBarsContainer: {
+        width: '100%',
+        marginTop: 16,
+        paddingHorizontal: 16,
+        overflow: 'hidden',
+    },
+    riskBarItem: {
+        marginBottom: 20,
+    },
+    riskBarHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    riskBarLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    riskBarValue: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    riskBar: {
+        height: 8,
+        borderRadius: 4,
+        overflow: 'hidden',
+    },
+    riskBarFill: {
+        height: '100%',
+        borderRadius: 4,
     },
     scoreGrid: {
         marginBottom: 32,
@@ -532,15 +651,14 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         position: "relative",
     },
-    scoreRow: {
-        flexDirection: 'row',
+    scoreColumn: {
         alignItems: 'center',
-        paddingHorizontal: 8,
     },
-    categoryLabel: {
-        fontSize: 16,
-        fontWeight: "400",
-        marginLeft: 16,
+    riskScoreLabel: {
+        fontSize: 20,
+        fontWeight: '500',
+        marginTop: 16,
+        textAlign: 'center',
     },
     highlightedScoreContainer: {
         marginBottom: 16,
@@ -590,67 +708,99 @@ const styles = StyleSheet.create({
     compositePatternCard: {
         backgroundColor: 'rgba(239, 68, 68, 0.08)',
     },
-    patternHeader: {
+    patternMainContent: {
         padding: 16,
-        flexDirection: "row",
-        alignItems: "flex-start",
     },
-    confidenceDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        marginTop: 5,
-        marginRight: 10,
+    patternHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
     },
-    patternHeaderContent: {
+    patternContent: {
         flex: 1,
+        marginLeft: 12,
     },
-    patternTitle: {
+    patternMessage: {
         fontSize: 16,
-        fontWeight: "600",
-        marginBottom: 8,
-        marginRight: 8,
+        fontWeight: '600',
         lineHeight: 22,
+        marginBottom: 12,
+    },
+    patternMetadata: {
+        gap: 12,
+    },
+    badgeGroup: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginTop: 16,
+        gap: 16,
+    },
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+    },
+    actionButtonText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    similarPatternsContainer: {
+        overflow: 'hidden',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(0,0,0,0.1)',
+    },
+    similarPatternsHeader: {
+        padding: 16,
+        paddingBottom: 8,
+    },
+    similarPatternsTitle: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    similarPattern: {
+        flexDirection: 'row',
+        padding: 16,
+        paddingTop: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.1)',
+    },
+    similarPatternDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginTop: 6,
+        marginRight: 12,
+    },
+    similarPatternContent: {
         flex: 1,
     },
-    titleRow: {
+    similarPatternMessage: {
+        fontSize: 14,
+        lineHeight: 20,
+        marginBottom: 8,
+    },
+    similarPatternMetadata: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 6,
-    },
-    primaryBadges: {
-        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
     },
-    categoryRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flexWrap: 'wrap',
+    similarPatternConfidence: {
+        fontSize: 12,
     },
-    badgeBase: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 6,
-        marginRight: 6,
-        marginBottom: 2,
+    componentsHeader: {
+        padding: 16,
+        paddingBottom: 8,
     },
-    badgeText: {
-        fontSize: 10,
-        fontWeight: "500",
-    },
-    categoryTag: {
-        backgroundColor: 'transparent', // Will be set inline
-    },
-    compositeBadge: {
-        borderRadius: 4,
-    },
-    confidencePill: {
-        borderRadius: 10,
-    },
-    collapsibleButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginLeft: 2,
+    componentsTitle: {
+        fontSize: 14,
+        fontWeight: '500',
     },
     progressContainer: {
         paddingHorizontal: 16,
@@ -668,14 +818,6 @@ const styles = StyleSheet.create({
     progressFill: {
         height: "100%",
         borderRadius: 3,
-    },
-    limitMarker: {
-        position: "absolute",
-        right: 0,
-        top: -4,
-        width: 2,
-        height: 14,
-        borderRadius: 1,
     },
     progressLabels: {
         flexDirection: "row",
@@ -784,13 +926,6 @@ const styles = StyleSheet.create({
         width: 70,
         textAlign: "right",
     },
-    bottomRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-    },
     emptyStateContainer: {
         padding: 24,
         alignItems: 'center',
@@ -801,5 +936,62 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         lineHeight: 22,
+    },
+    similarBadge: {
+        borderRadius: 4,
+    },
+    compositeBadge: {
+        borderRadius: 4,
+    },
+    confidenceDot: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        marginTop: 5,
+        marginRight: 10,
+    },
+    dotCount: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    confidencePill: {
+        borderRadius: 10,
+    },
+    badgeBase: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        marginRight: 6,
+        marginBottom: 2,
+    },
+    badgeText: {
+        fontSize: 10,
+        fontWeight: "500",
+    },
+    categoryTag: {
+        backgroundColor: 'transparent', // Will be set inline
+    },
+    componentsButton: {
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        backgroundColor: 'rgba(0,0,0,0.05)',
+        alignSelf: 'flex-start',
+    },
+    componentsButtonText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    riskDetailsToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-end',
+        paddingVertical: 12,
+        marginTop: 8,
+        paddingRight: 16,
+    },
+    riskDetailsToggleText: {
+        fontSize: 14,
+        fontWeight: '500',
     },
 });

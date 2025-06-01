@@ -17,6 +17,10 @@ export function NewsItem({ item }: NewsItemProps) {
     const [imageError, setImageError] = useState(false);
 
     const getSourceIcon = () => {
+        if (!item.source) {
+            return <Globe size={24} color={colors.textTertiary} />;
+        }
+
         if (item.source.domain === 'youtube.com') {
             return <Youtube size={24} color={colors.textTertiary} />;
         }
@@ -35,6 +39,8 @@ export function NewsItem({ item }: NewsItemProps) {
     };
 
     const handlePress = async () => {
+        if (!item.url) return;
+        
         try {
             await Linking.openURL(item.url);
         } catch (err) {
@@ -58,7 +64,7 @@ export function NewsItem({ item }: NewsItemProps) {
                             numberOfLines={1}
                             style={styles.source}
                         >
-                            {item.source.title}
+                            {item.source?.title || 'Unknown Source'}
                         </ThemedText>
                     </View>
                     <View style={styles.timeContainer}>
@@ -68,7 +74,7 @@ export function NewsItem({ item }: NewsItemProps) {
                             color={colors.textTertiary}
                             style={styles.time}
                         >
-                            {formatTimeAgo(item.published_at)}
+                            {item.published_at ? formatTimeAgo(item.published_at) : 'Unknown time'}
                         </ThemedText>
                     </View>
                 </View>
@@ -77,7 +83,7 @@ export function NewsItem({ item }: NewsItemProps) {
                     numberOfLines={2}
                     style={styles.title}
                 >
-                    {item.title}
+                    {item.title || 'No title available'}
                 </ThemedText>
                 {item.currencies && item.currencies.length > 0 && (
                     <View style={styles.currencies}>

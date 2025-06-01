@@ -8,7 +8,7 @@ export interface RiskPatternDetails {
     components?: Array<{
         id: string;
         pattern_type: string;
-        confidence: number;
+        severity: number;
     }>;
 }
 
@@ -24,6 +24,7 @@ export interface RiskPattern {
     details: RiskPatternDetails;
     unique: boolean;
     severity: number;
+    confidence?: number;
     consumed: boolean;
     pattern_id: string;
     job_id: number[] | null;

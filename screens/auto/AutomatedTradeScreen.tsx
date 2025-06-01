@@ -1,18 +1,17 @@
-import React, {useState, useEffect, useMemo, createContext} from 'react';
+import React, {useState, createContext} from 'react';
 import {
-    StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Animated, RefreshControl, View
+    StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, RefreshControl, View
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {JobCreator} from '@/components/screens/auto/JobCreator';
 import {JobCard} from '@/components/screens/auto/JobCard';
 import {autoService, DCAJobParams, LIQJobParams} from '@/services/api/auto';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
-import {Bot, History, Plus, ArrowRight, ChevronRight} from 'lucide-react-native';
+import { History, ArrowRight, ChevronRight, HeartCrack} from 'lucide-react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useDispatch, useSelector} from "react-redux";
+import {useSelector} from "react-redux";
 import {RootState} from "@/services/redux/store";
-import {setSelectedCoins} from "@/services/redux/slices/jobStateSlice";
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 import {useTheme} from '@/contexts/ThemeContext';
 import {ThemedText} from '@/components/ui/ThemedText';
@@ -20,8 +19,7 @@ import {ThemedTitle} from '@/components/ui/ThemedTitle';
 import {ThemedHeader} from '@/components/ui/ThemedHeader';
 import {ThemedView} from '@/components/ui/ThemedView';
 import SwipeButton from "rn-swipe-button/src/components/SwipeButton";
-import {useActiveJobs, useJob} from '@/services/redux/hooks';
-import {updateActiveJobs} from '@/services/redux/slices/activeJobsSlice';
+import {useActiveJobs} from '@/services/redux/hooks';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -36,10 +34,8 @@ export const TooltipContext = createContext<{
 export default function AutomatedTradeScreen() {
     const navigation = useNavigation<NavigationProp>();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [submitButtonScale] = useState(new Animated.Value(1));
     const {colors} = useTheme();
 
-    const dispatch = useDispatch();
     const {jobType, jobParams, selectedCoins} = useSelector((state: RootState) => state.job);
     const {jobs, lastUpdated} = useActiveJobs();
 
@@ -63,24 +59,6 @@ export default function AutomatedTradeScreen() {
     });
 
     const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
-
-    const handleButtonPressIn = () => {
-        Animated.spring(submitButtonScale, {
-            toValue: 0.97,
-            friction: 5,
-            tension: 100,
-            useNativeDriver: true,
-        }).start();
-    };
-
-    const handleButtonPressOut = () => {
-        Animated.spring(submitButtonScale, {
-            toValue: 1,
-            friction: 3,
-            tension: 40,
-            useNativeDriver: true,
-        }).start();
-    };
 
     const handleJobComplete = async () => {
         if (!jobParams || selectedCoins.length === 0) {
@@ -137,8 +115,8 @@ export default function AutomatedTradeScreen() {
             <ThemedView style={styles.safeArea} variant="screen">
                 <SafeAreaView style={{flex: 1}}>
                     <ThemedHeader
-                        title="Create Strategy"
-                        subtitle="Choose a strategy below to get started"
+                        title="Autotrading"
+                        subtitle="Setup your perfect strategy"
                         onRefresh={handleRefresh}
                         canRefresh={true}
                         lastUpdated={lastUpdated ? new Date(lastUpdated) : undefined}
@@ -197,35 +175,54 @@ export default function AutomatedTradeScreen() {
                                     }
                                 />
                             </View>
-                            {(
-                                <ThemedView style={styles.recentJobsSection} variant="transparent">
-                                    <TouchableOpacity
-                                        style={styles.sectionHeader}
-                                        onPress={() => navigateToJobList('active')}
-                                    >
-                                        <ThemedView variant="transparent">
-                                            <ThemedTitle variant="medium" mb={2}>Active Jobs</ThemedTitle>
-                                            <ThemedText variant="bodySmall" secondary>
-                                                Your running automated strategies
-                                            </ThemedText>
-                                        </ThemedView>
-                                        <ThemedView style={styles.viewAllContainer} variant="transparent">
-                                            <ThemedText variant="label" color={colors.primary} weight="600">
-                                                View All
-                                            </ThemedText>
-                                            <ChevronRight size={16} color={colors.primary}/>
-                                        </ThemedView>
-                                    </TouchableOpacity>
+                            <ThemedView style={styles.recentJobsSection} variant="transparent">
+                                <TouchableOpacity
+                                    style={styles.sectionHeader}
+                                    onPress={() => navigateToJobList('active')}
+                                >
+                                    <ThemedView variant="transparent">
+                                        <ThemedTitle variant="medium" mb={2}>Active Jobs</ThemedTitle>
+                                        <ThemedText variant="bodySmall" secondary>
+                                            Your running automated strategies
+                                        </ThemedText>
+                                    </ThemedView>
+                                    <ThemedView style={styles.viewAllContainer} variant="transparent">
+                                        <ThemedText variant="label" color={colors.primary} weight="600">
+                                            View All
+                                        </ThemedText>
+                                        <ChevronRight size={16} color={colors.primary}/>
+                                    </ThemedView>
+                                </TouchableOpacity>
 
-                                    {activeJobs.map(job => (
+                                {activeJobs.length > 0 ? (
+                                    activeJobs.map(job => (
                                         <JobCard
                                             key={job.id}
                                             job={job}
                                             onViewDetails={() => handleViewJobDetails(job.id)}
                                         />
-                                    ))}
-                                </ThemedView>
-                            ) }
+                                    ))
+                                ) : (
+                                    <ThemedView style={styles.emptyStateContainer} variant="transparent">
+                                        <HeartCrack size={60} color={colors.primary} style={styles.emptyStateIcon} />
+                                        <ThemedTitle variant="medium" style={styles.emptyStateTitle}>
+                                            No Active Jobs
+                                        </ThemedTitle>
+                                        <ThemedText variant="body" secondary style={styles.emptyStateText}>
+                                            You don't have any running automated strategies at the moment :(
+                                        </ThemedText>
+                                        <TouchableOpacity
+                                            style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
+                                            onPress={() => navigateToJobList('finished')}
+                                        >
+                                            <History size={16} color={colors.buttonPrimaryText} style={{ marginRight: 8 }} />
+                                            <ThemedText variant="label" color={colors.buttonPrimaryText} weight="600">
+                                                View Job History
+                                            </ThemedText>
+                                        </TouchableOpacity>
+                                    </ThemedView>
+                                )}
+                            </ThemedView>
                         </ThemedView>
                     </ScrollView>
 
@@ -315,15 +312,31 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptyStateContainer: {
-        padding: 28,
+        padding: 24,
         marginHorizontal: 16,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 16,
     },
-    emptyStateIconContainer: {
-        marginBottom: 16,
-        padding: 20,
+    emptyStateIcon: {
+        marginBottom: 24,
+    },
+    emptyStateTitle: {
+        textAlign: 'center',
+        marginBottom: 2,
+        paddingHorizontal: 16,
+    },
+    emptyStateText: {
+        textAlign: 'center',
+        marginBottom: 24,
+        paddingHorizontal: 24,
+    },
+    emptyStateButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 12,
     },
     loadingOverlay: {
         padding: 40,

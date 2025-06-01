@@ -63,24 +63,18 @@ export function useEventConnection(isAuthenticated: boolean): void {
   // Handle authentication state changes
   useEffect(() => {
     if (isAuthenticated) {
-      // Clear any existing reconnect timeout
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
         reconnectTimeoutRef.current = null;
       }
-
-      // Reset delay when authentication state changes
       currentDelayRef.current = INITIAL_RECONNECT_DELAY;
-
-      // Connect to SSE
       dispatch({ type: EVENT_ACTIONS.CONNECT });
+
     } else {
-      // Disconnect when not authenticated
       dispatch({ type: EVENT_ACTIONS.DISCONNECT });
     }
   }, [dispatch, isAuthenticated]);
 
-  // Handle reconnection logic with exponential backoff
   const handleReconnect = () => {
     if (!isAuthenticated) return;
 
@@ -88,8 +82,7 @@ export function useEventConnection(isAuthenticated: boolean): void {
     
     reconnectTimeoutRef.current = setTimeout(() => {
       dispatch({ type: EVENT_ACTIONS.RECONNECT });
-      
-      // Increase delay for next attempt (exponential backoff)
+
       currentDelayRef.current = Math.min(
         currentDelayRef.current * 1.5,
         MAX_RECONNECT_DELAY
@@ -97,7 +90,6 @@ export function useEventConnection(isAuthenticated: boolean): void {
     }, currentDelayRef.current);
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (reconnectTimeoutRef.current) {
@@ -110,7 +102,6 @@ export function useEventConnection(isAuthenticated: boolean): void {
     };
   }, [dispatch]);
 
-  // Export reconnection handler for use in error cases
   useEffect(() => {
     (window as any).handleSSEReconnect = handleReconnect;
     return () => {

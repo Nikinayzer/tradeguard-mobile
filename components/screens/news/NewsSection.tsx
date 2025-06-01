@@ -16,7 +16,7 @@ type NewsSectionNavigationProp = CompositeNavigationProp<
 >;
 
 interface NewsSectionProps {
-    navigation: NewsSectionNavigationProp;
+    navigation: NativeStackNavigationProp<any>;
     itemsPerPage?: number;
     coin?: string;
 }
