@@ -10,6 +10,11 @@ export type RootStackParamList = {
 export type AuthStackParamList = {
     Login: undefined;
     Register: undefined;
+    TwoFactor: {
+        code: string,
+        name: string;
+        email: string;
+    };
     DiscordAuth: { code: string; state?: string; codeVerifier: string | undefined} | undefined;
 };
 
@@ -42,6 +47,7 @@ export type HealthStackParamList = {
         patternId: string;
         isComposite: boolean;
     };
+    HealthFAQ: undefined;
 };
 
 export type HomeStackParamList = {

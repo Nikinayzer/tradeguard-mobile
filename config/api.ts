@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
         logout: '/auth/logout',
         validate: '/auth/validate',
         discord: '/auth/discord/exchange',
+        verifyOTP: '/auth/verify-otp',
     },
     news:{
         getNews: (page: number) =>  `/news?page=${page}`,

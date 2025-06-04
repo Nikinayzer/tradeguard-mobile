@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemedText } from './ThemedText';
+import tinycolor from "tinycolor2";
 
 export type ButtonVariant = 
   | 'primary'    // Main CTA button
@@ -63,7 +64,7 @@ export function ThemedButton({
     switch (variant) {
       case 'primary':
         return {
-          backgroundColor: colors.buttonPrimary,
+          backgroundColor: tinycolor(colors.primary).lighten(20).toHexString(),
           borderColor: colors.buttonPrimary,
         };
       case 'secondary':

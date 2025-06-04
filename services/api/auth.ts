@@ -2,12 +2,13 @@ import apiClient from './client';
 import {API_ENDPOINTS} from '@/config/api';
 
 export interface AuthResponse {
-    token: string;
+    twoFactorRequired: boolean;
     user: {
         username: string;
         email: string;
         firstName: string;
     }
+    token?: string;
 }
 
 export interface LoginCredentials {
@@ -21,6 +22,11 @@ export interface RegisterData {
     password: string;
 }
 
+export interface TwoFactorVerification {
+    email: string;
+    code: string;
+}
+
 export const authService = {
     login: async (credentials: LoginCredentials, pushToken: string): Promise<AuthResponse> => {
         const response =
@@ -29,6 +35,15 @@ export const authService = {
                     'X-Push-Token': pushToken,
                 },
             });
+        return response.data;
+    },
+
+    verifyOTP: async (data: TwoFactorVerification, pushToken: string): Promise<AuthResponse> => {
+        const response = await apiClient.post<AuthResponse>(API_ENDPOINTS.auth.verifyOTP, data, {
+            headers: {
+                'X-Push-Token': pushToken,
+            },
+        });
         return response.data;
     },
 

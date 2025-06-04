@@ -21,6 +21,11 @@ import {useAuth} from '@/contexts/AuthContext';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 import {usePushToken} from "@/contexts/PushTokenContext";
 import DiscordLoginButton from '@/components/auth/DiscordLoginButton';
+import { ThemedButton } from '@/components/ui/ThemedButton';
+import {ThemedView} from "@/components/ui/ThemedView";
+import {ThemedText} from "@/components/ui/ThemedText";
+import {useTheme} from "@/contexts/ThemeContext";
+import tinycolor from "tinycolor2";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -46,6 +51,8 @@ export default function LoginScreen() {
     const {alert, showAlert, hideAlert} = useAlert();
     const navigation = useNavigation<LoginScreenNavigationProp>();
     const {login} = useAuth();
+
+    const {colors} = useTheme();
 
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
@@ -74,6 +81,18 @@ export default function LoginScreen() {
                     password: formData.password,
                 },
                 pushToken);
+            if (response.twoFactorRequired){
+                navigation.navigate('TwoFactor', {
+                    code: '',
+                    name: formData.username.trim(),
+                    email: response.user.email
+                });
+                return;
+            }
+            if (!response.token) {
+                console.error("No token returned from server.");
+                return; //no 2fa, but no token was sent. Probably edge case, but who knows..
+            }
             await login(response.token, response.user);
         } catch (error: any) {
             showAlert({
@@ -93,9 +112,9 @@ export default function LoginScreen() {
                 style={styles.keyboardAvoidingView}
             >
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                    <View style={styles.content}>
+                    <ThemedView variant={"screen"} style={styles.content}>
                         <View style={styles.header}>
-                            <Text style={styles.title}>Welcome Back</Text>
+                            <ThemedText variant={"heading1"} style={StyleSheet.flatten([styles.title, { color: colors.text }])}>Welcome Back.</ThemedText>
                             <Text style={styles.subtitle}>
                                 Sign in to continue trading
                             </Text>
@@ -103,7 +122,9 @@ export default function LoginScreen() {
 
                         <View style={styles.form}>
                             <View style={styles.inputContainer}>
-                                <View style={[styles.input, errors.username && styles.inputError]}>
+                                <View style={[styles.input, errors.password && styles.inputError, {
+                                    backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString(),
+                                }]}>
                                     <Ionicons
                                         name="person-outline"
                                         size={20}
@@ -117,7 +138,7 @@ export default function LoginScreen() {
                                         onChangeText={(text) =>
                                             setFormData({...formData, username: text})
                                         }
-                                        style={styles.inputText}
+                                        style={[styles.inputText, {color: colors.text}]}
                                         autoCapitalize="none"
                                         autoCorrect={false}
                                     />
@@ -128,7 +149,9 @@ export default function LoginScreen() {
                             </View>
 
                             <View style={styles.inputContainer}>
-                                <View style={[styles.input, errors.password && styles.inputError]}>
+                                <View style={[styles.input, errors.password && styles.inputError, {
+                                    backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString(),
+                                }]}>
                                     <Ionicons
                                         name="lock-closed-outline"
                                         size={20}
@@ -142,7 +165,7 @@ export default function LoginScreen() {
                                         onChangeText={(text) =>
                                             setFormData({...formData, password: text})
                                         }
-                                        style={styles.inputText}
+                                        style={[styles.inputText, {color: colors.text}]}
                                         secureTextEntry={!showPassword}
                                     />
                                     <TouchableOpacity
@@ -199,6 +222,8 @@ export default function LoginScreen() {
                                 }}
                             />
 
+
+
                             <TouchableOpacity
                                 style={styles.linkButton}
                                 onPress={() => navigation.navigate('Register')}
@@ -209,7 +234,7 @@ export default function LoginScreen() {
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </ThemedView>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
 
@@ -231,7 +256,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0D1B2A',
     },
     keyboardAvoidingView: {
         flex: 1,
@@ -247,7 +271,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#FFFFFF',
         marginBottom: 8,
     },
     subtitle: {
@@ -261,12 +284,9 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     input: {
-        backgroundColor: '#1B263B',
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#1B263B',
     },
     inputError: {
         borderColor: '#EF4444',
@@ -276,7 +296,6 @@ const styles = StyleSheet.create({
     },
     inputText: {
         flex: 1,
-        color: '#FFFFFF',
         fontSize: 16,
         padding: 16,
         paddingLeft: 12,
@@ -335,5 +354,9 @@ const styles = StyleSheet.create({
         color: '#748CAB',
         fontSize: 14,
         marginHorizontal: 10,
+    },
+    devButton: {
+        marginTop: 16,
+        borderColor: '#EF4444',
     },
 }); 

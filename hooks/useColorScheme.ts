@@ -4,7 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type ColorSchemeName = 'light' | 'dark' | 'system';
 
-// Key for storing theme preference
 const THEME_PREFERENCE_KEY = '@theme_preference';
 
 export function useColorScheme(forceUpdate = false) {

@@ -1,9 +1,10 @@
 module.exports = () => {
     return {
         "expo": {
-            "name": "tradeguard",
+            "name": "TradeGuard",
             "slug": "tradeGuard",
             "version": "0.0.1",
+            "icon": "./assets/icons/app.png",
             "scheme": "tradeguard",
             "extra": {
                 "eas": {
@@ -17,7 +18,6 @@ module.exports = () => {
                 "silentLaunch": false
             },
             "orientation": "portrait",
-            "icon": "./assets/images/icon.png",
             "userInterfaceStyle": "automatic",
             "newArchEnabled": true,
             "ios": {
@@ -26,7 +26,7 @@ module.exports = () => {
             "android": {
                 "googleServicesFile": process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
                 "adaptiveIcon": {
-                    "foregroundImage": "./assets/images/adaptive-icon.png",
+                    "foregroundImage": "./assets/icons/app.png",
                     "backgroundColor": "#ffffff"
                 },
                 "package": "com.tradeguard.app"

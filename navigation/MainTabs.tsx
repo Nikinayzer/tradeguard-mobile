@@ -37,6 +37,7 @@ import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import NewsScreen from '../screens/news/NewsScreen';
 import AllPositionsScreen from '../screens/portfolio/AllPositionsScreen';
 import PatternDetailScreen from '../screens/health/PatternDetailScreen';
+import HealthFAQScreen from '../screens/health/HealthFAQScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator();
@@ -103,6 +104,7 @@ function HealthStack() {
         >
             <Stack.Screen name="HealthMain" component={HealthScreen}/>
             <Stack.Screen name="PatternDetail" component={PatternDetailScreen}/>
+            <Stack.Screen name="HealthFAQ" component={HealthFAQScreen}/>
         </Stack.Navigator>
     );
 }

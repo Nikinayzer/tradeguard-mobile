@@ -20,6 +20,10 @@ import {Ionicons} from '@expo/vector-icons';
 import {AuthStackParamList} from '@/navigation/navigation';
 import {authService} from '@/services/api/auth';
 import {useAuth} from '@/contexts/AuthContext';
+import {ThemedView} from "@/components/ui/ThemedView";
+import tinycolor from "tinycolor2";
+import {useTheme} from "@/contexts/ThemeContext";
+import {ThemedText} from "@/components/ui/ThemedText";
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -50,6 +54,8 @@ export default function RegisterScreen() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const navigation = useNavigation<RegisterScreenNavigationProp>();
     const {login} = useAuth();
+
+    const {colors} = useTheme();
 
     const validateEmail = (email: string): boolean => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -97,6 +103,10 @@ export default function RegisterScreen() {
                 email: formData.email,
                 password: formData.password,
             });
+            if (!response.token || !response.user) {
+                console.error('Registration failed, please try again');
+                return;
+            }
             await login(response.token, response.user);
         } catch (error: any) {
             Alert.alert(
@@ -117,7 +127,10 @@ export default function RegisterScreen() {
         setShowPasswordState?: (show: boolean) => void
     ) => (
         <View style={styles.inputContainer}>
-            <View style={[styles.input, errors[field] && styles.inputError]}>
+            <View style={[styles.input, errors[field] && styles.inputError,
+                {
+                    backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                }]}>
                 <Ionicons
                     name={icon as any}
                     size={20}
@@ -131,7 +144,7 @@ export default function RegisterScreen() {
                     onChangeText={(text) =>
                         setFormData({...formData, [field]: text})
                     }
-                    style={styles.inputText}
+                    style={[styles.inputText, {color: colors.text}]}
                     autoCapitalize={field === 'email' ? 'none' : 'none'}
                     autoCorrect={false}
                     keyboardType={field === 'email' ? 'email-address' : 'default'}
@@ -167,9 +180,9 @@ export default function RegisterScreen() {
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
                     >
-                        <View style={styles.content}>
+                        <ThemedView variant={"screen"} style={styles.content}>
                             <View style={styles.header}>
-                                <Text style={styles.title}>Create Account</Text>
+                                <ThemedText variant={"heading1"} style={StyleSheet.flatten([styles.title, { color: colors.text }])}>Create Account</ThemedText>
                                 <Text style={styles.subtitle}>
                                     Join us and start trading
                                 </Text>
@@ -233,7 +246,7 @@ export default function RegisterScreen() {
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-                        </View>
+                        </ThemedView>
                     </ScrollView>
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
@@ -263,7 +276,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 32,
         fontWeight: 'bold',
-        color: '#FFFFFF',
         marginBottom: 8,
     },
     subtitle: {
@@ -277,12 +289,9 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     input: {
-        backgroundColor: '#1B263B',
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#1B263B',
     },
     inputError: {
         borderColor: '#EF4444',
@@ -292,7 +301,6 @@ const styles = StyleSheet.create({
     },
     inputText: {
         flex: 1,
-        color: '#FFFFFF',
         fontSize: 16,
         padding: 16,
         paddingLeft: 12,

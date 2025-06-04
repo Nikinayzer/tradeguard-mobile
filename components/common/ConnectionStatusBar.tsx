@@ -11,6 +11,7 @@ export const ConnectionStatusBar: React.FC = () => {
     const isConnected = useSelector(selectIsConnected);
     const lastError = useSelector(selectLastError);
     const isInitialized = useSelector(selectIsInitialized);
+    const isAuthorized = useSelector((state: any) => state.auth.isAuthenticated);
     const slideAnim = React.useRef(new Animated.Value(-100)).current;
     const opacityAnim = React.useRef(new Animated.Value(0)).current;
     const pulseAnim = React.useRef(new Animated.Value(1)).current;
@@ -70,7 +71,7 @@ export const ConnectionStatusBar: React.FC = () => {
         }
     }, [isConnected]);
 
-    if (!isInitialized || isConnected) return null;
+    if (!isInitialized || isConnected || !isAuthorized) return null;
 
     const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
 

@@ -1,7 +1,7 @@
 import React, {useState, useMemo, useEffect} from "react";
 import {View,StyleSheet, ScrollView, TouchableOpacity, Animated, TextStyle, ViewStyle} from "react-native";
 import {SafeAreaView} from "react-native-safe-area-context";
-import {ChevronDown, AlertCircle, ShieldAlert} from "lucide-react-native";
+import {ChevronDown, AlertCircle, ShieldAlert, Info} from "lucide-react-native";
 import CircularProgress from 'react-native-circular-progress-indicator';
 import tinycolor from "tinycolor2";
 import { useTheme } from '@/contexts/ThemeContext';
@@ -387,6 +387,7 @@ export default function HealthScreen() {
             return acc;
         }, {} as Record<string, Animated.Value>)
     );
+    const navigation = useNavigation<HealthScreenNavigationProp>();
 
     useEffect(() => {
         console.log("Risk Data Loaded:", riskData)
@@ -464,6 +465,10 @@ export default function HealthScreen() {
                     title="Health Monitor"
                     subtitle="Analysis of your trading patterns and risk profile"
                     titleVariant="heading1"
+                    actions={[{
+                        icon: <Info size={22} color={colors.primary} />, 
+                        onPress: () => navigation.navigate('HealthFAQ')
+                    }]}
                 />
                 <ScrollView style={styles.scrollContainer}>
                     {/* Overall Risk Score */}

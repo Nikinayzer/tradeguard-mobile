@@ -27,6 +27,7 @@ import LoadingScreen from '@/screens/LoadingScreen';
 import LoginScreen from '@/screens/auth/LoginScreen';
 import RegisterScreen from '@/screens/auth/RegisterScreen';
 import DiscordAuthScreen from '@/screens/auth/DiscordAuthScreen';
+import TwoFactorScreen from '@/screens/auth/TwoFactorScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -42,6 +43,7 @@ function AuthNavigator() {
         >
             <AuthStack.Screen name="Login" component={LoginScreen}/>
             <AuthStack.Screen name="Register" component={RegisterScreen}/>
+            <AuthStack.Screen name="TwoFactor" component={TwoFactorScreen}/>
             <AuthStack.Screen name="DiscordAuth" component={DiscordAuthScreen}/>
         </AuthStack.Navigator>
     );
@@ -108,6 +110,7 @@ const linking: LinkingOptions<RootStackParamList> = {
                 screens: {
                     Login: 'login',
                     Register: 'register',
+                    TwoFactor: 'two-factor',
                 }
             },
             DiscordAuth: 'auth/discord',
