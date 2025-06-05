@@ -1,6 +1,5 @@
 import React, {useEffect, useRef} from 'react';
 import {
-    View,
     StyleSheet,
     Modal,
     TouchableOpacity,
@@ -10,6 +9,9 @@ import {
     Platform
 } from 'react-native';
 import {X} from 'lucide-react-native';
+import { ThemedView } from '@/components/ui/ThemedView';
+import { useTheme } from '@/contexts/ThemeContext';
+import tinycolor from 'tinycolor2';
 
 interface BaseModalProps {
     visible: boolean;
@@ -24,13 +26,14 @@ const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const MODAL_WIDTH = SCREEN_WIDTH * 0.9;
 
 const BaseModal: React.FC<BaseModalProps> = ({
-                                                 visible,
-                                                 onClose,
-                                                 type = 'info',
-                                                 showCloseButton = true,
-                                                 children,
-                                                 isLoading = false,
-                                             }) => {
+    visible,
+    onClose,
+    type = 'info',
+    showCloseButton = true,
+    children,
+    isLoading = false,
+}) => {
+    const { colors } = useTheme();
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scaleAnim = useRef(new Animated.Value(0.95)).current;
 
@@ -69,13 +72,13 @@ const BaseModal: React.FC<BaseModalProps> = ({
     const getTypeColor = () => {
         switch (type) {
             case 'warning':
-                return '#F59E0B';
+                return colors.warning;
             case 'success':
-                return '#10B981';
+                return colors.success;
             case 'error':
-                return '#EF4444';
+                return colors.error;
             default:
-                return '#3B82F6';
+                return colors.primary;
         }
     };
 
@@ -89,7 +92,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
             <Animated.View
                 style={[
                     styles.overlay,
-                    {opacity: fadeAnim}
+                    { opacity: fadeAnim }
                 ]}
             >
                 <Animated.View
@@ -97,13 +100,10 @@ const BaseModal: React.FC<BaseModalProps> = ({
                         styles.modalContainer,
                         {
                             transform: [{scale: scaleAnim}],
-                            backgroundColor: '#1B263B',
-                            borderRadius: 24,
-                            padding: 24,
                             width: MODAL_WIDTH,
                             ...Platform.select({
                                 ios: {
-                                    shadowColor: '#000',
+                                    shadowColor: colors.text,
                                     shadowOffset: {
                                         width: 0,
                                         height: 4,
@@ -118,23 +118,30 @@ const BaseModal: React.FC<BaseModalProps> = ({
                         }
                     ]}
                 >
-                    {showCloseButton && !isLoading && (
-                        <TouchableOpacity
-                            onPress={onClose}
-                            style={styles.closeButton}
-                            hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
-                        >
-                            <X size={24} color="#748CAB"/>
-                        </TouchableOpacity>
-                    )}
-                    <View style={styles.content}>
-                        {children}
-                        {isLoading && (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color={getTypeColor()}/>
-                            </View>
+                    <ThemedView
+                        variant="modal"
+                        style={styles.modalContent}
+                        border
+                        rounded="large"
+                    >
+                        {showCloseButton && (
+                            <TouchableOpacity
+                                onPress={onClose}
+                                style={styles.closeButton}
+                                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                            >
+                                <X size={24} color={colors.textTertiary}/>
+                            </TouchableOpacity>
                         )}
-                    </View>
+                        <ThemedView style={styles.content}>
+                            {children}
+                            {isLoading && (
+                                <ThemedView style={styles.loadingContainer}>
+                                    <ActivityIndicator size="large" color={getTypeColor()}/>
+                                </ThemedView>
+                            )}
+                        </ThemedView>
+                    </ThemedView>
                 </Animated.View>
             </Animated.View>
         </Modal>
@@ -150,6 +157,9 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         maxHeight: '80%',
+    },
+    modalContent: {
+        padding: 24,
     },
     closeButton: {
         position: 'absolute',

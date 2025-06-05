@@ -26,6 +26,14 @@ export interface RegisterData {
     dateOfBirth: string; // YYYY-MM-DD
 }
 
+export interface PasswordChangeRequest{
+    email: string;
+}
+export interface PasswordChangeRequestVerify{
+    code: string;
+    email: string;
+    newPassword: string;
+}
 export interface TwoFactorVerification {
     email: string;
     code: string;
@@ -54,6 +62,14 @@ export const authApiService = {
     register: async (data: RegisterData): Promise<AuthResponse> => {
         const response =
             await apiClient.post<AuthResponse>(API_ENDPOINTS.auth.register, data);
+        return response.data;
+    },
+    requestPasswordChange: async (data: PasswordChangeRequest): Promise<void> => {
+        await apiClient.post(API_ENDPOINTS.auth.requestPasswordChange, data);
+    },
+    verifyPasswordChange: async (data: PasswordChangeRequestVerify): Promise<AuthResponse> => {
+        const response =
+            await apiClient.post<AuthResponse>(API_ENDPOINTS.auth.verifyPasswordChange, data);
         return response.data;
     },
 

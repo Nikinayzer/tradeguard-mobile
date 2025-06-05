@@ -58,6 +58,10 @@ export interface UserAccountLimits {
     liquidityThreshold: string;
 }
 
+export interface UserSecuritySettings {
+    twoFactorEnabled: boolean;
+}
+
 export const profileService = {
     getMe: async (): Promise<User> => {
         const response = await apiClient.get<User>(API_ENDPOINTS.profile.getMe);
@@ -70,6 +74,14 @@ export const profileService = {
     },
     getExchangeAccount: async (id: string): Promise<ExchangeAccount> => {
         const response = await apiClient.get<ExchangeAccount>(API_ENDPOINTS.profile.getExchangeAccount(id));
+        return response.data;
+    },
+    getSecuritySettings: async (): Promise<UserSecuritySettings> => {
+        const response = await apiClient.get(API_ENDPOINTS.profile.getSecuritySettings);
+        return response.data;
+    },
+    updateSecuritySettings: async (data: UserSecuritySettings): Promise<void> => {
+        const response = await apiClient.post(API_ENDPOINTS.profile.updateSecuritySettings, data);
         return response.data;
     },
     updateExchangeAccount: async (id: string, data: ExchangeAccount): Promise<void> => {

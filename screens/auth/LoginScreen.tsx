@@ -27,6 +27,8 @@ import {ThemedView} from "@/components/ui/ThemedView";
 import {ThemedText} from "@/components/ui/ThemedText";
 import {useTheme} from "@/contexts/ThemeContext";
 import tinycolor from "tinycolor2";
+import PasswordChangeModal from '@/components/modals/PasswordChangeModal';
+import TwoFactorModal from '@/components/modals/TwoFactorModal';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 type LoginScreenRouteProp = RouteProp<AuthStackParamList, 'Login'>;
@@ -54,8 +56,14 @@ export default function LoginScreen() {
     const {alert, showAlert, hideAlert} = useAlert();
     const navigation = useNavigation<LoginScreenNavigationProp>();
     const {login} = useAuth();
-
     const {colors} = useTheme();
+
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+    const [pendingPasswordChange, setPendingPasswordChange] = useState<{
+        email?: string;
+        newPassword: string;
+    } | null>(null);
 
     useEffect(() => {
         if (route.params?.autoLogin) {
@@ -126,6 +134,66 @@ export default function LoginScreen() {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handlePasswordChange = async (data: {
+        email?: string;
+        password: string;
+        confirmPassword: string;
+    }) => {
+        try {
+            await authApiService.requestPasswordChange({
+                email: data.email || formData.identifier
+            });
+
+            setPendingPasswordChange({
+                email: data.email || formData.identifier,
+                newPassword: data.password
+            });
+
+            setShowPasswordModal(false);
+            setShowTwoFactorModal(true);
+        } catch (error:any) {
+            showAlert({
+                title: "Error",
+                message: error?.response?.data?.message || "Failed to initiate password change. Please try again.",
+                type: "error",
+                buttons: [{ text: "OK", onPress: () => {} }]
+            });
+        }
+    };
+
+    const handleTwoFactorVerify = async (code: string) => {
+        if (!pendingPasswordChange) return;
+        
+        try {
+            const response = await authApiService.verifyPasswordChange({
+                code,
+                email: pendingPasswordChange.email || '',
+                newPassword: pendingPasswordChange.newPassword
+            });
+            if (response.token) {
+                await login(response.token, response.user);
+            }
+            
+            showAlert({
+                title: "Success",
+                message: "Your password has been changed successfully.",
+                type: "success",
+                buttons: [{ text: "OK", onPress: () => {} }]
+            });
+            
+            // Reset state
+            setShowTwoFactorModal(false);
+            setPendingPasswordChange(null);
+        } catch (error) {
+            showAlert({
+                title: "Error",
+                message: "Failed to verify password change. Please try again.",
+                type: "error",
+                buttons: [{ text: "OK", onPress: () => {} }]
+            });
         }
     };
 
@@ -206,9 +274,17 @@ export default function LoginScreen() {
                                         />
                                     </TouchableOpacity>
                                 </View>
-                                {errors.password && (
-                                    <Text style={styles.errorText}>{errors.password}</Text>
-                                )}
+                                <View style={styles.passwordContainer}>
+                                    {errors.password && (
+                                        <Text style={styles.errorText}>{errors.password}</Text>
+                                    )}
+                                    <TouchableOpacity
+                                        onPress={() => setShowPasswordModal(true)}
+                                        style={styles.forgotPasswordButton}
+                                    >
+                                        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
 
                             <TouchableOpacity
@@ -263,16 +339,26 @@ export default function LoginScreen() {
                 </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
 
-            <CustomAlert
-                {...alert}
-                onClose={hideAlert}
-                buttons={[
-                    {
-                        text: 'Try Again',
-                        onPress: hideAlert,
-                        style: 'default',
-                    },
-                ]}
+            {alert && <CustomAlert {...alert} onClose={hideAlert} />}
+
+            <PasswordChangeModal
+                visible={showPasswordModal}
+                onClose={() => setShowPasswordModal(false)}
+                onSubmit={handlePasswordChange}
+                showEmail={true}
+                isLoading={false}
+            />
+
+            <TwoFactorModal
+                visible={showTwoFactorModal}
+                onClose={() => {
+                    setShowTwoFactorModal(false);
+                    setPendingPasswordChange(null);
+                }}
+                onVerify={handleTwoFactorVerify}
+                email={pendingPasswordChange?.email || formData.identifier}
+                name=""
+                isLoading={false}
             />
         </SafeAreaView>
     );
@@ -383,5 +469,19 @@ const styles = StyleSheet.create({
     devButton: {
         marginTop: 16,
         borderColor: '#EF4444',
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    forgotPasswordButton: {
+        padding: 4,
+    },
+    forgotPasswordText: {
+        color: '#3B82F6',
+        fontSize: 14,
+        fontWeight: '500',
     },
 }); 

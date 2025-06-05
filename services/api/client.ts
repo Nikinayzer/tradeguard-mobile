@@ -38,14 +38,14 @@ apiClient.interceptors.request.use(
     }
 );
 /**
- * Interceptor to handle 401 response, which probably would mean JWT is expired
+ * Interceptor to handle 401/3 response, which probably would mean JWT is expired
  */
 apiClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 || error.response?.status === 403) {
             if (error.response.data.reason =="token_expired"){
-                await secureStorage.removeToken(); //todo refactor
+                console.log('Token expired');
             }
         }
         return Promise.reject(error);

@@ -21,6 +21,7 @@ import {StatusBarManager} from "@/components/StatusBarManager";
 import {GestureHandlerRootView} from "react-native-gesture-handler";
 import { loadPersistedFavorites } from '@/services/redux/slices/favoritesSlice';
 import { ConnectionStatusBar } from '@/components/common/ConnectionStatusBar';
+import { BiometricAuthProvider } from '@/contexts/BiometricAuthContext';
 
 // Screens
 import LoadingScreen from '@/screens/LoadingScreen';
@@ -181,17 +182,19 @@ export default function App() {
             <SafeAreaProvider>
                 <Provider store={store}>
                     <AuthProvider>
-                        <PushTokenProvider>
-                            <ThemeProvider>
-                                <StatusBarManager/>
-                                <ThemedView variant="screen" style={{flex: 1}}>
-                                    <NavigationContainer linking={linking}>
-                                        <ConnectionStatusBar />
-                                        <Navigation/>
-                                    </NavigationContainer>
-                                </ThemedView>
-                            </ThemeProvider>
-                        </PushTokenProvider>
+                        <BiometricAuthProvider>
+                            <PushTokenProvider>
+                                <ThemeProvider>
+                                    <StatusBarManager/>
+                                    <ThemedView variant="screen" style={{flex: 1}}>
+                                        <NavigationContainer linking={linking}>
+                                            <ConnectionStatusBar />
+                                            <Navigation/>
+                                        </NavigationContainer>
+                                    </ThemedView>
+                                </ThemeProvider>
+                            </PushTokenProvider>
+                        </BiometricAuthProvider>
                     </AuthProvider>
                 </Provider>
             </SafeAreaProvider>

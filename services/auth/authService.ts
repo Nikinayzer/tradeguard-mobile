@@ -21,10 +21,8 @@ export const authService = {
 
         try {
             await authApiService.validate();
-            // optionally return user info if needed
         } catch (error) {
-            // no 401 check — just clean up and exit
-            await secureStorage.removeToken();
+            //await secureStorage.removeToken();
             return null;
         }
 

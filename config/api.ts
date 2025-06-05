@@ -19,6 +19,8 @@ export const API_ENDPOINTS = {
         validate: '/auth/validate',
         discord: '/auth/discord/exchange',
         verifyOTP: '/auth/verify-otp',
+        requestPasswordChange: '/auth/password-change',
+        verifyPasswordChange: '/auth/password-change/verify',
     },
     news:{
         getNews: (page: number) =>  `/news?page=${page}`,
@@ -33,6 +35,8 @@ export const API_ENDPOINTS = {
         deleteExchangeAccount: (id: string) => `/users/me/exchange-accounts/${id}/delete`,
         getLimits: '/users/me/limits',
         updateLimits: '/users/me/limits',
+        getSecuritySettings: '/users/me/settings/security',
+        updateSecuritySettings: '/users/me/settings/security/update',
         getNotifications: '/users/me/notifications',
         markAsReadNotification: (id: string) => `/users/me/notifications/${id}/read`,
     },

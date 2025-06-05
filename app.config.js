@@ -37,6 +37,12 @@ module.exports = () => {
                 "favicon": "./assets/images/favicon.png"
             },
             "plugins": [
+                [
+                    "expo-local-authentication",
+                    {
+                        "faceIDPermission": "Allow TradeGuard to use Face ID."
+                    }
+                ],
                 "expo-router",
                 [
                     "expo-splash-screen",
