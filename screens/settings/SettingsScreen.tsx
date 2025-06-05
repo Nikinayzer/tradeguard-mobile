@@ -228,7 +228,7 @@ export default function SettingsScreen() {
           undefined,
           'Password, 2FA, and security options',
           false,
-          true
+          false
         )}
         
         {renderSettingsItem(

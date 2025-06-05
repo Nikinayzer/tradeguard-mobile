@@ -1,6 +1,6 @@
-import { secureStorage } from '@/services/storage/secureStorage';
-import { profileService } from '@/services/api/profile';
-import { authService as apiAuthService } from '@/services/api/auth';
+import {secureStorage} from '@/services/storage/secureStorage';
+import {profileService} from '@/services/api/profile';
+import {authApiService as apiAuthService, authApiService} from '@/services/api/auth';
 
 export interface User {
     username: string;
@@ -17,9 +17,17 @@ export interface AuthState {
 export const authService = {
     checkAuthStatus: async (): Promise<User | null> => {
         const hasToken = await secureStorage.hasToken();
-        if (hasToken) {
-            return await profileService.getMe();
+        if (!hasToken) return null;
+
+        try {
+            await authApiService.validate();
+            // optionally return user info if needed
+        } catch (error) {
+            // no 401 check — just clean up and exit
+            await secureStorage.removeToken();
+            return null;
         }
+
         return null;
     },
 

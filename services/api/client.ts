@@ -44,7 +44,9 @@ apiClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error) => {
         if (error.response?.status === 401) {
-            console.log('401, token probably expired');
+            if (error.response.data.reason =="token_expired"){
+                await secureStorage.removeToken(); //todo refactor
+            }
         }
         return Promise.reject(error);
     }

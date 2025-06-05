@@ -8,7 +8,12 @@ export type RootStackParamList = {
 };
 
 export type AuthStackParamList = {
-    Login: undefined;
+    Login: {
+        autoLogin?: {
+            username: string;
+            password: string;
+        }
+    };
     Register: undefined;
     TwoFactor: {
         code: string,

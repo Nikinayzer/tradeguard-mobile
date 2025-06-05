@@ -9,17 +9,21 @@ export interface AuthResponse {
         firstName: string;
     }
     token?: string;
+    expiration?: string;
 }
 
 export interface LoginCredentials {
-    username: string;
+    identifier: string;
     password: string;
 }
 
 export interface RegisterData {
-    name: string;
+    username: string;
     email: string;
     password: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string; // YYYY-MM-DD
 }
 
 export interface TwoFactorVerification {
@@ -27,7 +31,7 @@ export interface TwoFactorVerification {
     code: string;
 }
 
-export const authService = {
+export const authApiService = {
     login: async (credentials: LoginCredentials, pushToken: string): Promise<AuthResponse> => {
         const response =
             await apiClient.post<AuthResponse>(API_ENDPOINTS.auth.login, credentials, {

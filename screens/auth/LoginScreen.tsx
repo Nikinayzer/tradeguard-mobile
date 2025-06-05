@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     View,
     Text,
@@ -12,25 +12,27 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {RouteProp} from '@react-navigation/native';
 import {Ionicons} from '@expo/vector-icons';
 import {AuthStackParamList} from '@/navigation/navigation';
-import {authService} from '@/services/api/auth';
+import {authApiService} from '@/services/api/auth';
 import {useAuth} from '@/contexts/AuthContext';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 import {usePushToken} from "@/contexts/PushTokenContext";
 import DiscordLoginButton from '@/components/auth/DiscordLoginButton';
-import { ThemedButton } from '@/components/ui/ThemedButton';
+import {ThemedButton} from '@/components/ui/ThemedButton';
 import {ThemedView} from "@/components/ui/ThemedView";
 import {ThemedText} from "@/components/ui/ThemedText";
 import {useTheme} from "@/contexts/ThemeContext";
 import tinycolor from "tinycolor2";
 
-type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
+type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
+type LoginScreenRouteProp = RouteProp<AuthStackParamList, 'Login'>;
 
 interface FormData {
-    username: string;
+    identifier: string;
     password: string;
 }
 
@@ -40,9 +42,10 @@ interface FormErrors {
 }
 
 export default function LoginScreen() {
+    const route = useRoute<LoginScreenRouteProp>();
     const [formData, setFormData] = useState<FormData>({
-        username: '',
-        password: '',
+        identifier: route.params?.autoLogin?.username?.trim() || '',
+        password: route.params?.autoLogin?.password || '',
     });
     const {pushToken} = usePushToken();
     const [errors, setErrors] = useState<FormErrors>({});
@@ -54,11 +57,32 @@ export default function LoginScreen() {
 
     const {colors} = useTheme();
 
+    useEffect(() => {
+        if (route.params?.autoLogin) {
+            const {username, password} = route.params.autoLogin;
+            // Set form data
+            setFormData({
+                identifier: username.trim(),
+                password: password
+            });
+            handleLogin();
+
+        }
+    }, [route.params?.autoLogin]);
+
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
 
-        if (!formData.username.trim()) {
+        const username = formData.identifier.trim();
+
+        if (!username) {
             newErrors.username = 'Username is required';
+        }
+        if (username.includes('@')) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(username)) {
+                newErrors.username = 'Invalid email format';
+            }
         }
 
         if (!formData.password) {
@@ -76,15 +100,15 @@ export default function LoginScreen() {
 
         setIsLoading(true);
         try {
-            const response = await authService.login({
-                    username: formData.username.trim(),
+            const response = await authApiService.login({
+                    identifier: formData.identifier.trim(),
                     password: formData.password,
                 },
                 pushToken);
-            if (response.twoFactorRequired){
+            if (response.twoFactorRequired) {
                 navigation.navigate('TwoFactor', {
                     code: '',
-                    name: formData.username.trim(),
+                    name: response.user.firstName,
                     email: response.user.email
                 });
                 return;
@@ -114,7 +138,9 @@ export default function LoginScreen() {
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <ThemedView variant={"screen"} style={styles.content}>
                         <View style={styles.header}>
-                            <ThemedText variant={"heading1"} style={StyleSheet.flatten([styles.title, { color: colors.text }])}>Welcome Back.</ThemedText>
+                            <ThemedText variant={"heading1"}
+                                        style={StyleSheet.flatten([styles.title, {color: colors.text}])}>Welcome
+                                Back.</ThemedText>
                             <Text style={styles.subtitle}>
                                 Sign in to continue trading
                             </Text>
@@ -132,11 +158,11 @@ export default function LoginScreen() {
                                         style={styles.inputIcon}
                                     />
                                     <TextInput
-                                        placeholder="Username"
+                                        placeholder="Username or Email"
                                         placeholderTextColor="#748CAB"
-                                        value={formData.username}
+                                        value={formData.identifier}
                                         onChangeText={(text) =>
-                                            setFormData({...formData, username: text})
+                                            setFormData({...formData, identifier: text})
                                         }
                                         style={[styles.inputText, {color: colors.text}]}
                                         autoCapitalize="none"
@@ -166,6 +192,7 @@ export default function LoginScreen() {
                                             setFormData({...formData, password: text})
                                         }
                                         style={[styles.inputText, {color: colors.text}]}
+                                        autoCapitalize="none"
                                         secureTextEntry={!showPassword}
                                     />
                                     <TouchableOpacity
@@ -205,12 +232,12 @@ export default function LoginScreen() {
                             </TouchableOpacity>
 
                             <View style={styles.orContainer}>
-                                <View style={styles.divider} />
+                                <View style={styles.divider}/>
                                 <Text style={styles.orText}>OR</Text>
-                                <View style={styles.divider} />
+                                <View style={styles.divider}/>
                             </View>
 
-                            <DiscordLoginButton 
+                            <DiscordLoginButton
                                 onLoginStarted={() => setIsLoading(true)}
                                 onLoginFailed={(error) => {
                                     setIsLoading(false);
@@ -221,8 +248,6 @@ export default function LoginScreen() {
                                     });
                                 }}
                             />
-
-
 
                             <TouchableOpacity
                                 style={styles.linkButton}

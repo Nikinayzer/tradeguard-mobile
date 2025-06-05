@@ -8,7 +8,7 @@ import {ThemedView} from '@/components/ui/ThemedView';
 import {ThemedText} from '@/components/ui/ThemedText';
 import {ThemedButton} from '@/components/ui/ThemedButton';
 import {useAuth} from '@/contexts/AuthContext';
-import {authService} from '@/services/api/auth';
+import {authApiService} from '@/services/api/auth';
 import {usePushToken} from '@/contexts/PushTokenContext';
 import CustomAlert, {useAlert} from '@/components/common/CustomAlert';
 import {Shield} from 'lucide-react-native';
@@ -84,7 +84,7 @@ export default function TwoFactorScreen() {
     const handleVerification = async (verificationCode: string) => {
         setIsLoading(true);
         try {
-            const response = await authService.verifyOTP({
+            const response = await authApiService.verifyOTP({
                 email,
                 code: verificationCode
             }, pushToken);
