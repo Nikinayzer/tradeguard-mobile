@@ -21,6 +21,9 @@ import { ThemedView } from '@/components/ui/ThemedView';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { ThemedHeader } from '@/components/ui/ThemedHeader';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {ThemedButton} from '@/components/ui/ThemedButton';
+import tinycolor from 'tinycolor2';
+import {Ionicons} from '@expo/vector-icons';
 
 type PersonalInfoScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
@@ -193,100 +196,106 @@ export default function PersonalInfoScreen() {
                             PROFILE DETAILS
                         </ThemedText>
                         <ThemedView variant="transparent" style={styles.form}>
-                            <View style={styles.formField}>
-                                <ThemedText variant="label" secondary mb={8}>
-                                    First Name
-                                </ThemedText>
-                                <ThemedView
-                                    variant="input"
-                                    style={{
-                                        ...styles.inputContainer,
-                                        ...(touchedFields.firstName && errors.firstName ? { borderColor: colors.error } : {})
-                                    }}
-                                    rounded
-                                >
+                            <ThemedView variant="transparent" style={styles.inputContainer}>
+                                <ThemedText variant="label" secondary style={styles.inputLabel}>First Name</ThemedText>
+                                <View style={[
+                                    styles.input,
+                                    {
+                                        backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                                    },
+                                    errors.firstName ? {borderColor: colors.error} : {}
+                                ]}>
+                                    <Ionicons
+                                        name="person-outline"
+                                        size={20}
+                                        color="#748CAB"
+                                        style={styles.inputIcon}
+                                    />
                                     <TextInput
                                         style={{
-                                            ...styles.input,
+                                            ...styles.inputText,
                                             color: colors.text
                                         }}
                                         value={formData.firstName}
                                         onChangeText={(text) => handleChange('firstName', text)}
                                         onBlur={() => handleBlur('firstName')}
-                                        placeholder="Enter first name"
-                                        placeholderTextColor={colors.textTertiary}
-                                        maxLength={50}
+                                        placeholder="Enter your first name"
+                                        placeholderTextColor="#748CAB"
                                     />
-                                </ThemedView>
-                                {touchedFields.firstName && errors.firstName && (
-                                    <ThemedText variant="caption" color={colors.error} mt={4}>
-                                        {errors.firstName}
-                                    </ThemedText>
+                                </View>
+                                {errors.firstName && (
+                                    <ThemedText variant="caption" color={colors.error}
+                                                style={styles.errorText}>{errors.firstName}</ThemedText>
                                 )}
-                            </View>
-                            <View style={styles.formField}>
-                                <ThemedText variant="label" secondary mb={8}>
-                                    Last Name
-                                </ThemedText>
-                                <ThemedView
-                                    variant="input"
-                                    style={{
-                                        ...styles.inputContainer,
-                                        ...(touchedFields.lastName && errors.lastName ? { borderColor: colors.error } : {})
-                                    }}
-                                    rounded
-                                >
+                            </ThemedView>
+
+                            <ThemedView variant="transparent" style={styles.inputContainer}>
+                                <ThemedText variant="label" secondary style={styles.inputLabel}>Last Name</ThemedText>
+                                <View style={[
+                                    styles.input,
+                                    {
+                                        backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                                    },
+                                    errors.lastName ? {borderColor: colors.error} : {}
+                                ]}>
+                                    <Ionicons
+                                        name="person-outline"
+                                        size={20}
+                                        color="#748CAB"
+                                        style={styles.inputIcon}
+                                    />
                                     <TextInput
                                         style={{
-                                            ...styles.input,
+                                            ...styles.inputText,
                                             color: colors.text
                                         }}
                                         value={formData.lastName}
                                         onChangeText={(text) => handleChange('lastName', text)}
                                         onBlur={() => handleBlur('lastName')}
-                                        placeholder="Enter last name"
-                                        placeholderTextColor={colors.textTertiary}
-                                        maxLength={50}
+                                        placeholder="Enter your last name"
+                                        placeholderTextColor="#748CAB"
                                     />
-                                </ThemedView>
-                                {touchedFields.lastName && errors.lastName && (
-                                    <ThemedText variant="caption" color={colors.error} mt={4}>
-                                        {errors.lastName}
-                                    </ThemedText>
+                                </View>
+                                {errors.lastName && (
+                                    <ThemedText variant="caption" color={colors.error}
+                                                style={styles.errorText}>{errors.lastName}</ThemedText>
                                 )}
-                            </View>
-                            <View style={styles.formField}>
-                                <ThemedText variant="label" secondary mb={8}>
-                                    Email
-                                </ThemedText>
-                                <ThemedView
-                                    variant="input"
-                                    style={{
-                                        ...styles.inputContainer,
-                                        ...(touchedFields.email && errors.email ? { borderColor: colors.error } : {})
-                                    }}
-                                    rounded
-                                >
+                            </ThemedView>
+
+                            <ThemedView variant="transparent" style={styles.inputContainer}>
+                                <ThemedText variant="label" secondary style={styles.inputLabel}>Email</ThemedText>
+                                <View style={[
+                                    styles.input,
+                                    {
+                                        backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                                    },
+                                    errors.email ? {borderColor: colors.error} : {}
+                                ]}>
+                                    <Ionicons
+                                        name="mail-outline"
+                                        size={20}
+                                        color="#748CAB"
+                                        style={styles.inputIcon}
+                                    />
                                     <TextInput
                                         style={{
-                                            ...styles.input,
+                                            ...styles.inputText,
                                             color: colors.text
                                         }}
                                         value={formData.email}
                                         onChangeText={(text) => handleChange('email', text)}
                                         onBlur={() => handleBlur('email')}
-                                        placeholder="Enter email"
+                                        placeholder="Enter your email"
+                                        placeholderTextColor="#748CAB"
                                         keyboardType="email-address"
                                         autoCapitalize="none"
-                                        placeholderTextColor={colors.textTertiary}
                                     />
-                                </ThemedView>
-                                {touchedFields.email && errors.email && (
-                                    <ThemedText variant="caption" color={colors.error} mt={4}>
-                                        {errors.email}
-                                    </ThemedText>
+                                </View>
+                                {errors.email && (
+                                    <ThemedText variant="caption" color={colors.error}
+                                                style={styles.errorText}>{errors.email}</ThemedText>
                                 )}
-                            </View>
+                            </ThemedView>
                         </ThemedView>
                     </ThemedView>
 
@@ -377,18 +386,29 @@ const styles = StyleSheet.create({
     form: {
         gap: 16,
     },
-    formField: {
+    inputContainer: {
         marginBottom: 16,
     },
-    inputContainer: {
-        borderWidth: 1,
-        borderRadius: 8,
-        overflow: 'hidden',
+    inputLabel: {
+        marginBottom: 8,
     },
     input: {
-        padding: 12,
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 50,
+    },
+    inputIcon: {
+        paddingLeft: 16,
+    },
+    inputText: {
+        flex: 1,
         fontSize: 16,
-        width: '100%',
+        padding: 16,
+        paddingLeft: 12,
+    },
+    errorText: {
+        marginTop: 4,
     },
     infoList: {
         paddingVertical: 12,

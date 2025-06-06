@@ -31,12 +31,17 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
     const isProfit = pnl >= 0;
 
     const pnlPercentage = useMemo(() => {
-        if (position.prices.entry && position.prices.mark && position.prices.entry > 0) {
-            const percentChange = ((position.prices.mark - position.prices.entry) / position.prices.entry) * 100;
-            return isLong ? percentChange : -percentChange;
+        const entryValue = position.size?.value;
+        const unrealizedPnl = isClosed
+            ? position.pnl.cumulative
+            : position.pnl.unrealized;
+
+        if (entryValue && entryValue !== 0) {
+            return (unrealizedPnl / entryValue) * 100;
         }
+
         return 0;
-    }, [position.prices.entry, position.prices.mark, isLong]);
+    }, [position.size?.value, position.pnl.unrealized, position.pnl.cumulative, isClosed]);
 
     const getPriceDiffColor = () => {
         if (position.prices.mark > position.prices.entry) {

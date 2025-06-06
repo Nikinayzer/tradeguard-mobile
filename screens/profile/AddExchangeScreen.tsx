@@ -4,6 +4,7 @@ import {
     TouchableOpacity,
     TextInput,
     ScrollView,
+    View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useNavigation} from '@react-navigation/native';
@@ -20,6 +21,7 @@ import {ThemedView} from '@/components/ui/ThemedView';
 import {ThemedText} from '@/components/ui/ThemedText';
 import {ThemedButton} from '@/components/ui/ThemedButton';
 import {ThemedHeader} from '@/components/ui/ThemedHeader';
+import tinycolor from 'tinycolor2';
 
 type AddExchangeScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList>;
 
@@ -137,29 +139,33 @@ export default function AddExchangeScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <ThemedView variant="transparent" style={styles.section}>
-                        <ThemedText variant="heading3" style={styles.sectionTitle}>Account Details</ThemedText>
                         <ThemedView variant="transparent" style={styles.inputContainer}>
                             <ThemedText variant="label" secondary style={styles.inputLabel}>Account Name</ThemedText>
-                            <ThemedView
-                                variant="input"
-                                style={{
-                                    ...styles.input,
-                                    ...(touchedFields.name && errors.name ? {borderColor: colors.error} : {})
-                                }}
-                                rounded="medium"
-                            >
+                            <View style={[
+                                styles.input,
+                                {
+                                    backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                                },
+                                touchedFields.name && errors.name ? {borderColor: colors.error} : {}
+                            ]}>
+                                <Ionicons
+                                    name="person-outline"
+                                    size={20}
+                                    color="#748CAB"
+                                    style={styles.inputIcon}
+                                />
                                 <TextInput
                                     style={{
-                                        ...styles.textInput,
+                                        ...styles.inputText,
                                         color: colors.text
                                     }}
                                     value={formData.name}
                                     onChangeText={(text) => handleChange('name', text)}
                                     onBlur={() => handleBlur('name')}
                                     placeholder="Enter account name"
-                                    placeholderTextColor={colors.textTertiary}
+                                    placeholderTextColor="#748CAB"
                                 />
-                            </ThemedView>
+                            </View>
                             {touchedFields.name && errors.name && (
                                 <ThemedText variant="caption" color={colors.error}
                                             style={styles.errorText}>{errors.name}</ThemedText>
@@ -273,27 +279,32 @@ export default function AddExchangeScreen() {
                         <ThemedView variant="transparent" style={styles.inputContainer}>
                             <ThemedText variant="label" secondary style={styles.inputLabel}>Read-Write API
                                 Key</ThemedText>
-                            <ThemedView
-                                variant="input"
-                                style={{
-                                    ...styles.input,
-                                    ...(touchedFields.readWriteApiKey && errors.readWriteApiKey ? {borderColor: colors.error} : {})
-                                }}
-                                rounded="medium"
-                            >
+                            <View style={[
+                                styles.input,
+                                {
+                                    backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                                },
+                                touchedFields.readWriteApiKey && errors.readWriteApiKey ? {borderColor: colors.error} : {}
+                            ]}>
+                                <Ionicons
+                                    name="key-outline"
+                                    size={20}
+                                    color="#748CAB"
+                                    style={styles.inputIcon}
+                                />
                                 <TextInput
                                     style={{
-                                        ...styles.textInput,
+                                        ...styles.inputText,
                                         color: colors.text
                                     }}
                                     value={formData.readWriteApiKey}
                                     onChangeText={(text) => handleChange('readWriteApiKey', text)}
                                     onBlur={() => handleBlur('readWriteApiKey')}
                                     placeholder="Enter read-write API key"
-                                    placeholderTextColor={colors.textTertiary}
+                                    placeholderTextColor="#748CAB"
                                     secureTextEntry={!showKeys}
                                 />
-                            </ThemedView>
+                            </View>
                             {touchedFields.readWriteApiKey && errors.readWriteApiKey && (
                                 <ThemedText variant="caption" color={colors.error}
                                             style={styles.errorText}>{errors.readWriteApiKey}</ThemedText>
@@ -302,27 +313,32 @@ export default function AddExchangeScreen() {
                         <ThemedView variant="transparent" style={styles.inputContainer}>
                             <ThemedText variant="label" secondary style={styles.inputLabel}>Read-Write API
                                 Secret</ThemedText>
-                            <ThemedView
-                                variant="input"
-                                style={{
-                                    ...styles.input,
-                                    ...(touchedFields.readWriteApiSecret && errors.readWriteApiSecret ? {borderColor: colors.error} : {})
-                                }}
-                                rounded="medium"
-                            >
+                            <View style={[
+                                styles.input,
+                                {
+                                    backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                                },
+                                touchedFields.readWriteApiSecret && errors.readWriteApiSecret ? {borderColor: colors.error} : {}
+                            ]}>
+                                <Ionicons
+                                    name="key-outline"
+                                    size={20}
+                                    color="#748CAB"
+                                    style={styles.inputIcon}
+                                />
                                 <TextInput
                                     style={{
-                                        ...styles.textInput,
+                                        ...styles.inputText,
                                         color: colors.text
                                     }}
                                     value={formData.readWriteApiSecret}
                                     onChangeText={(text) => handleChange('readWriteApiSecret', text)}
                                     onBlur={() => handleBlur('readWriteApiSecret')}
                                     placeholder="Enter read-write API secret"
-                                    placeholderTextColor={colors.textTertiary}
+                                    placeholderTextColor="#748CAB"
                                     secureTextEntry={!showKeys}
                                 />
-                            </ThemedView>
+                            </View>
                             {touchedFields.readWriteApiSecret && errors.readWriteApiSecret && (
                                 <ThemedText variant="caption" color={colors.error}
                                             style={styles.errorText}>{errors.readWriteApiSecret}</ThemedText>
@@ -383,15 +399,19 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     input: {
-        borderWidth: 1,
-        overflow: 'hidden',
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
         height: 50,
     },
-    textInput: {
-        padding: 12,
+    inputIcon: {
+        paddingLeft: 16,
+    },
+    inputText: {
+        flex: 1,
         fontSize: 16,
-        width: '100%',
-        height: '100%',
+        padding: 16,
+        paddingLeft: 12,
     },
     providerButtons: {
         flexDirection: 'row',

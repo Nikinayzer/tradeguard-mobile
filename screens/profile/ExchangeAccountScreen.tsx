@@ -20,6 +20,7 @@ import {ThemedView} from '@/components/ui/ThemedView';
 import {ThemedText} from '@/components/ui/ThemedText';
 import {ThemedButton} from '@/components/ui/ThemedButton';
 import {ThemedHeader} from '@/components/ui/ThemedHeader';
+import tinycolor from 'tinycolor2';
 
 type ExchangeAccountScreenNavigationProp = NativeStackNavigationProp<ProfileStackParamList, 'ExchangeAccount'>;
 
@@ -33,6 +34,9 @@ export default function ExchangeAccountScreen() {
     const [isDeleting, setIsDeleting] = useState(false);
     const {alert, showAlert, hideAlert} = useAlert();
     const {colors} = useTheme();
+
+    const isDemo = account?.provider?.endsWith('_DEMO');
+    const providerName = account?.provider?.split('_')[0];
 
     useEffect(() => {
         if (!accountId) {
@@ -199,11 +203,11 @@ export default function ExchangeAccountScreen() {
                     </ThemedView>
                     <ThemedView variant="transparent" style={styles.infoField}>
                         <ThemedText variant="label" secondary style={styles.infoLabel}>Provider</ThemedText>
-                        <ThemedText variant="body">{account.provider}</ThemedText>
+                        <ThemedText variant="body">{providerName}</ThemedText>
                     </ThemedView>
                     <ThemedView variant="transparent" style={styles.infoField}>
                         <ThemedText variant="label" secondary style={styles.infoLabel}>Type</ThemedText>
-                        <ThemedText variant="body">{account.demo ? 'Demo' : 'Live'}</ThemedText>
+                        <ThemedText variant="body">{isDemo ? 'Demo' : 'Live'}</ThemedText>
                     </ThemedView>
                 </ThemedView>
 
@@ -223,40 +227,56 @@ export default function ExchangeAccountScreen() {
 
                     <ThemedView variant="transparent" style={styles.formField}>
                         <ThemedText variant="label" secondary style={styles.label}>Read-Write API Key</ThemedText>
-                        <ThemedView variant="input" style={styles.inputContainer} rounded="medium">
-                            <View style={styles.inputRow}>
-                                <Key size={18} color={colors.textTertiary}/>
-                                <TextInput
-                                    style={{
-                                        ...styles.input,
-                                        color: colors.text
-                                    }}
-                                    value={account.readWriteApiKey}
-                                    secureTextEntry={!showKeys}
-                                    editable={false}
-                                    placeholderTextColor={colors.textTertiary}
-                                />
-                            </View>
-                        </ThemedView>
+                        <View style={[
+                            styles.input,
+                            {
+                                backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                            }
+                        ]}>
+                            <Ionicons
+                                name="key-outline"
+                                size={20}
+                                color="#748CAB"
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={{
+                                    ...styles.inputText,
+                                    color: colors.text
+                                }}
+                                value={account.readWriteApiKey}
+                                secureTextEntry={!showKeys}
+                                editable={false}
+                                placeholderTextColor="#748CAB"
+                            />
+                        </View>
                     </ThemedView>
 
                     <ThemedView variant="transparent" style={styles.formField}>
                         <ThemedText variant="label" secondary style={styles.label}>Read-Write API Secret</ThemedText>
-                        <ThemedView variant="input" style={styles.inputContainer} rounded="medium">
-                            <View style={styles.inputRow}>
-                                <Key size={18} color={colors.textTertiary}/>
-                                <TextInput
-                                    style={{
-                                        ...styles.input,
-                                        color: colors.text
-                                    }}
-                                    value={account.readWriteApiSecret}
-                                    secureTextEntry={!showKeys}
-                                    editable={false}
-                                    placeholderTextColor={colors.textTertiary}
-                                />
-                            </View>
-                        </ThemedView>
+                        <View style={[
+                            styles.input,
+                            {
+                                backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
+                            }
+                        ]}>
+                            <Ionicons
+                                name="key-outline"
+                                size={20}
+                                color="#748CAB"
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={{
+                                    ...styles.inputText,
+                                    color: colors.text
+                                }}
+                                value={account.readWriteApiSecret}
+                                secureTextEntry={!showKeys}
+                                editable={false}
+                                placeholderTextColor="#748CAB"
+                            />
+                        </View>
                     </ThemedView>
                 </ThemedView>
 
@@ -329,22 +349,20 @@ const styles = StyleSheet.create({
     label: {
         marginBottom: 8,
     },
-    inputContainer: {
-        borderWidth: 1,
-        overflow: 'hidden',
-        height: 50,
-    },
-    inputRow: {
+    input: {
+        borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        height: '100%',
-        paddingHorizontal: 12,
-        gap: 12,
+        height: 50,
     },
-    input: {
+    inputIcon: {
+        paddingLeft: 16,
+    },
+    inputText: {
         flex: 1,
-        height: '100%',
-        padding: 0,
+        fontSize: 16,
+        padding: 16,
+        paddingLeft: 12,
     },
     infoField: {
         marginBottom: 16,

@@ -20,13 +20,11 @@ export const authService = {
         if (!hasToken) return null;
 
         try {
-            await authApiService.validate();
+            return await profileService.getMe();
         } catch (error) {
-            //await secureStorage.removeToken();
+            await secureStorage.removeToken();
             return null;
         }
-
-        return null;
     },
 
     login: async (token: string, userData: User): Promise<User> => {

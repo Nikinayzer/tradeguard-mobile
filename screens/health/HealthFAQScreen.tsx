@@ -30,6 +30,10 @@ const FAQS = [
     answer: 'To improve your health score, focus on making thoughtful and rational trading decisions. Avoid acting impulsively or making trades based on emotions or breaking news. Take a moment to think twice before any operation, and always consider the risks involved. Try to keep your trading out of the gambling zone-avoid taking big risks or chasing losses. Consistent, careful trading will help you build a healthier trading profile over time.'
   },
   {
+    question: 'When do my custom limits take effect?',
+    answer: 'Your custom limits are applied dynamically by our risk monitoring system. When you modify limits in the settings, the changes are typically reflected within one minute as the risk module processes the new parameters. This ensures that your trading activity is continuously evaluated against your most recent risk preferences.'
+  },
+  {
     question: "Why can't I see my trade history or operations?",
     answer: 'Trade history and operations are only available after you add an exchange account (you can set this up in the Profile page). Our data is powered by an internal service that is currently in alpha testing, so bugs or missing data may occur. We are actively working to improve reliability and coverage.'
   },

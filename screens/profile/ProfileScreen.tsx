@@ -136,7 +136,8 @@ interface ExchangeAccount {
     id: number;
     name: string;
     provider: string;
-    demo: boolean;
+    readWriteApiKey: string;
+    readWriteApiSecret: string;
 }
 
 interface ExchangeCardProps {
@@ -147,6 +148,9 @@ const ExchangeCard: React.FC<ExchangeCardProps> = ({exchangeAccount}) => {
     const navigation = useNavigation<NativeStackNavigationProp<ProfileStackParamList>>();
     const { colors } = useTheme();
 
+    const isDemo = exchangeAccount.provider.endsWith('_DEMO');
+    const providerName = exchangeAccount.provider.split('_')[0];
+
     return (
         <TouchableOpacity
             onPress={() => navigation.navigate('ExchangeAccount', {accountId: exchangeAccount.id.toString()})}
@@ -154,20 +158,20 @@ const ExchangeCard: React.FC<ExchangeCardProps> = ({exchangeAccount}) => {
             <ThemedView variant="card" rounded padding="medium">
                 <View style={styles.exchangeHeader}>
                     <View style={styles.exchangeTitleContainer}>
-                        <ThemedText variant="label" secondary style={styles.providerText}>{exchangeAccount.provider}</ThemedText>
+                        <ThemedText variant="label" secondary style={styles.providerText}>{providerName}</ThemedText>
                         <ThemedView 
                             rounded="small" 
                             style={{
                                 ...styles.accountTypeBadge,
-                                backgroundColor: exchangeAccount.demo ? `${colors.success}15` : `${colors.warning}15`
+                                backgroundColor: isDemo ? `${colors.success}15` : `${colors.warning}15`
                             }}
                         >
                             <ThemedText 
                                 variant="caption" 
                                 weight="600" 
-                                color={exchangeAccount.demo ? colors.success : colors.warning}
+                                color={isDemo ? colors.success : colors.warning}
                             >
-                                {exchangeAccount.demo ? 'Demo' : 'Live'}
+                                {isDemo ? 'Demo' : 'Live'}
                             </ThemedText>
                         </ThemedView>
                     </View>
@@ -251,11 +255,12 @@ export default function ProfileScreen() {
     };
 
     const handleSettingsPress = () => {
+        console.log("pressed")
         navigation.navigate('SettingsStack', {
-            screen: 'Settings' 
+            screen: 'Settings',
+            params: undefined
         });
     };
-
     if (isLoading) {
         return (
             <ThemedView variant="screen" style={styles.loadingContainer}>
@@ -382,7 +387,8 @@ export default function ProfileScreen() {
                                             id: account.id,
                                             name: account.name,
                                             provider: account.provider,
-                                            demo: account.demo
+                                            readWriteApiKey: account.readWriteApiKey,
+                                            readWriteApiSecret: account.readWriteApiSecret
                                         }}
                                     />
                                 );
@@ -541,6 +547,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         overflow: 'hidden',
+        borderRadius: 24,
     },
     discordUserInfo: {
         flex: 1,

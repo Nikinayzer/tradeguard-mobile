@@ -299,7 +299,7 @@ export default function SecuritySettingsScreen() {
         icon: React.ReactNode,
         onPress: () => void
     ) => (
-        <TouchableOpacity
+                    <TouchableOpacity 
             onPress={onPress}
             activeOpacity={0.7}
         >
@@ -323,14 +323,14 @@ export default function SecuritySettingsScreen() {
                 <View style={styles.contentColumn}>
                     <ThemedText variant="bodyBold">{title}</ThemedText>
                     <ThemedText variant="caption" secondary>{description}</ThemedText>
-                </View>
+                    </View>
 
                 {/* Action Column */}
                 <View style={styles.actionColumn}>
                     <ChevronRight size={20} color={colors.textTertiary} />
                 </View>
             </ThemedView>
-        </TouchableOpacity>
+                        </TouchableOpacity>
     );
 
     return (
