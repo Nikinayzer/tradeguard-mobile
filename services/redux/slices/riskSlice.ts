@@ -87,7 +87,7 @@ export default riskSlice.reducer;
 export const selectGroupedPatterns = createSelector(
     [(state: { risk: RiskState }) => state.risk.patterns],
     (patterns) => {
-        const grouped = patterns.reduce((acc, pattern) => {
+        const grouped = patterns.filter(pattern => !pattern.consumed).reduce((acc, pattern) => {
             const key = pattern.pattern_id;
             if (!acc[key]) {
                 acc[key] = [];

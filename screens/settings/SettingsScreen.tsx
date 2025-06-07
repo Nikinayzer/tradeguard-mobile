@@ -55,7 +55,6 @@ export default function SettingsScreen() {
           ...styles.settingsCard,
           ...(isDisabled ? { opacity: 0.6 } : {})
         }}
-        border
         rounded="medium"
       >
         <View style={styles.settingsItemLeft}>
@@ -104,7 +103,6 @@ export default function SettingsScreen() {
         padding: 6,
         paddingVertical: 10,
       }}
-      border
       rounded="medium"
     >
       <TouchableOpacity 
@@ -339,7 +337,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     marginBottom: 8,
-    borderWidth: 1,
   },
   themeOption: {
     flex: 1,

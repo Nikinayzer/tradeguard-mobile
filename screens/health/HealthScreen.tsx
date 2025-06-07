@@ -15,6 +15,8 @@ import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { HealthStackParamList } from '@/navigation/navigation';
+import { getRiskColor, getRiskColorWithAlpha } from '@/utils/colorsUtil';
+import { formatSnakeCase } from '@/utils/normalizeData';
 
 type HealthScreenNavigationProp = NativeStackNavigationProp<HealthStackParamList>;
 
@@ -100,6 +102,7 @@ interface PatternItemProps {
     findPatternById?: (id: string) => RiskPattern | undefined;
     similarPatterns?: RiskPattern[];
     similarCount?: number;
+    onPress?: (pattern: RiskPattern, isComposite: boolean) => void;
 }
 
 const PatternItem: React.FC<PatternItemProps> = ({
@@ -107,12 +110,19 @@ const PatternItem: React.FC<PatternItemProps> = ({
     isComposite = false,
     findPatternById,
     similarPatterns = [],
-    similarCount = 0
+    similarCount = 0,
+    onPress
 }) => {
     const { colors } = useTheme();
     const navigation = useNavigation<HealthScreenNavigationProp>();
     const [isSimilarExpanded, setIsSimilarExpanded] = useState(false);
     const [similarAnimation] = useState(new Animated.Value(0));
+
+    const handlePatternPress = () => {
+        if (onPress) {
+            onPress(pattern, isComposite);
+        }
+    };
 
     const toggleSimilarExpand = () => {
         Animated.timing(similarAnimation, {
@@ -128,23 +138,16 @@ const PatternItem: React.FC<PatternItemProps> = ({
         outputRange: [0, 500],
     });
 
-    const handlePatternPress = () => {
-        if (isComposite) {
-            navigation.navigate('PatternDetail', {
-                patternId: pattern.internal_id,
-                isComposite: true
-            });
-        }
-    };
-
     const getConfidenceColor = (severity: number): string => {
-        if (severity >= 0.8) return colors.error;
-        if (severity >= 0.5) return colors.warning;
-        return colors.success;
+        return getRiskColor(severity);
     };
 
-    const confidenceColor = getConfidenceColor(pattern.severity);
-    const confidencePercent = Math.round((isComposite ? (pattern.confidence || pattern.severity) : pattern.severity) * 100);
+    const getConfidenceColorWithAlpha = (severity: number): string => {
+        return getRiskColorWithAlpha(severity);
+    };
+
+    const confidenceValue = isComposite ? (pattern.confidence ?? pattern.severity) : pattern.severity;
+    const confidencePercent = Math.round(confidenceValue * 100);
 
     const hasRatio = pattern.details?.ratio !== undefined;
     const ratio = pattern.details?.ratio || 0;
@@ -156,10 +159,7 @@ const PatternItem: React.FC<PatternItemProps> = ({
         : null;
 
     const formatCategoryName = (name: string) => {
-        if (name === "overtrading") return "Overtrading";
-        if (name === "sunk_cost") return "Sunk Cost";
-        if (name === "fomo") return "FOMO";
-        return name.charAt(0).toUpperCase() + name.slice(1);
+        return formatSnakeCase(name, { capitalize: true });
     };
 
     const cardStyle = {
@@ -190,7 +190,7 @@ const PatternItem: React.FC<PatternItemProps> = ({
                 <View style={styles.patternHeader}>
                     <View style={{
                         ...styles.confidenceDot,
-                        backgroundColor: confidenceColor,
+                        backgroundColor: getConfidenceColor(confidenceValue),
                         justifyContent: 'center',
                         alignItems: 'center'
                     }}>
@@ -227,11 +227,11 @@ const PatternItem: React.FC<PatternItemProps> = ({
                                     style={{
                                         ...styles.badgeBase,
                                         ...styles.confidencePill,
-                                        backgroundColor: `${confidenceColor}20`
+                                        backgroundColor: `${getConfidenceColor(confidenceValue)}20`
                                     }}
                                     variant="transparent"
                                 >
-                                    <ThemedText style={styles.badgeText} color={confidenceColor}>
+                                    <ThemedText style={styles.badgeText} color={getConfidenceColor(confidenceValue)}>
                                         {confidencePercent}% {isComposite ? 'confidence' : 'severity'}
                                     </ThemedText>
                                 </ThemedView>
@@ -250,7 +250,7 @@ const PatternItem: React.FC<PatternItemProps> = ({
                                             style={{
                                                 ...styles.progressFill,
                                                 width: `${Math.min(100, (pattern.details.actual / pattern.details.limit) * 100)}%`,
-                                                backgroundColor: confidenceColor
+                                                backgroundColor: getConfidenceColor(confidenceValue)
                                             }}
                                         />
                                     </View>
@@ -263,7 +263,7 @@ const PatternItem: React.FC<PatternItemProps> = ({
                                         {pattern.details.ratio !== undefined && (
                                             <ThemedText 
                                                 style={styles.ratioIndicator} 
-                                                color={pattern.details.ratio > 1 ? confidenceColor : colors.textTertiary}
+                                                color={pattern.details.ratio > 1 ? getConfidenceColor(confidenceValue) : colors.textTertiary}
                                             >
                                                 {(pattern.details.ratio).toFixed(1)}x
                                             </ThemedText>
@@ -310,14 +310,12 @@ const PatternItem: React.FC<PatternItemProps> = ({
                         <TouchableOpacity
                             key={similarPattern.internal_id}
                             onPress={() => {
-                                if (isComposite) {
-                                    navigation.navigate('PatternDetail', {
-                                        patternId: similarPattern.internal_id,
-                                        isComposite: true
-                                    });
-                                }
+                                navigation.navigate('PatternDetail', {
+                                    patternId: similarPattern.internal_id,
+                                    isComposite: similarPattern.is_composite
+                                });
                             }}
-                            activeOpacity={isComposite ? 0.7 : 1}
+                            activeOpacity={0.7}
                         >
                             <ThemedView 
                                 style={styles.similarPattern}
@@ -326,7 +324,7 @@ const PatternItem: React.FC<PatternItemProps> = ({
                                 <View 
                                     style={{
                                         ...styles.similarPatternDot,
-                                        backgroundColor: getConfidenceColor(isComposite ? (similarPattern.confidence || similarPattern.severity) : similarPattern.severity)
+                                        backgroundColor: getConfidenceColor(similarPattern.is_composite ? (similarPattern.confidence ?? similarPattern.severity) : similarPattern.severity)
                                     }}
                                 />
                                 <ThemedView style={styles.similarPatternContent} variant="transparent">
@@ -335,7 +333,7 @@ const PatternItem: React.FC<PatternItemProps> = ({
                                     </ThemedText>
                                     <ThemedView style={styles.similarPatternMetadata} variant="transparent">
                                         <ThemedText style={styles.similarPatternConfidence} tertiary>
-                                            {Math.round((isComposite ? (similarPattern.confidence || similarPattern.severity) : similarPattern.severity) * 100)}% {isComposite ? 'confidence' : 'severity'}
+                                            {Math.round((similarPattern.is_composite ? (similarPattern.confidence ?? similarPattern.severity) : similarPattern.severity) * 100)}% {similarPattern.is_composite ? 'confidence' : 'severity'}
                                         </ThemedText>
                                     </ThemedView>
                                 </ThemedView>
@@ -401,7 +399,7 @@ export default function HealthScreen() {
                     useNativeDriver: false,
                     tension: 20,
                     friction: 7,
-                    delay: index * 100 // Stagger the animations
+                    delay: index * 100
                 }).start();
             });
         } else {
@@ -417,16 +415,15 @@ export default function HealthScreen() {
     );
 
     const getScoreColor = (score: number): string => {
-        if (score >= 0.7) return colors.error;
-        if (score >= 0.4) return colors.warning;
-        return colors.success;
+        return getRiskColor(score);
+    };
+
+    const getScoreColorWithAlpha = (score: number): string => {
+        return getRiskColorWithAlpha(score);
     };
 
     const formatCategoryName = (name: string) => {
-        if (name === "overtrading") return "Overtrading";
-        if (name === "sunk_cost") return "Sunk Cost";
-        if (name === "fomo") return "FOMO";
-        return name.charAt(0).toUpperCase() + name.slice(1);
+        return formatSnakeCase(name, { capitalize: true });
     };
 
     const findPatternById = (id: string): RiskPattern | undefined => {
@@ -457,6 +454,25 @@ export default function HealthScreen() {
         inputRange: [0, 1],
         outputRange: [0, 300]
     });
+
+    const handlePatternPress = (pattern: RiskPattern, isComposite: boolean) => {
+        navigation.navigate('PatternDetail', {
+            patternId: pattern.internal_id,
+            isComposite: isComposite,
+            riskStateSnapshot: {
+                patterns: riskData.patterns,
+                compositePatterns: riskData.compositePatterns,
+                lastUpdated: riskData.lastUpdated,
+                topRiskLevel: riskData.topRiskLevel,
+                topRiskConfidence: riskData.topRiskConfidence,
+                topRiskType: riskData.topRiskType,
+                categoryScores: riskData.categoryScores,
+                atomicPatternsCount: riskData.atomicPatternsCount,
+                compositePatternsCount: riskData.compositePatternsCount,
+                consumedPatternsCount: riskData.consumedPatternsCount
+            }
+        });
+    };
 
     return (
         <SafeAreaView style={{ ...styles.container, backgroundColor: colors.background }}>
@@ -514,10 +530,7 @@ export default function HealthScreen() {
                                     >
                                         <View style={styles.riskBarHeader}>
                                             <ThemedText style={styles.riskBarLabel}>
-                                                {category === "overtrading" ? "Overtrading" :
-                                                 category === "sunk_cost" ? "Sunk Cost" :
-                                                 category === "fomo" ? "FOMO" :
-                                                 category.charAt(0).toUpperCase() + category.slice(1)}
+                                                {formatCategoryName(category)}
                                             </ThemedText>
                                             <ThemedText style={styles.riskBarValue} tertiary>
                                                 {Math.round(score * 100)}%
@@ -551,16 +564,24 @@ export default function HealthScreen() {
                         />
 
                         {groupedCompositePatterns.length > 0 ? (
-                            groupedCompositePatterns.map(({ patternId, patterns, count }) => (
-                                <PatternItem
-                                    key={patternId}
-                                    pattern={patterns[0]}
-                                    isComposite={true}
-                                    findPatternById={findPatternById}
-                                    similarPatterns={patterns.slice(1)}
-                                    similarCount={count}
-                                />
-                            ))
+                            groupedCompositePatterns.map(({ patternId, patterns, count }) => {
+                                const sortedPatterns = [...patterns].sort((a, b) => {
+                                    const aValue = a.confidence ?? a.severity;
+                                    const bValue = b.confidence ?? b.severity;
+                                    return bValue - aValue;
+                                });
+                                return (
+                                    <PatternItem
+                                        key={patternId}
+                                        pattern={sortedPatterns[0]}
+                                        isComposite={true}
+                                        findPatternById={findPatternById}
+                                        similarPatterns={sortedPatterns.slice(1)}
+                                        similarCount={count}
+                                        onPress={handlePatternPress}
+                                    />
+                                );
+                            })
                         ) : (
                             <ThemedView style={styles.emptyStateContainer} variant="transparent">
                                 <ThemedText style={styles.emptyStateText} secondary>
@@ -578,14 +599,22 @@ export default function HealthScreen() {
                         />
 
                         {groupedPatterns.length > 0 ? (
-                            groupedPatterns.map(({ patternId, patterns, count }) => (
-                                <PatternItem
-                                    key={patternId}
-                                    pattern={patterns[0]}
-                                    similarPatterns={patterns.slice(1)}
-                                    similarCount={count}
-                                />
-                            ))
+                            groupedPatterns.map(({ patternId, patterns, count }) => {
+                                const sortedPatterns = [...patterns].sort((a, b) => {
+                                    const aValue = a.is_composite ? (a.confidence ?? a.severity) : a.severity;
+                                    const bValue = b.is_composite ? (b.confidence ?? b.severity) : b.severity;
+                                    return bValue - aValue;
+                                });
+                                return (
+                                    <PatternItem
+                                        key={patternId}
+                                        pattern={sortedPatterns[0]}
+                                        similarPatterns={sortedPatterns.slice(1)}
+                                        similarCount={count}
+                                        onPress={handlePatternPress}
+                                    />
+                                );
+                            })
                         ) : (
                             <ThemedView style={styles.emptyStateContainer} variant="transparent">
                                 <ThemedText style={styles.emptyStateText} secondary>
@@ -974,7 +1003,7 @@ const styles = StyleSheet.create({
         fontWeight: "500",
     },
     categoryTag: {
-        backgroundColor: 'transparent', // Will be set inline
+        backgroundColor: 'transparent',
     },
     componentsButton: {
         paddingVertical: 4,

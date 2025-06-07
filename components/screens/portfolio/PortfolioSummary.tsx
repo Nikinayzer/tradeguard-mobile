@@ -26,7 +26,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   const isPnlPositive = totalUnrealizedPnl >= 0;
 
   return (
-    <ThemedView variant="card" style={styles.container} border rounded="large">
+    <ThemedView variant="card" style={styles.container} rounded="large">
       {/* Total Value Section */}
       <View style={styles.totalValueContainer}>
         <ThemedText variant="label" secondary style={styles.totalValueLabel}>

@@ -29,7 +29,6 @@ export function StatCard({
         <ThemedView 
             variant="card" 
             style={cardStyle} 
-            border 
             rounded="medium"
         >
             <View style={styles.statHeader}>

@@ -17,6 +17,7 @@ import TwoFactorModal from "@/components/modals/TwoFactorModal";
 import { authApiService } from "@/services/api/auth";
 import { useBiometricAuthContext } from '@/contexts/BiometricAuthContext';
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
+import {SecurityScoreCard} from "@/components/screens/settings/security/SecurityScoreCard";
 
 type SecurityScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
@@ -74,6 +75,7 @@ export default function SecuritySettingsScreen() {
         emailNotifications: true,
         smsNotifications: false,
         biometricAuth: false,
+        lastPasswordChangeDate: undefined as string | undefined
     });
 
     useEffect(() => {
@@ -86,7 +88,8 @@ export default function SecuritySettingsScreen() {
             const settings = await profileService.getSecuritySettings();
             setSecuritySettings(prev => ({
                 ...prev,
-                twoFactorAuth: settings.twoFactorEnabled
+                twoFactorAuth: settings.twoFactorEnabled,
+                lastPasswordChangeDate: settings.lastPasswordChangeDate
             }));
         } catch (error) {
             showAlert({
@@ -159,18 +162,15 @@ export default function SecuritySettingsScreen() {
         confirmPassword: string;
     }) => {
         try {
-            // First, request password change
             await authApiService.requestPasswordChange({
                 email: data.email || user?.email || ''
             });
-            
-            // Store the data for later use after 2FA
+
             setPendingPasswordChange({
                 email: data.email || user?.email,
                 newPassword: data.password
             });
-            
-            // Close password modal and show 2FA modal
+
             setShowPasswordModal(false);
             setShowTwoFactorModal(true);
         } catch (error) {
@@ -192,8 +192,7 @@ export default function SecuritySettingsScreen() {
                 email: pendingPasswordChange.email || '',
                 newPassword: pendingPasswordChange.newPassword
             });
-            
-            // Update the token with the new one
+
             if (response.token) {
                 await login(response.token, response.user);
             }
@@ -204,8 +203,7 @@ export default function SecuritySettingsScreen() {
                 type: "success",
                 buttons: [{ text: "OK", onPress: () => {} }]
             });
-            
-            // Reset state
+
             setShowTwoFactorModal(false);
             setPendingPasswordChange(null);
         } catch (error) {
@@ -261,7 +259,6 @@ export default function SecuritySettingsScreen() {
                 styles.menuItem,
                 isDisabled ? { opacity: 0.6 } : null
             ] as any}
-            border
             rounded="medium"
             padding="medium"
         >
@@ -306,7 +303,6 @@ export default function SecuritySettingsScreen() {
             <ThemedView
                 variant="card"
                 style={styles.menuItem}
-                border
                 rounded="medium"
                 padding="medium"
             >
@@ -351,6 +347,11 @@ export default function SecuritySettingsScreen() {
                         style={styles.content}
                         showsVerticalScrollIndicator={false}
                     >
+                        <SecurityScoreCard
+                            twoFactorEnabled={securitySettings.twoFactorAuth}
+                            biometricEnabled={isBiometricEnabled}
+                            lastPasswordChangeDate={securitySettings.lastPasswordChangeDate}
+                        />
                         {/* Authentication Section */}
                         <View style={styles.section}>
                             <ThemedText variant="label" secondary style={styles.sectionTitle}>

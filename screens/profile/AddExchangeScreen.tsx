@@ -264,6 +264,20 @@ export default function AddExchangeScreen() {
                     </ThemedView>
 
                     <ThemedView variant="transparent" style={styles.section}>
+                        <ThemedView variant="transparent" style={{
+                            ...styles.securityNotice,
+                            backgroundColor: tinycolor(colors.backgroundSecondary).setAlpha(0.8).toHexString()
+                        }}>
+                            <Ionicons name="shield-checkmark" size={24} color={colors.success} style={styles.securityIcon} />
+                            <ThemedView variant="transparent" style={styles.securityTextContainer}>
+                                <ThemedText variant="heading3" style={styles.securityTitle}>Your API Keys are Secure</ThemedText>
+                                <ThemedText variant="body" secondary style={styles.securityText}>
+                                    We encrypt and securely store your API keys in our database. Your keys are only used to execute trades you manually create and to fetch your account data. We never use your keys for any other purpose, and they are never shared with third parties.{'\n\n'}
+                                    You can delete your exchange account at any time from the app, and we will permanently remove all associated API keys and account information from our systems.
+                                </ThemedText>
+                            </ThemedView>
+                        </ThemedView>
+
                         <ThemedView variant="transparent" style={styles.sectionHeader}>
                             <ThemedText variant="heading3" style={styles.sectionTitle}>API Keys</ThemedText>
                             <ThemedButton
@@ -445,5 +459,27 @@ const styles = StyleSheet.create({
     },
     saveButtonDisabled: {
         opacity: 0.7,
+    },
+    securityNotice: {
+        flexDirection: 'row',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 24,
+        alignItems: 'flex-start',
+    },
+    securityIcon: {
+        marginRight: 12,
+        marginTop: 2,
+    },
+    securityTextContainer: {
+        flex: 1,
+    },
+    securityTitle: {
+        marginBottom: 6,
+        fontWeight: '600',
+    },
+    securityText: {
+        lineHeight: 20,
+        opacity: 0.9,
     },
 }); 

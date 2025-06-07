@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
-import { Newspaper } from 'lucide-react-native';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Newspaper, Ghost } from 'lucide-react-native';
 import { ThemedView } from '@/components/ui/ThemedView';
 import { useTheme } from '@/contexts/ThemeContext';
 import { NewsItem } from '@/components/screens/news/NewsItem';
@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '@/navigation/navigation';
 import { ThemedSectionHeader } from '@/components/common/ThemedSectionHeader';
 import { newsService, NewsItem as NewsItemType } from '@/services/api/news';
+import { ThemedText } from '@/components/ui/ThemedText';
 
 type NewsSectionNavigationProp = CompositeNavigationProp<
     NativeStackNavigationProp<any>,
@@ -53,12 +54,11 @@ export function NewsSection({ navigation, itemsPerPage = 3, coin }: NewsSectionP
     }, [itemsPerPage, coin]);
 
     useEffect(() => {
-        fetchNews(); // Initial fetch
+        fetchNews();
         
         const interval = setInterval(() => {
             fetchNews();
-        }, 60000); // Refresh every minute
-        
+        }, 60000);
         return () => clearInterval(interval);
     }, [fetchNews]);
 
@@ -91,9 +91,15 @@ export function NewsSection({ navigation, itemsPerPage = 3, coin }: NewsSectionP
                     showSeeAll={true}
                     onSeeAll={handleNewsPress}
                 />
-                <View style={styles.errorContainer}>
-                    <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-                </View>
+                <ThemedView style={styles.emptyState} variant="transparent">
+                    <Ghost size={48} color={colors.textTertiary} style={styles.emptyStateIcon} />
+                    <ThemedText variant="heading3" style={styles.emptyStateTitle}>
+                        No News Available
+                    </ThemedText>
+                    <ThemedText variant="body" secondary style={styles.emptyStateText}>
+                        Who stole the news? We're using a free API, so sometimes the news might be playing hide and seek!
+                    </ThemedText>
+                </ThemedView>
             </ThemedView>
         );
     }
@@ -126,11 +132,21 @@ const styles = StyleSheet.create({
         padding: 20,
         alignItems: 'center',
     },
-    errorContainer: {
-        padding: 20,
+    emptyState: {
+        padding: 32,
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    errorText: {
-        fontSize: 14,
+    emptyStateIcon: {
+        marginBottom: 16,
+        opacity: 0.7,
+    },
+    emptyStateTitle: {
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    emptyStateText: {
+        textAlign: 'center',
+        lineHeight: 20,
     },
 }); 

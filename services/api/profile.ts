@@ -49,17 +49,13 @@ export interface UserAccountLimits {
     maxConcurrentOrders: string;
     maxDailyTrades: string;
     tradingCooldown: string;
-    allowDcaForce: boolean;
-    allowLiqForce: boolean;
     dailyLossLimit: string;
-    maxConsecutiveLosses: string;
     maxDailyBalanceChange: string;
-    volatilityLimit: string;
-    liquidityThreshold: string;
 }
 
 export interface UserSecuritySettings {
     twoFactorEnabled: boolean;
+    lastPasswordChangeDate?: string;
 }
 
 export const profileService = {

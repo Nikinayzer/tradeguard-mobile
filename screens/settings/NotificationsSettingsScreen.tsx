@@ -1,25 +1,24 @@
 import React, {useState} from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { View, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SettingsStackParamList } from "@/navigation/navigation";
-import NotificationModal from "@/components/modals/NotificationModal";
-import CooldownWarningModal from "@/components/modals/CooldownWarningModal";
-import CooldownPromptModal from "@/components/modals/CooldownPromptModal";
 import { ThemedView } from "@/components/ui/ThemedView";
 import { ThemedText } from "@/components/ui/ThemedText";
 import { ThemedHeader } from "@/components/ui/ThemedHeader";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Bell, AlertTriangle, Newspaper, Mail, Heart, HeartPulse } from "lucide-react-native";
 
 type NotificationsScreenNavigationProp = NativeStackNavigationProp<SettingsStackParamList>;
 
 interface ToggleProps {
     value: boolean;
     onChange: (value: boolean) => void;
+    isDisabled?: boolean;
 }
 
-function Toggle({value, onChange}: ToggleProps) {
+function Toggle({value, onChange, isDisabled}: ToggleProps) {
     const { colors } = useTheme();
     
     return (
@@ -27,6 +26,7 @@ function Toggle({value, onChange}: ToggleProps) {
             onPress={() => onChange(!value)}
             activeOpacity={0.8}
             style={styles.toggleButtonContainer}
+            disabled={isDisabled}
         >
             <View
                 style={[
@@ -53,11 +53,12 @@ export default function NotificationsSettingsScreen() {
     const { colors } = useTheme();
     
     const [notifications, setNotifications] = React.useState({
-        tradeAlerts: true,
-        priceAlerts: true,
-        securityAlerts: true,
+        jobAlerts: true,
+        priceAlerts: false,
+        securityAlerts: false,
         newsUpdates: false,
         marketingEmails: false,
+        riskAlerts: true,
     });
 
     const toggleNotification = (key: keyof typeof notifications) => {
@@ -67,41 +68,39 @@ export default function NotificationsSettingsScreen() {
         }));
     };
 
-    const [showNotification, setShowNotification] = useState(false);
-    const [showCooldownWarning, setShowCooldownWarning] = useState(false);
-    const [showCooldownPrompt, setShowCooldownPrompt] = useState(false);
-
-    const handleNotificationConfirm = () => {
-        setShowNotification(false);
-    };
-
-    const handleCooldownWarningConfirm = () => {
-        setShowCooldownWarning(false);
-    };
-
-    const handleCooldownPromptConfirm = (justification: string) => {
-        setShowCooldownPrompt(false);
-        console.log("Justification:", justification);
-    };
-
     const renderMenuItem = (
         title: string,
         description: string,
+        icon: React.ReactNode,
         value: boolean,
-        onChange: () => void
+        onChange: () => void,
+        isDisabled?: boolean
     ) => (
         <ThemedView
             variant="card"
             style={styles.menuItem}
-            border
             rounded="medium"
             padding="medium"
         >
-            <View style={styles.menuContent}>
+            {/* Icon Column */}
+            <View style={styles.iconColumn}>
+                {React.cloneElement(icon as React.ReactElement, {
+                    size: 20,
+                    color: colors.primary,
+                    strokeWidth: 2
+                })}
+            </View>
+
+            {/* Content Column */}
+            <View style={styles.contentColumn}>
                 <ThemedText variant="bodyBold">{title}</ThemedText>
                 <ThemedText variant="caption" secondary>{description}</ThemedText>
             </View>
-            <Toggle value={value} onChange={onChange} />
+
+            {/* Action Column */}
+            <View style={styles.actionColumn}>
+                <Toggle value={value} onChange={onChange} isDisabled={isDisabled} />
+            </View>
         </ThemedView>
     );
 
@@ -118,6 +117,24 @@ export default function NotificationsSettingsScreen() {
                     style={styles.content}
                     showsVerticalScrollIndicator={false}
                 >
+                    <ThemedView 
+                        variant="card" 
+                        style={styles.noteContainer}
+                        rounded="medium"
+                        padding="medium"
+                    >
+                        <ThemedText variant="heading2" style={styles.noteEmoji}>
+                            🚧
+                        </ThemedText>
+                        <ThemedText variant="body" style={styles.noteText}>
+                            Oops! We're still putting the finishing touches on notifications. 
+                            {"\n\n"}
+                            Don't worry though - we'll let you know as soon as you can customize your alerts. In the meantime, we've set up some smart defaults to keep you in the loop! 
+                            {"\n\n"}
+                            We'll spam you with notifications and you'll like it... for now!
+                        </ThemedText>
+                    </ThemedView>
+
                     {/* Trading Notifications */}
                     <View style={styles.section}>
                         <ThemedText variant="label" secondary style={styles.sectionTitle}>
@@ -125,17 +142,37 @@ export default function NotificationsSettingsScreen() {
                         </ThemedText>
                         
                         {renderMenuItem(
-                            "Trade Alerts",
-                            "Get notified about your trades",
-                            notifications.tradeAlerts,
-                            () => toggleNotification('tradeAlerts')
+                            "Job Alerts",
+                            "Get notified about your trading jobs",
+                            <Bell />,
+                            notifications.jobAlerts,
+                            () => toggleNotification('jobAlerts'),
+                            true
                         )}
                         
                         {renderMenuItem(
                             "Price Alerts",
                             "Get notified about price movements",
+                            <AlertTriangle />,
                             notifications.priceAlerts,
-                            () => toggleNotification('priceAlerts')
+                            () => toggleNotification('priceAlerts'),
+                            true
+                        )}
+                    </View>
+
+                    {/* Health & Risk Section */}
+                    <View style={styles.section}>
+                        <ThemedText variant="label" secondary style={styles.sectionTitle}>
+                            HEALTH & RISK
+                        </ThemedText>
+                        
+                        {renderMenuItem(
+                            "Risk Alerts",
+                            "Get notified when your portfolio risk level changes",
+                            <HeartPulse />,
+                            notifications.riskAlerts,
+                            () => toggleNotification('riskAlerts'),
+                            true
                         )}
                     </View>
 
@@ -148,8 +185,10 @@ export default function NotificationsSettingsScreen() {
                         {renderMenuItem(
                             "Security Alerts",
                             "Get notified about security events",
+                            <AlertTriangle />,
                             notifications.securityAlerts,
-                            () => toggleNotification('securityAlerts')
+                            () => toggleNotification('securityAlerts'),
+                            true
                         )}
                     </View>
 
@@ -162,103 +201,23 @@ export default function NotificationsSettingsScreen() {
                         {renderMenuItem(
                             "News Updates",
                             "Receive news and updates",
+                            <Newspaper />,
                             notifications.newsUpdates,
-                            () => toggleNotification('newsUpdates')
+                            () => toggleNotification('newsUpdates'),
+                            true
                         )}
                         
                         {renderMenuItem(
                             "Marketing Emails",
                             "Receive marketing communications",
+                            <Mail />,
                             notifications.marketingEmails,
-                            () => toggleNotification('marketingEmails')
+                            () => toggleNotification('marketingEmails'),
+                            true
                         )}
-                    </View>
-                    
-                    {/* Example notifications with modals */}
-                    <View style={styles.section}>
-                        <ThemedText variant="label" secondary style={styles.sectionTitle}>
-                            EXAMPLE NOTIFICATIONS:
-                        </ThemedText>
-
-                        {/* Simple Notification Button */}
-                        <ThemedView 
-                            variant="card" 
-                            border 
-                            rounded="medium" 
-                            style={styles.button}
-                        >
-                            <TouchableOpacity 
-                                onPress={() => setShowNotification(true)}
-                                style={styles.buttonContainer}
-                            >
-                                <ThemedText variant="bodyBold">Show Notification</ThemedText>
-                            </TouchableOpacity>
-                        </ThemedView>
-
-                        {/* Cooldown Warning Button */}
-                        <ThemedView 
-                            variant="card" 
-                            border 
-                            rounded="medium" 
-                            style={styles.button}
-                        >
-                            <TouchableOpacity 
-                                onPress={() => setShowCooldownWarning(true)}
-                                style={styles.buttonContainer}
-                            >
-                                <ThemedText variant="bodyBold">Show Cooldown Warning</ThemedText>
-                            </TouchableOpacity>
-                        </ThemedView>
-
-                        {/* Cooldown with Prompt Button */}
-                        <ThemedView 
-                            variant="card" 
-                            border 
-                            rounded="medium" 
-                            style={styles.button}
-                        >
-                            <TouchableOpacity 
-                                onPress={() => setShowCooldownPrompt(true)}
-                                style={styles.buttonContainer}
-                            >
-                                <ThemedText variant="bodyBold">Show Cooldown with Prompt</ThemedText>
-                            </TouchableOpacity>
-                        </ThemedView>
                     </View>
                 </ScrollView>
             </SafeAreaView>
-
-            {/* Simple Notification Modal */}
-            <NotificationModal
-                visible={showNotification}
-                onClose={() => setShowNotification(false)}
-                title="Notification Settings"
-                message="Your notification preferences have been updated successfully"
-                type="success"
-                buttonText="View Settings"
-                onButtonPress={handleNotificationConfirm}
-            />
-
-            {/* Cooldown Warning Modal */}
-            <CooldownWarningModal
-                visible={showCooldownWarning}
-                onClose={() => setShowCooldownWarning(false)}
-                title="Warning"
-                message="You are about to disable important trading notifications"
-                cooldownSeconds={5}
-                onConfirm={handleCooldownWarningConfirm}
-            />
-
-            {/* Cooldown with Prompt Modal */}
-            <CooldownPromptModal
-                visible={showCooldownPrompt}
-                onClose={() => setShowCooldownPrompt(false)}
-                title="Warning"
-                message="You are about to disable all trading notifications"
-                cooldownSeconds={10}
-                promptText="Please explain why you want to disable all notifications"
-                onConfirm={handleCooldownPromptConfirm}
-            />
         </ThemedView>
     );
 }
@@ -285,19 +244,25 @@ const styles = StyleSheet.create({
     },
     menuItem: {
         flexDirection: "row",
-        justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 8,
     },
-    menuContent: {
+    iconColumn: {
+        width: 40,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    contentColumn: {
         flex: 1,
+        marginHorizontal: 12,
     },
-    button: {
-        marginBottom: 8,
+    actionColumn: {
+        width: 44,
+        alignItems: "center",
+        justifyContent: "center",
     },
-    buttonContainer: {
-        padding: 16,
-        width: '100%',
+    toggleButtonContainer: {
+        padding: 4,
     },
     toggleButton: {
         width: 44,
@@ -315,5 +280,17 @@ const styles = StyleSheet.create({
     },
     toggleHandleInactive: {
         transform: [{translateX: 0}],
+    },
+    noteContainer: {
+        marginBottom: 24,
+        alignItems: 'center',
+    },
+    noteEmoji: {
+        fontSize: 48,
+        marginBottom: 16,
+    },
+    noteText: {
+        lineHeight: 22,
+        textAlign: 'center',
     },
 });

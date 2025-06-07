@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from "react";
-import {View, Text, StyleSheet} from "react-native";
+import {View, StyleSheet} from "react-native";
 import Svg, {Circle} from "react-native-svg";
 import Animated, {
     useAnimatedProps,
@@ -10,6 +10,8 @@ import Animated, {
     Extrapolate,
     runOnJS,
 } from "react-native-reanimated";
+import { ThemedText } from '@/components/ui/ThemedText';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -17,17 +19,16 @@ interface CircularTimerProps {
     size: number;
     strokeWidth: number;
     seconds: number;
-    color: string;
     onComplete?: () => void;
 }
 
 const CircularTimer: React.FC<CircularTimerProps> = ({
-                                                         size,
-                                                         strokeWidth,
-                                                         seconds,
-                                                         color,
-                                                         onComplete,
-                                                     }) => {
+    size,
+    strokeWidth,
+    seconds,
+    onComplete,
+}) => {
+    const { colors } = useTheme();
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const progress = useSharedValue(0);
@@ -37,7 +38,6 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
     useEffect(() => {
         if (seconds <= 0) return;
 
-        // Reset progress and start animation
         progress.value = 0;
         setTimeLeft(seconds);
         setIsRunning(true);
@@ -84,16 +84,17 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    stroke="#1B2A3A"
+                    stroke={colors.error}
                     strokeWidth={strokeWidth}
                     fill="none"
+                    opacity={0.2}
                 />
                 {/* Animated Progress Circle */}
                 <AnimatedCircle
                     cx={size / 2}
                     cy={size / 2}
                     r={radius}
-                    stroke={color}
+                    stroke={colors.error}
                     strokeWidth={strokeWidth}
                     strokeDasharray={circumference}
                     animatedProps={animatedProps}
@@ -104,8 +105,25 @@ const CircularTimer: React.FC<CircularTimerProps> = ({
             </Svg>
             {/* Timer Display */}
             <View style={[styles.textContainer, {width: size, height: size}]}>
-                <Text style={[styles.timerText, {color}]}>{timeLeft}</Text>
-                <Text style={styles.unitText}>s</Text>
+                <ThemedText 
+                    variant="heading2" 
+                    style={{
+                        ...styles.timerText,
+                        color: colors.error
+                    }}
+                >
+                    {timeLeft}
+                </ThemedText>
+                <ThemedText 
+                    variant="body" 
+                    secondary 
+                    style={{
+                        ...styles.unitText,
+                        color: colors.error
+                    }}
+                >
+                    s
+                </ThemedText>
             </View>
         </View>
     );
@@ -128,7 +146,6 @@ const styles = StyleSheet.create({
     },
     unitText: {
         fontSize: 16,
-        color: "#748CAB",
         marginLeft: 2,
     },
 });

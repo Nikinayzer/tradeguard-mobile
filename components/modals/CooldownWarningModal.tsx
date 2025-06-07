@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import CooldownModal from './CooldownModal';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface CooldownWarningModalProps {
     visible: boolean;
@@ -20,10 +20,18 @@ const CooldownWarningModal: React.FC<CooldownWarningModalProps> = ({
     onConfirm,
 }) => {
     const [isButtonEnabled, setIsButtonEnabled] = useState(false);
+    const { colors } = useTheme();
 
     const handleClose = () => {
         setIsButtonEnabled(false);
         onClose();
+    };
+
+    const handleConfirm = () => {
+        if (onConfirm) {
+            onConfirm();
+        }
+        handleClose();
     };
 
     return (
@@ -34,10 +42,9 @@ const CooldownWarningModal: React.FC<CooldownWarningModalProps> = ({
             message={message}
             cooldownSeconds={cooldownSeconds}
             onComplete={() => setIsButtonEnabled(true)}
-            buttonText={isButtonEnabled ? 'Close' : 'Please wait'}
-            onButtonPress={handleClose}
+            buttonText={isButtonEnabled ? 'Proceed' : 'Please wait'}
+            onButtonPress={handleConfirm}
             isButtonEnabled={isButtonEnabled}
-            showCloseButton={true}
         />
     );
 };

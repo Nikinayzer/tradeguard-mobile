@@ -20,14 +20,14 @@ import {useTheme} from '@/contexts/ThemeContext';
 import {ThemedText} from '@/components/ui/ThemedText';
 import {ThemedView} from '@/components/ui/ThemedView';
 import {TimerPickerModal} from "react-native-timer-picker";
+import tinycolor from 'tinycolor2';
 
 interface InputLabelProps {
     label: string;
     icon?: React.ReactNode;
-    tooltip?: string;
 }
 
-function InputLabel({label, icon, tooltip}: InputLabelProps) {
+function InputLabel({label, icon}: InputLabelProps) {
     const { colors } = useTheme();
     
     return (
@@ -38,11 +38,6 @@ function InputLabel({label, icon, tooltip}: InputLabelProps) {
                 </View>
             }
             <ThemedText style={styles.inputLabel}>{label}</ThemedText>
-            {tooltip && (
-                <TouchableOpacity style={styles.tooltipIcon}>
-                    <Info size={14} color={colors.textTertiary} />
-                </TouchableOpacity>
-            )}
         </View>
     );
 }
@@ -154,14 +149,12 @@ function DurationInput({value, onChange, primaryColor}: DurationInputProps) {
                 <InputLabel 
                     label="Duration" 
                     icon={<Clock size={20} color={primaryColor} />}
-                    tooltip="Trading duration"
                 />
                 <TouchableOpacity
                     style={[
                         styles.valueDisplay, 
                         {
-                            backgroundColor: colors.backgroundSecondary,
-                            borderColor: colors.primary + '33'
+                            backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString()
                         }
                     ]}
                     onPress={() => setShowTimePicker(true)}
@@ -249,8 +242,7 @@ export function JobCreator() {
     
     const handleUpdateParams = (key: keyof JobParams, value: JobParams[keyof JobParams]) => {
         const updatedJobParams = {...jobParams, [key]: value};
-        
-        // Floor numeric values to 3 decimal places
+
         if (key === 'amount' || key === 'discountPct') {
             const numericValue = Number(value);
             if (!isNaN(numericValue)) {
@@ -282,7 +274,6 @@ export function JobCreator() {
                 <ThemedView 
                     variant="card" 
                     style={styles.tabContainer}
-                    border
                     rounded="medium"
                 >
                     <Animated.View 
@@ -351,7 +342,6 @@ export function JobCreator() {
             <ThemedView
                 variant="card"
                 style={styles.paramSection}
-                border
                 rounded="large"
                 padding="large"
             >
@@ -432,7 +422,6 @@ export function JobCreator() {
                         <InputLabel
                             label="Force Entry"
                             icon={<AlertOctagon size={20} color={isDCA ? colors.primary : colors.secondary}/>}
-                            tooltip="Force immediate trading"
                         />
                         <Toggle
                             value={isForce}
@@ -597,8 +586,7 @@ const styles = StyleSheet.create({
     valueDisplay: {
         paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: 8,
-        borderWidth: 1,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
         minWidth: 100,

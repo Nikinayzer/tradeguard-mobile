@@ -58,7 +58,6 @@ export function PositionCard({ position, onPress, isClosed = false }: PositionCa
         <ThemedView 
             variant="card" 
             style={styles.card} 
-            border 
             rounded="medium"
         >
             <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.cardTouchable}>

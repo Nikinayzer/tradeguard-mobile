@@ -38,6 +38,7 @@ import NewsScreen from '../screens/news/NewsScreen';
 import AllPositionsScreen from '../screens/portfolio/AllPositionsScreen';
 import PatternDetailScreen from '../screens/health/PatternDetailScreen';
 import HealthFAQScreen from '../screens/health/HealthFAQScreen';
+import AutoFAQScreen from '../screens/auto/AutoFAQScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator();
@@ -90,6 +91,7 @@ function AutoStack() {
             <Stack.Screen name="JobDetail" component={JobDetailScreen}/>
             <Stack.Screen name="JobList" component={JobListScreen}/>
             <Stack.Screen name="CoinSelector" component={CoinSelectorScreen}/>
+            <Stack.Screen name="AutoFAQ" component={AutoFAQScreen}/>
         </Stack.Navigator>
     );
 }

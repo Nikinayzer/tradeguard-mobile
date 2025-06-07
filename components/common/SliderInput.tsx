@@ -12,6 +12,7 @@ import {
 import { Plus, Minus } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
 import { useTheme } from '@/contexts/ThemeContext';
+import tinycolor from 'tinycolor2';
 
 interface SliderInputProps {
     value: number;
@@ -100,8 +101,7 @@ export function SliderInput({
                     style={[
                         styles.valueDisplay, 
                         {
-                            backgroundColor: colors.backgroundSecondary,
-                            borderColor: disabled ? colors.buttonDisabled : colors.primary + '33' // 20% opacity
+                            backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString(),
                         },
                         disabled && {
                             opacity: 0.7
@@ -228,9 +228,8 @@ const styles = StyleSheet.create({
     valueDisplay: {
         paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: 'center',
-        borderWidth: 1,
         minWidth: 80,
     },
     valueText: {
@@ -259,7 +258,7 @@ const styles = StyleSheet.create({
     slider: {
         width: '100%',
         height: 30,
-        marginTop: -12, // Adjust to center the thumb
+        marginTop: -12,
     },
     labelsContainer: {
         flexDirection: 'row',

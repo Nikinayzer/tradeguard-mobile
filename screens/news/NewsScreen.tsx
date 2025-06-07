@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Text } from 'react-native';
+import { View, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,6 +11,7 @@ import { newsService, NewsItem as NewsItemType } from '@/services/api/news';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { ThemedView } from '@/components/ui/ThemedView';
 import { ThemedText } from '@/components/ui/ThemedText';
+import { Ghost } from 'lucide-react-native';
 
 type NewsScreenNavigationProp = NativeStackNavigationProp<HomeStackParamList | MarketStackParamList>;
 type NewsScreenRouteProp = RouteProp<HomeStackParamList | MarketStackParamList, 'News'>;
@@ -97,9 +98,13 @@ export default function NewsScreen() {
         if (loading) return null;
         
         return (
-            <ThemedView style={styles.emptyState}>
-                <ThemedText variant="body" color={colors.textSecondary}>
-                    {error || 'No news available'}
+            <ThemedView style={styles.emptyState} variant="transparent">
+                <Ghost size={64} color={colors.textTertiary} style={styles.emptyStateIcon} />
+                <ThemedText variant="heading2" style={styles.emptyStateTitle}>
+                    No News Available
+                </ThemedText>
+                <ThemedText variant="body" secondary style={styles.emptyStateText}>
+                    Who stole the news? We're using a free API, so sometimes the news might be playing hide and seek!
                 </ThemedText>
             </ThemedView>
         );
@@ -121,7 +126,10 @@ export default function NewsScreen() {
                 data={news}
                 renderItem={renderItem}
                 keyExtractor={item => item.id.toString()}
-                contentContainerStyle={styles.list}
+                contentContainerStyle={[
+                    styles.list,
+                    news.length === 0 && !loading && styles.emptyList
+                ]}
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.5}
                 ListFooterComponent={renderFooter}
@@ -147,13 +155,30 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 8,
     },
+    emptyList: {
+        flex: 1,
+    },
     footer: {
         padding: 16,
         alignItems: 'center',
     },
     emptyState: {
-        padding: 20,
+        flex: 1,
+        padding: 32,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    emptyStateIcon: {
+        marginBottom: 24,
+        opacity: 0.7,
+    },
+    emptyStateTitle: {
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    emptyStateText: {
+        textAlign: 'center',
+        lineHeight: 22,
+        paddingHorizontal: 32,
     },
 }); 

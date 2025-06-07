@@ -51,14 +51,6 @@ interface LimitSetting {
     presets?: number[];
 }
 
-interface BooleanSetting {
-    id: 'allowDcaForce' | 'allowLiqForce';
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    enabled: boolean;
-}
-
 const limitMappings = {
     maxSingleJobLimit: {
         title: 'Single Job Limit',
@@ -144,18 +136,6 @@ const limitMappings = {
         formatValue: (value: number) => value.toLocaleString(),
         parseValue: (value: string) => parseInt(value.replace(/[^0-9]/g, ''), 10) || 0
     },
-    maxConsecutiveLosses: {
-        title: 'Consecutive Losses',
-        description: 'Maximum number of consecutive losing trades',
-        icon: <TrendingDown size={24} color="#748CAB"/>,
-        unit: 'trades',
-        min: 0,
-        max: 100,
-        presets: [3, 5, 10, 25, 50],
-        keyboardType: 'numeric' as const,
-        formatValue: (value: number) => value.toString(),
-        parseValue: (value: string) => parseInt(value.replace(/[^0-9]/g, ''), 10) || 0
-    },
     maxDailyBalanceChange: {
         title: 'Daily Balance Change',
         description: 'Maximum percentage change in balance per day',
@@ -167,70 +147,21 @@ const limitMappings = {
         keyboardType: 'decimal-pad' as const,
         formatValue: (value: number) => value.toString(),
         parseValue: (value: string) => parseFloat(value.replace(/[^0-9.]/g, '')) || 0
-    },
-    volatilityLimit: {
-        title: 'Volatility Limit',
-        description: 'Maximum market volatility for trading',
-        icon: <Percent size={24} color="#748CAB"/>,
-        unit: '%',
-        min: 0,
-        max: 100,
-        presets: [1, 2, 5, 10, 15],
-        keyboardType: 'decimal-pad' as const,
-        formatValue: (value: number) => value.toString(),
-        parseValue: (value: string) => parseFloat(value.replace(/[^0-9.]/g, '')) || 0
-    },
-    liquidityThreshold: {
-        title: 'Liquidity Threshold',
-        description: 'Minimum market liquidity required',
-        icon: <DollarSign size={24} color="#748CAB"/>,
-        unit: 'USDT',
-        min: 0,
-        max: 1000000,
-        presets: [10000, 100000, 500000, 1000000],
-        keyboardType: 'numeric' as const,
-        formatValue: (value: number) => value.toLocaleString(),
-        parseValue: (value: string) => parseInt(value.replace(/[^0-9]/g, ''), 10) || 0
     }
 };
-
-const booleanSettings = [
-    {
-        id: 'allowDcaForce' as const,
-        title: 'Allow DCA Force',
-        description: 'Enable forced Dollar Cost Averaging in unfavorable conditions',
-        icon: <Repeat size={24} color="#748CAB"/>
-    },
-    {
-        id: 'allowLiqForce' as const,
-        title: 'Allow Liquidation Force',
-        description: 'Enable forced liquidation in emergency situations',
-        icon: <Trash2 size={24} color="#748CAB"/>
-    }
-];
 
 export default function AccountLimitsScreen({navigation}: any) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [limits, setLimits] = useState<LimitSetting[]>([]);
-    const [booleans, setBooleans] = useState<BooleanSetting[]>([]);
     const {alert, showAlert, hideAlert} = useAlert();
     const {colors} = useTheme();
 
     useEffect(() => {
-        // Replace hardcoded colors in icons with theme colors
         Object.keys(limitMappings).forEach(key => {
             const mappingKey = key as keyof typeof limitMappings;
             limitMappings[mappingKey].icon = React.cloneElement(
                 limitMappings[mappingKey].icon as React.ReactElement,
-                {color: colors.textSecondary}
-            );
-        });
-
-        // Update boolean settings icons
-        booleanSettings.forEach(setting => {
-            setting.icon = React.cloneElement(
-                setting.icon as React.ReactElement,
                 {color: colors.textSecondary}
             );
         });
@@ -252,14 +183,7 @@ export default function AccountLimitsScreen({navigation}: any) {
                     isEditing: false
                 }));
 
-            const transformedBooleans = booleanSettings.map(setting => ({
-                ...setting,
-                enabled: response[setting.id]
-            }));
-
-
             setLimits(transformedLimits);
-            setBooleans(transformedBooleans);
         } catch (error) {
             console.error('Error fetching limits:', error);
             showAlert({
@@ -305,14 +229,6 @@ export default function AccountLimitsScreen({navigation}: any) {
                 )
             );
         }
-    };
-
-    const toggleBoolean = (id: string) => {
-        setBooleans(prevBooleans =>
-            prevBooleans.map(bool =>
-                bool.id === id ? {...bool, enabled: !bool.enabled} : bool
-            )
-        );
     };
 
     const handleInputBlur = (id: string) => {
@@ -421,19 +337,10 @@ export default function AccountLimitsScreen({navigation}: any) {
                 maxDailyTrades: "0",
                 tradingCooldown: "0",
                 dailyLossLimit: "0",
-                maxConsecutiveLosses: "0",
                 maxDailyBalanceChange: "0",
-                volatilityLimit: "0",
-                liquidityThreshold: "0",
-                allowDcaForce: false,
-                allowLiqForce: false,
                 ...limits.reduce((acc, limit) => ({
                     ...acc,
                     [limit.id]: limit.enabled ? limit.value.toString() : "0"
-                }), {}),
-                ...booleans.reduce((acc, bool) => ({
-                    ...acc,
-                    [bool.id]: bool.enabled
                 }), {})
             };
 
@@ -598,39 +505,10 @@ export default function AccountLimitsScreen({navigation}: any) {
                             )}
                         </ThemedView>
                     ))}
-
-                    <ThemedView variant="transparent" style={styles.sectionTitle}>
-                        <ThemedText variant="heading3" style={styles.sectionTitleText}>Advanced Settings</ThemedText>
-                    </ThemedView>
-
-                    {booleans.map((bool) => (
-                        <ThemedView key={bool.id} variant="card" style={styles.limitCard} rounded border>
-                            <View style={styles.limitHeader}>
-                                <View style={styles.limitIcon}>
-                                    {bool.icon}
-                                </View>
-                                <View style={styles.limitTitleContainer}>
-                                    <ThemedText variant="bodyBold" style={styles.limitTitle}>{bool.title}</ThemedText>
-                                    <ThemedText variant="caption" secondary
-                                                style={styles.limitDescription}>{bool.description}</ThemedText>
-                                </View>
-                                <Switch
-                                    value={bool.enabled}
-                                    onValueChange={() => toggleBoolean(bool.id)}
-                                    trackColor={{false: colors.backgroundTertiary, true: colors.primary}}
-                                    thumbColor={bool.enabled ? colors.buttonPrimaryText : colors.textSecondary}
-                                />
-                            </View>
-                        </ThemedView>
-                    ))}
                 </ThemedView>
             </ScrollView>
 
-            <View
-                style={[
-                    styles.buttonContainer,
-                ]}
-            >
+            <View style={styles.buttonContainer}>
                 <TouchableOpacity
                     style={[
                         styles.saveButton,
@@ -667,7 +545,7 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     scrollContent: {
-        paddingBottom: 80, // Add padding at the bottom to account for the floating button
+        paddingBottom: 80,
     },
     description: {
         marginBottom: 24,
@@ -737,13 +615,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 6,
-    },
-    sectionTitle: {
-        marginTop: 8,
-        marginBottom: 16,
-    },
-    sectionTitleText: {
-        marginBottom: 8,
     },
     buttonContainer: {
         position: 'absolute',

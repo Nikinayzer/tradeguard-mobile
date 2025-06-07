@@ -7,7 +7,7 @@ import {JobCreator} from '@/components/screens/auto/JobCreator';
 import {JobCard} from '@/components/screens/auto/JobCard';
 import {autoService, DCAJobParams, LIQJobParams} from '@/services/api/auto';
 import {usePullToRefresh} from '@/hooks/usePullToRefresh';
-import { History, ArrowRight, ChevronRight, HeartCrack} from 'lucide-react-native';
+import { History, ArrowRight, ChevronRight, HeartCrack, Info, HelpCircle } from 'lucide-react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSelector} from "react-redux";
@@ -20,6 +20,8 @@ import {ThemedHeader} from '@/components/ui/ThemedHeader';
 import {ThemedView} from '@/components/ui/ThemedView';
 import SwipeButton from "rn-swipe-button/src/components/SwipeButton";
 import {useActiveJobs} from '@/services/redux/hooks';
+import CooldownWarningModal from '@/components/modals/CooldownWarningModal';
+import CooldownPromptModal from '@/components/modals/CooldownPromptModal';
 
 type NavigationProp = NativeStackNavigationProp<any>;
 
@@ -35,9 +37,12 @@ export default function AutomatedTradeScreen() {
     const navigation = useNavigation<NavigationProp>();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const {colors} = useTheme();
+    const [showCooldownWarning, setShowCooldownWarning] = useState(false);
+    const [showCooldownPrompt, setShowCooldownPrompt] = useState(false);
 
     const {jobType, jobParams, selectedCoins} = useSelector((state: RootState) => state.job);
     const {jobs, lastUpdated} = useActiveJobs();
+    const {topRiskLevel} = useSelector((state: RootState) => state.risk);
 
     const {alert, showAlert, hideAlert} = useAlert();
 
@@ -69,7 +74,18 @@ export default function AutomatedTradeScreen() {
             });
             return;
         }
+        if (topRiskLevel === 'medium') {
+            setShowCooldownWarning(true);
+            return;
+        } else if (topRiskLevel === 'high') {
+            setShowCooldownPrompt(true);
+            return;
+        }
 
+        await createJob();
+    };
+
+    const createJob = async () => {
         try {
             setIsSubmitting(true);
 
@@ -102,6 +118,17 @@ export default function AutomatedTradeScreen() {
         }
     };
 
+    const handleCooldownWarningConfirm = () => {
+        setShowCooldownWarning(false);
+        createJob();
+    };
+
+    const handleCooldownPromptConfirm = (justification: string) => {
+        setShowCooldownPrompt(false);
+        // send justification
+        createJob();
+    };
+
     const handleViewJobDetails = (id: string) => {
         navigation.navigate('JobDetail', {id});
     };
@@ -113,13 +140,16 @@ export default function AutomatedTradeScreen() {
     return (
         <TooltipContext.Provider value={{activeTooltipId, setActiveTooltipId}}>
             <ThemedView style={styles.safeArea} variant="screen">
-                <SafeAreaView style={{flex: 1}}>
+                <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
                     <ThemedHeader
-                        title="Autotrading"
-                        subtitle="Setup your perfect strategy"
-                        onRefresh={handleRefresh}
-                        canRefresh={true}
-                        lastUpdated={lastUpdated ? new Date(lastUpdated) : undefined}
+                        title="Automated Trading"
+                        subtitle="Create and manage automated trading jobs"
+                        canGoBack={true}
+                        onBack={() => navigation.goBack()}
+                        actions={[{
+                            icon: <HelpCircle size={24} color={colors.primary} />,
+                            onPress: () => navigation.navigate('AutoFAQ')
+                        }]}
                     />
 
                     <ScrollView
@@ -226,9 +256,28 @@ export default function AutomatedTradeScreen() {
                         </ThemedView>
                     </ScrollView>
 
-                    {alert && <CustomAlert {...alert} onClose={hideAlert}/>}
+                    <CooldownWarningModal
+                        visible={showCooldownWarning}
+                        onClose={() => setShowCooldownWarning(false)}
+                        onConfirm={handleCooldownWarningConfirm}
+                        title="Risk Warning"
+                        message="Your current risk level is moderate. Please review your trading strategy carefully."
+                        cooldownSeconds={15}
+                    />
+
+                    <CooldownPromptModal
+                        visible={showCooldownPrompt}
+                        onClose={() => setShowCooldownPrompt(false)}
+                        onConfirm={handleCooldownPromptConfirm}
+                        title="High Risk Warning"
+                        message="Your current risk level is high. We recommend reviewing your risk report in the Health screen before proceeding with this trade."
+                        cooldownSeconds={30}
+                        promptText="Please explain why you want to proceed with this trade despite the high risk level:"
+                    />
                 </SafeAreaView>
             </ThemedView>
+
+            {alert && <CustomAlert {...alert} onClose={hideAlert}/>}
         </TooltipContext.Provider>
     );
 }
@@ -236,15 +285,19 @@ export default function AutomatedTradeScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
+        borderWidth: 0,
     },
     container: {
         flex: 1,
+        borderWidth: 0,
     },
     scrollContent: {
         paddingBottom: 30,
+        borderWidth: 0,
     },
     contentContainer: {
         marginTop: 8,
+        borderWidth: 0,
     },
     createButton: {
         marginHorizontal: 16,
@@ -300,6 +353,7 @@ const styles = StyleSheet.create({
     recentJobsSection: {
         marginHorizontal: 16,
         marginBottom: 24,
+        borderWidth: 0,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -317,6 +371,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 16,
+        borderWidth: 0,
     },
     emptyStateIcon: {
         marginBottom: 24,

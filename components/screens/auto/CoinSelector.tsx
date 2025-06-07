@@ -79,7 +79,6 @@ export function CoinSelector() {
                     <ThemedView
                         variant="card"
                         style={styles.emptyStateGradient}
-                        border
                         rounded="medium"
                         padding="large"
                     >

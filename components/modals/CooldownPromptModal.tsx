@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TextInput } from 'react-native';
 import CooldownModal from './CooldownModal';
+import { ThemedText } from '@/components/ui/ThemedText';
+import { useTheme } from '@/contexts/ThemeContext';
+import tinycolor from 'tinycolor2';
 
 interface CooldownPromptModalProps {
     visible: boolean;
@@ -25,6 +28,11 @@ const CooldownPromptModal: React.FC<CooldownPromptModalProps> = ({
     const [isTextEnabled, setIsTextEnabled] = useState(true);
     const [justification, setJustification] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { colors } = useTheme();
+
+    useEffect(() => {
+        setIsButtonEnabled(justification.trim().length >= 10);
+    }, [justification]);
 
     const handleClose = () => {
         setIsButtonEnabled(false);
@@ -33,7 +41,7 @@ const CooldownPromptModal: React.FC<CooldownPromptModalProps> = ({
     };
 
     const handleSubmit = () => {
-        if (justification.trim()) {
+        if (justification.trim().length >= 10) {
             setIsSubmitting(true);
             onConfirm(justification);
             handleClose();
@@ -47,24 +55,28 @@ const CooldownPromptModal: React.FC<CooldownPromptModalProps> = ({
             title={title}
             message={message}
             cooldownSeconds={cooldownSeconds}
-            onComplete={() => setIsButtonEnabled(true)}
-            buttonText={isButtonEnabled ? 'Proceed' : 'Please wait'}
+            onComplete={() => setIsTextEnabled(true)}
+            buttonText={isButtonEnabled ? 'Proceed' : justification.trim().length < 10 ? 'Please provide a detailed justification' : 'Please wait'}
             onButtonPress={handleSubmit}
             isButtonEnabled={isButtonEnabled}
             isLoading={isSubmitting}
         >
             <View style={styles.promptContainer}>
-                <Text style={styles.promptLabel}>{promptText}</Text>
-                <TextInput
-                    style={styles.input}
-                    value={justification}
-                    onChangeText={setJustification}
-                    placeholder="Enter your justification..."
-                    placeholderTextColor="#748CAB"
-                    multiline
-                    numberOfLines={3}
-                    editable={isTextEnabled}
-                />
+                <View style={[styles.inputContainer, { 
+                    backgroundColor: tinycolor(colors.backgroundTertiary).lighten(5).toHexString(),
+                }]}>
+                    <TextInput
+                        value={justification}
+                        onChangeText={setJustification}
+                        placeholder={promptText}
+                        placeholderTextColor="#748CAB"
+                        multiline
+                        numberOfLines={3}
+                        editable={isTextEnabled}
+                        style={[styles.inputText, { color: colors.text }]}
+                        textAlignVertical="top"
+                    />
+                </View>
             </View>
         </CooldownModal>
     );
@@ -73,21 +85,18 @@ const CooldownPromptModal: React.FC<CooldownPromptModalProps> = ({
 const styles = StyleSheet.create({
     promptContainer: {
         width: '100%',
-        marginVertical: 16,
+        marginVertical: 8,
     },
-    promptLabel: {
-        color: '#E2E8F0',
-        fontSize: 14,
-        marginBottom: 8,
+    inputContainer: {
+        borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    input: {
-        backgroundColor: '#22314A',
-        borderRadius: 8,
-        padding: 12,
-        color: '#E2E8F0',
-        fontSize: 14,
-        textAlignVertical: 'top',
-        minHeight: 80,
+    inputText: {
+        flex: 1,
+        fontSize: 16,
+        padding: 16,
+        minHeight: 120,
     },
 });
 

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PortfolioSummary } from '@/components/screens/portfolio/PortfolioSummary';
 import { PositionCard } from '@/components/screens/portfolio/PositionCard';
-import { ChevronRight, AlertCircle, Plus } from "lucide-react-native";
+import { ChevronRight, AlertCircle, Plus, BarChart2, History } from "lucide-react-native";
 import { useTheme } from '@/contexts/ThemeContext';
 import { ThemedText } from '@/components/ui/ThemedText';
 import { ThemedView } from '@/components/ui/ThemedView';
@@ -204,8 +204,14 @@ export default function PortfolioScreen() {
                             )}
                     </View>
                     ) : (
-                        <ThemedView variant="section" style={styles.emptyPositionsContainer} rounded="medium">
-                            <ThemedText variant="body" secondary>No open positions</ThemedText>
+                        <ThemedView variant="transparent" style={styles.emptyStateContainer}>
+                            <BarChart2 size={48} color={colors.textTertiary} style={styles.emptyStateIcon} />
+                            <ThemedText variant="heading3" style={styles.emptyStateTitle}>
+                                No Open Positions
+                            </ThemedText>
+                            <ThemedText variant="body" secondary style={styles.emptyStateText}>
+                                Ready to start trading? Open your first position and watch your portfolio grow!
+                            </ThemedText>
                         </ThemedView>
                     )}
                 </ThemedView>
@@ -254,8 +260,14 @@ export default function PortfolioScreen() {
                             )}
                     </View>
                     ) : (
-                        <ThemedView variant="section" style={styles.emptyPositionsContainer} rounded="medium">
-                            <ThemedText variant="body" secondary>No closed positions</ThemedText>
+                        <ThemedView variant="transparent" style={styles.emptyStateContainer}>
+                            <History size={48} color={colors.textTertiary} style={styles.emptyStateIcon} />
+                            <ThemedText variant="heading3" style={styles.emptyStateTitle}>
+                                No Closed Positions
+                            </ThemedText>
+                            <ThemedText variant="body" secondary style={styles.emptyStateText}>
+                                Your trading history will appear here once you close your positions
+                            </ThemedText>
                         </ThemedView>
                     )}
                 </ThemedView>
@@ -299,11 +311,6 @@ const styles = StyleSheet.create({
     seeAllText: {
         marginRight: 4,
     },
-    emptyPositionsContainer: {
-        padding: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
     viewMoreButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -311,21 +318,21 @@ const styles = StyleSheet.create({
         padding: 12,
     },
     emptyStateContainer: {
-        flex: 1,
+        padding: 32,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
     },
     emptyStateIcon: {
-        width: 80,
-        height: 80,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 24,
+        marginBottom: 16,
+        opacity: 0.7,
     },
     emptyStateTitle: {
-        marginBottom: 12,
+        marginBottom: 8,
         textAlign: 'center',
+    },
+    emptyStateText: {
+        textAlign: 'center',
+        lineHeight: 20,
     },
     emptyStateDescription: {
         textAlign: 'center',

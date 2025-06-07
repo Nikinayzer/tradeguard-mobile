@@ -12,6 +12,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { Position } from '@/types/events';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { PortfolioStackParamList } from '@/navigation/navigation';
+import { BarChart2, History } from 'lucide-react-native';
 
 const CATEGORIES = ['Active', 'Closed'];
 type PositionCategory = 'Active' | 'Closed';
@@ -28,7 +29,7 @@ export default function AllPositionsScreen() {
 
     const { isRefreshing, handleRefresh } = usePullToRefresh({
         onRefresh: async () => {
-            // TODO: Implement actual refresh logic
+            // just dongle, since data is from redux
             await new Promise(resolve => setTimeout(resolve, 1000));
         },
         refreshDelay: 1000,
@@ -86,9 +87,20 @@ export default function AllPositionsScreen() {
                         />
                     ))
                 ) : (
-                    <ThemedView variant="section" style={styles.emptyContainer} rounded="medium">
-                        <ThemedText variant="body" secondary>
-                            No {selectedCategory.toLowerCase()} positions
+                    <ThemedView variant="transparent" style={styles.emptyStateContainer}>
+                        {selectedCategory === 'Active' ? (
+                            <BarChart2 size={48} color={colors.textTertiary} style={styles.emptyStateIcon} />
+                        ) : (
+                            <History size={48} color={colors.textTertiary} style={styles.emptyStateIcon} />
+                        )}
+                        <ThemedText variant="heading3" style={styles.emptyStateTitle}>
+                            No {selectedCategory} Positions
+                        </ThemedText>
+                        <ThemedText variant="body" secondary style={styles.emptyStateText}>
+                            {selectedCategory === 'Active' 
+                                ? "Ready to start trading? Open your first position and watch your portfolio grow!"
+                                : "Your trading history will appear here once you close your positions"
+                            }
                         </ThemedText>
                     </ThemedView>
                 )}
@@ -107,9 +119,21 @@ const styles = StyleSheet.create({
     content: {
         padding: 16,
     },
-    emptyContainer: {
-        padding: 24,
+    emptyStateContainer: {
+        padding: 32,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    emptyStateIcon: {
+        marginBottom: 16,
+        opacity: 0.7,
+    },
+    emptyStateTitle: {
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    emptyStateText: {
+        textAlign: 'center',
+        lineHeight: 20,
     },
 }); 

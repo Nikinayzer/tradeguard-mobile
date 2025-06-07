@@ -6,7 +6,8 @@ export interface RiskPatternDetails {
     limit: number;
     ratio: number;
     components?: Array<{
-        id: string;
+        pattern_id: string;
+        internal_id: string;
         pattern_type: string;
         severity: number;
     }>;
@@ -21,6 +22,7 @@ export interface CategoryWeights {
 
 export interface RiskPattern {
     message: string;
+    description?: string;
     details: RiskPatternDetails;
     unique: boolean;
     severity: number;

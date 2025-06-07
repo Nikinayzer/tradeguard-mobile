@@ -44,13 +44,15 @@ export type AutoStackParamList = {
     JobDetail: { id: string };
     JobList: undefined;
     CoinSelector: undefined;
+    AutoFAQ: undefined;
 };
 
 export type HealthStackParamList = {
     HealthMain: undefined;
-    PatternDetail: { 
+    PatternDetail: {
         patternId: string;
         isComposite: boolean;
+        riskStateSnapshot?: any;
     };
     HealthFAQ: undefined;
 };
