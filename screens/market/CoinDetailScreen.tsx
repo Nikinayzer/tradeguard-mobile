@@ -228,7 +228,7 @@ export default function CoinDetailScreen() {
                                 <BarChart2 size={16} color={colors.textSecondary} />
                                 <ThemedText variant="label" secondary>24h Volume</ThemedText>
                             </View>
-                            <ThemedText variant="heading2">{formatVolume(coin.volume24h)}</ThemedText>
+                            <ThemedText variant="heading2">{formatVolume(coin.volume24h * coin.currentPrice)}</ThemedText>
                         </ThemedView>
 
                         <ThemedView variant="card" style={styles.statItem}>

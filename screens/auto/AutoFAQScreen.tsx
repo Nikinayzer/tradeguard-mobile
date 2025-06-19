@@ -23,7 +23,7 @@ const jobParameters = {
             },
             {
                 name: "Trade Direction",
-                description: "Choose between BUY (accumulate) or SELL (take profit) orders.",
+                description: "Choose between BUY (long) or SELL (short) orders.",
                 icon: ArrowLeftRight
             },
             {

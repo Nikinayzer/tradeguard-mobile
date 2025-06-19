@@ -77,9 +77,11 @@ export default function AutomatedTradeScreen() {
         if (topRiskLevel === 'medium') {
             setShowCooldownWarning(true);
             return;
-        } else if (topRiskLevel === 'high') {
-            setShowCooldownPrompt(true);
-            return;
+        } else { // @ts-ignore
+            if (topRiskLevel === 'high' || topRiskLevel === 'critical') {
+                        setShowCooldownPrompt(true);
+                        return;
+                    }
         }
 
         await createJob();

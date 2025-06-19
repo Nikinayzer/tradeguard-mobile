@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {Dispatch, SetStateAction, useEffect, useState} from 'react';
 import {
     View,
     Text,
@@ -254,7 +254,7 @@ export default function RegisterScreen() {
         icon: string,
         isPassword: boolean = false,
         showPasswordState?: boolean,
-        setShowPasswordState?: (show: boolean) => void
+        setShowPasswordState?: Dispatch<SetStateAction<boolean>>
     ) => (
         <View style={styles.inputContainer}>
             <View style={[styles.input, errors[field] && styles.inputError,
@@ -270,7 +270,6 @@ export default function RegisterScreen() {
                 {field === 'dateOfBirth' ? (
                     <TouchableOpacity
                         onPress={() => {
-                            console.log('Opening date picker at', Date.now());
                             setShowDatePicker(true)
                         }}
                         style={{flex: 1}}
@@ -288,6 +287,11 @@ export default function RegisterScreen() {
                 ) : (
                     <>
                         <TextInput
+                            key={
+                                isPassword
+                                    ? `${field}-${String(showPasswordState)}`
+                                    : field
+                            }
                             placeholder={placeholder}
                             placeholderTextColor="#748CAB"
                             value={formData[field]}
@@ -297,7 +301,7 @@ export default function RegisterScreen() {
                                     [field]: text
                                 })
                             }
-                            style={[styles.inputText, { color: colors.text, flex: 1 }]}
+                            style={[styles.inputText, {color: colors.text, flex: 1}]}
                             autoCapitalize={autoCapitalize ? 'words' : 'none'}
                             autoCorrect={false}
                             keyboardType={field === 'email' ? 'email-address' : 'default'}
@@ -305,7 +309,11 @@ export default function RegisterScreen() {
                         />
                         {isPassword && setShowPasswordState && (
                             <TouchableOpacity
-                                onPress={() => setShowPasswordState(!showPasswordState)}
+                                onPress={() =>
+                                    setShowPasswordState((prev: boolean) => {
+                                        return !prev
+                                    })
+                                }
                                 style={styles.passwordToggle}
                             >
                                 <Ionicons
@@ -397,11 +405,13 @@ export default function RegisterScreen() {
                                     hasConsent && styles.checkboxChecked
                                 ]}>
                                     {hasConsent && (
-                                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                                        <Ionicons name="checkmark" size={16} color="#FFFFFF"/>
                                     )}
                                 </View>
                                 <Text style={styles.consentText}>
-                                    I agree to the processing of my personal data for the purpose of account management and service provision. I understand that my data will be handled in accordance with the privacy policy.
+                                    I agree to the processing of my personal data for the purpose of account management
+                                    and service provision. I understand that my data will be handled in accordance with
+                                    the privacy policy.
                                 </Text>
                             </TouchableOpacity>
                             {errors.consent && (
