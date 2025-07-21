@@ -355,6 +355,7 @@ export default function JobDetailScreen() {
                                         <TouchableOpacity
                                             style={[styles.actionButton, styles.stopButton]}
                                             onPress={handleStopJob}
+                                            disabled={true}
                                         >
                                             <StopCircle size={18} color="white"/>
                                             <ThemedText style={styles.actionButtonText}>Stop</ThemedText>
@@ -367,6 +368,7 @@ export default function JobDetailScreen() {
                                             isActive ? styles.pauseButton : styles.resumeButton
                                         ]}
                                         onPress={isActive ? handlePauseJob : handleResumeJob}
+                                        disabled={true}
                                     >
                                         {isActive ? (
                                             <>
@@ -384,6 +386,7 @@ export default function JobDetailScreen() {
                                     <TouchableOpacity
                                         style={[styles.actionButton, styles.cancelButton]}
                                         onPress={handleCancelJob}
+                                        disabled={true}
                                     >
                                         <X size={18} color="white"/>
                                         <ThemedText style={styles.actionButtonText}>Cancel</ThemedText>
